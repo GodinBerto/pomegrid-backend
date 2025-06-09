@@ -47,25 +47,31 @@ def create_tables():
         )
     ''')
 
-    # Create product table
+
+    # Create products table
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS Products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            farmer_id INTEGER NOT NULL,
-            type_id INTEGER NOT NULL,
-            title TEXT NOT NULL,
-            description TEXT,
-            price REAL NOT NULL,
-            quantity INTEGER NOT NULL,
-            is_alive BOOLEAN,
-            is_fresh BOOLEAN,
-            image_url TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (farmer_id) REFERENCES Users(id),
-            FOREIGN KEY (type_id) REFERENCES ProductTypes(id)
-        )
-    ''')
+    CREATE TABLE IF NOT EXISTS Products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        farmer_id INTEGER NOT NULL,
+        type_id INTEGER NOT NULL,
+        title TEXT NOT NULL,
+        animal_stage INTEGER CHECK (animal_stage IN (0, 1)) DEFAULT NULL,
+        description TEXT,
+        price REAL NOT NULL,
+        quantity INTEGER NOT NULL,
+        weight_per_unit REAL NOT NULL DEFAULT 1.0,
+        is_alive INTEGER,
+        is_fresh INTEGER,
+        image_url TEXT,
+        rating REAL DEFAULT 4.5,
+        discount_percentage INTEGER DEFAULT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (farmer_id) REFERENCES Users(id),
+        FOREIGN KEY (type_id) REFERENCES ProductTypes(id)
+    )
+''')
+
 
     # Create orders table
     cursor.execute('''

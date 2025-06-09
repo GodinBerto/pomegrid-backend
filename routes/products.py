@@ -8,7 +8,6 @@ from routes import response
 products = Blueprint('products', __name__)
 
 @products.route('/', methods=['GET'])
-@jwt_required()
 def get_products():
     try:
         conn, cursor = db_connection()
@@ -63,7 +62,6 @@ def get_product_types():
 @jwt_required()
 def add_product_type():
     data = request.get_json()
-    current_user = get_jwt_identity()
     category_id = data.get('category_id')
     name = data.get('name')
     description = data.get('description', '')
@@ -119,34 +117,41 @@ def add_product():
     is_alive = data.get('is_live', False)
     is_fresh = data.get('is_fresh', True)
     image_url = data.get('image_url', None)
+    rating = data.get('rating', 4.0)
+    discount_percentage = data.get('discount_percentage', None)
+    weight_per_unit = data.get('weight_per_unit', 1.0)
+    animal_stage = data.get('animal_stage')  # Default to 0 if not provided
+
 
     # Validate required fields
     if not all([title, type_id, price, quantity, image_url]):
         return jsonify(response(None, "Missing required fields", 400)), 400
     
-    try: 
-        conn, cursor = db_connection()
-        cursor.execute('SELECT * FROM ProductTypes WHERE id = ?', (type_id))
-        product_type = cursor.fetchone()
-        if not product_type:
-            return jsonify(response(None, "Product not found", 404))
-        conn.close()
-    
-    except Exception as e:
-        return jsonify(response(None, "Error fetching product type", 500))
+
 
     try:
         conn, cursor = db_connection()
-        if is_alive:     
-            cursor.execute('''
-                INSERT INTO Products (farmer_id, type_id, title, description, price, quantity, is_alive, image_url)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (current_user, type_id, title, description, price, quantity, is_alive, image_url))
+        if is_alive:
+            if animal_stage not in [0, 1]:
+                conn.close()
+                return jsonify(response(None, "Invalid animal stage. Must be 0 or 1.", 400)), 400
+
+            columns = '''farmer_id, type_id, title, description, price, quantity, is_alive, image_url, weight_per_unit, rating, discount_percentage'''
+            values = [current_user, type_id, title, description, price, quantity, is_alive, image_url, weight_per_unit, rating, discount_percentage]
+
+            if animal_stage is not None:
+                columns += ', animal_stage'
+                values.append(animal_stage)
+
+            cursor.execute(f'''
+                INSERT INTO Products ({columns})
+                VALUES ({','.join(['?'] * len(values))})
+            ''', values)
         elif is_fresh:
             cursor.execute('''
-                INSERT INTO Products (farmer_id, type_id, title, description, price, quantity, is_fresh, image_url)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (current_user, type_id, title, description, price, quantity, is_fresh, image_url))
+                INSERT INTO Products (farmer_id, type_id, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (current_user, type_id, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage))
         product_id = cursor.lastrowid  # Get ID before closing
         conn.commit()
         conn.close()
@@ -160,7 +165,11 @@ def add_product():
             'price': price,
             'quantity': quantity,
             'is_live': is_alive,
-            'image_url': image_url
+            'image_url': image_url,
+            'weight_per_unit': weight_per_unit,
+            'rating': rating,
+            'discount_percentage': discount_percentage,
+            'animal_stage': animal_stage
         }
         else:
             data = {
@@ -171,14 +180,17 @@ def add_product():
             'price': price,
             'quantity': quantity,
             'is_fresh': is_fresh,
-            'image_url': image_url
+            'image_url': image_url,
+            'weight_per_unit': weight_per_unit,
+            'rating': rating,
+            'discount_percentage': discount_percentage
         }
 
-        
         return jsonify(response(data, "Product added successfully", 201)), 201
 
     except Exception as e:
         return jsonify(response(None, f"Error: {e}", 500)), 500
+    
 
 @products.route('/<int:product_id>', methods=['PUT'])
 @jwt_required()
@@ -193,23 +205,29 @@ def update_product(product_id):
     is_alive = data.get('is_alive', False)
     is_fresh = data.get('is_fresh', True)
     image_url = data.get('image_url', None)
+    rating = data.get('rating', 4.0)
+    discount_percentage = data.get('discount_percentage', None)
+    weight_per_unit = data.get('weight_per_unit', 1.0)
+    animal_stage = data.get('animal_stage', None)  # Default to None if not provided
+
     # Validate required fields
     if not all([title, type_id, price, quantity, image_url]):
         return jsonify(response(None, "Missing required fields", 400)), 400
+    
     try:
         conn, cursor = db_connection()
         if is_alive:
             cursor.execute('''
                 UPDATE Products
-                SET title = ?, type_id = ?, description = ?, price = ?, quantity = ?, is_alive = ?, image_url = ?
+                SET title = ?, type_id = ?, description = ?, price = ?, quantity = ?, is_alive = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?, animal_stage = ?
                 WHERE id = ? AND farmer_id = ?
-            ''', (title, type_id, description, price, quantity, is_alive, image_url, product_id, current_user))
+            ''', (title, type_id, description, price, quantity, is_alive, image_url, rating, discount_percentage, weight_per_unit, animal_stage, product_id, current_user))
         elif is_fresh:
             cursor.execute('''
                 UPDATE Products
-                SET title = ?, type_id = ?, description = ?, price = ?, quantity = ?, is_fresh = ?, image_url = ?
+                SET title = ?, type_id = ?, description = ?, price = ?, quantity = ?, is_fresh = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?
                 WHERE id = ? AND farmer_id = ?
-            ''', (title, type_id, description, price, quantity, is_fresh, image_url, product_id, current_user))
+            ''', (title, type_id, description, price, quantity, is_fresh, image_url, rating, discount_percentage, weight_per_unit, product_id, current_user))
         
         conn.commit()
         if cursor.rowcount == 0:
@@ -227,7 +245,11 @@ def update_product(product_id):
                 'price': price,
                 'quantity': quantity,
                 'is_alive': is_alive,
-                'image_url': image_url
+                'image_url': image_url,
+                'weight_per_unit': weight_per_unit,
+                'rating': rating,
+                'discount_percentage': discount_percentage,
+                'animal_stage': animal_stage
             }
         else:
             data = {
@@ -238,7 +260,10 @@ def update_product(product_id):
                 'price': price,
                 'quantity': quantity,
                 'is_fresh': is_fresh,
-                'image_url': image_url
+                'image_url': image_url,
+                'weight_per_unit': weight_per_unit,
+                'rating': rating,
+                'discount_percentage': discount_percentage
             }
         
         return jsonify(response(data, "Product updated successfully", 200)), 200
@@ -264,6 +289,27 @@ def delete_product(product_id):
 
     except Exception as e:
         return jsonify(response(None, f"Error: {e}", 500)), 500
+    
+
+@products.route('/all', methods=['DELETE'])
+@jwt_required()
+def delete_all_products():
+    current_user = get_jwt_identity()
+    try:
+        conn, cursor = db_connection()
+        cursor.execute('DELETE FROM Products WHERE farmer_id = ?', (current_user,))
+        conn.commit()
+        
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify(response(None, "No products found for this user", 404)), 404
+        
+        conn.close()
+        return jsonify(response(None, "All products deleted successfully", 200)), 200
+
+    except Exception as e:
+        return jsonify(response(None, f"Error: {e}", 500)), 500
+    
     
 @products.route('/<int:product_id>/image', methods=['POST'])
 @jwt_required()
@@ -342,3 +388,4 @@ def delete_product_image(product_id):
     except Exception as e:
         return jsonify(response(None, f"Error: {e}", 500)), 500
     
+
