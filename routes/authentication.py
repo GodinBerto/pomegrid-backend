@@ -17,16 +17,25 @@ def register():
     email = data.get('email')
     full_name = data.get('full_name')
     phone = data.get('phone')
-    user_type = data.get('user_type')  # Should be 'farmer' or 'consumer'
+    user_type = data.get('user_type', "consumer")  # Should be 'farmer' or 'consumer'
     address = data.get('address')  # Optional
     profile_image_url = data.get('profile_image_url')  # Optional
+    date_of_birth = data.get('date_of_birth')  # Optional
 
     # Validate required fields
-    if not all([username, password, email, full_name, phone, user_type]):
+    if not all([username, password, email, full_name, phone, user_type, date_of_birth]):
         return jsonify({'message': 'All required fields must be provided'}), 400
 
     if user_type not in ['farmer', 'consumer']:
         return jsonify({'message': 'Invalid user_type. Must be "farmer" or "consumer".'}), 400
+    
+    # Check if username or email already exists 
+    conn, cursor = db_connection()
+    cursor.execute('SELECT id FROM Users WHERE username = ? OR email = ?', (username, email))
+    existing_user = cursor.fetchone()
+    conn.close()
+    if existing_user:
+        return jsonify({'message': 'Username or email already exists'}), 409
 
     hashed_password = generate_password_hash(password)
 
@@ -36,11 +45,11 @@ def register():
         cursor.execute('''
             INSERT INTO Users (
                 username, email, password_hash, full_name, phone,
-                user_type, address, profile_image_url
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                user_type, address, profile_image_url, date_of_birth
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             username, email, hashed_password, full_name, phone,
-            user_type, address, profile_image_url
+            user_type, address, profile_image_url, date_of_birth
         ))
 
         conn.commit()
@@ -65,7 +74,7 @@ def login():
         return jsonify({'message': 'Username and password are required'}), 400
 
     conn, cursor = db_connection()
-    cursor.execute('SELECT id, username, password_hash, email, full_name, phone, user_type, address, is_admin, is_active FROM Users WHERE email = ?', (email,))
+    cursor.execute('SELECT id, username, password_hash, email, full_name, phone, user_type, address, is_admin, is_active, date_of_birth FROM Users WHERE email = ?', (email,))
     user = cursor.fetchone()
     conn.close()
 
@@ -75,7 +84,7 @@ def login():
     # Unpack all values in the correct order
     (
         user_id, username, password_hash, email, full_name,
-        phone, user_type, address, is_admin, is_active
+        phone, user_type, address, is_admin, is_active, date_of_birth
     ) = user
 
     if not check_password_hash(password_hash, password):
@@ -90,8 +99,9 @@ def login():
         'user_type': user_type,
         'address': address,
         'is_admin': is_admin,
-        'is_active': is_active
-    }
+        'is_active': is_active,
+        'date_of_birth': date_of_birth}
+    
     access_token = create_access_token(identity=str(user_id))
 
     return jsonify({

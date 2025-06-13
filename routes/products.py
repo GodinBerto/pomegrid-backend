@@ -1,3 +1,4 @@
+import cloudinary
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import get_jwt_identity, jwt_required
@@ -55,52 +56,6 @@ def get_product_types():
 
     except Exception as e:
         return jsonify(response([], f"Error: {e}", 500)), 500
-    
-    
-# Product types POST endpoint
-@products.route('/types', methods=['POST'])
-@jwt_required()
-def add_product_type():
-    data = request.get_json()
-    category_id = data.get('category_id')
-    name = data.get('name')
-    description = data.get('description', '')
-    # Validate required fields
-    if not all([category_id, name]):
-        return jsonify(response(None, "Missing required fields", 400)), 400
-    
-    # Check if the category exists
-    try:
-        conn, cursor = db_connection()
-        cursor.execute('SELECT id FROM Categories WHERE id = ?', (category_id,))
-        category = cursor.fetchone()
-        if not category:
-            conn.close()
-            return jsonify(response(None, "Category not found", 404)), 404
-        conn.close()
-    except Exception as e:
-        return jsonify(response(None, f"Error checking category: {e}", 500)), 500
-    
-    try:
-        conn, cursor = db_connection()
-        cursor.execute('''
-            INSERT INTO ProductTypes (category_id, name, description)
-            VALUES (?, ?, ?)
-        ''', (category_id, name, description))
-        product_type_id = cursor.lastrowid  # Get ID before closing
-        conn.commit()
-        conn.close()
-        
-        data = {
-            'id': product_type_id,
-            'category_id': category_id,
-            'name': name,
-            'description': description
-        }
-        
-        return jsonify(response(data, "Product type added successfully", 201)), 201
-    except Exception as e:
-        return jsonify(response(None, f"Error: {e}", 500)), 500
 
 
 @products.route('/', methods=['POST'])
@@ -108,36 +63,38 @@ def add_product_type():
 def add_product():
     data = request.get_json()
     current_user = get_jwt_identity()  # Assuming this is user_id
-
+    
     title = data.get('title')
-    type_id = data.get('type_id')
+    category = data.get('category')  # Assuming this is the category
+    animal_type = data.get('animal_type')  # 1=livestock, 2=vegetables, 3=fruits, 4=fish
     description = data.get('description', '')
     price = data.get('price')
     quantity = data.get('quantity')
     is_alive = data.get('is_live', False)
     is_fresh = data.get('is_fresh', True)
-    image_url = data.get('image_url', None)
     rating = data.get('rating', 4.0)
     discount_percentage = data.get('discount_percentage', None)
     weight_per_unit = data.get('weight_per_unit', 1.0)
-    animal_stage = data.get('animal_stage')  # Default to 0 if not provided
+    animal_stage = data.get('animal_stage', None)  # Young or Mature, default to None if not provided
+    image_file = request.files.get('image')
 
-
-    # Validate required fields
-    if not all([title, type_id, price, quantity, image_url]):
-        return jsonify(response(None, "Missing required fields", 400)), 400
     
-
+    if not image_file:
+        return jsonify(response(None, "Image is required", 400)), 400
 
     try:
+        # Upload image to Cloudinary
+        upload_result = cloudinary.uploader.upload(image_file)
+        image_url = upload_result.get('secure_url')
+
+        # Validate required fields
+        if not all([title, animal_type, price, quantity, image_url]):
+            return jsonify(response(None, "Missing required fields", 400)), 400
+
         conn, cursor = db_connection()
         if is_alive:
-            if animal_stage not in [0, 1]:
-                conn.close()
-                return jsonify(response(None, "Invalid animal stage. Must be 0 or 1.", 400)), 400
-
-            columns = '''farmer_id, type_id, title, description, price, quantity, is_alive, image_url, weight_per_unit, rating, discount_percentage'''
-            values = [current_user, type_id, title, description, price, quantity, is_alive, image_url, weight_per_unit, rating, discount_percentage]
+            columns = '''user_id, animal_type, category, title, description, price, quantity, is_alive, image_url, weight_per_unit, rating, discount_percentage'''
+            values = [current_user, animal_type, category, title, description, price, quantity, is_alive, image_url, weight_per_unit, rating, discount_percentage]
 
             if animal_stage is not None:
                 columns += ', animal_stage'
@@ -149,9 +106,9 @@ def add_product():
             ''', values)
         elif is_fresh:
             cursor.execute('''
-                INSERT INTO Products (farmer_id, type_id, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (current_user, type_id, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage))
+                INSERT INTO Products (user_id, animal_type, category, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (current_user, animal_type, category, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage))
         product_id = cursor.lastrowid  # Get ID before closing
         conn.commit()
         conn.close()
@@ -160,7 +117,8 @@ def add_product():
             data = {
             'id': product_id,
             'title': title,
-            'type_id': type_id,
+            'category': category,
+            'animal_type': animal_type,
             'description': description,
             'price': price,
             'quantity': quantity,
@@ -175,7 +133,8 @@ def add_product():
             data = {
             'id': product_id,
             'title': title,
-            'type_id': type_id,
+            'category': category,
+            'animal_type': animal_type,
             'description': description,
             'price': price,
             'quantity': quantity,
@@ -198,7 +157,8 @@ def update_product(product_id):
     data = request.get_json()
     current_user = get_jwt_identity()
     title = data.get('title')
-    type_id = data.get('type_id')
+    category = data.get('category')
+    animal_type = data.get('animal_type')  # 1=livestock, 2=vegetables, 3=fruits 4=fish
     description = data.get('description', '')
     price = data.get('price')
     quantity = data.get('quantity')
@@ -211,7 +171,7 @@ def update_product(product_id):
     animal_stage = data.get('animal_stage', None)  # Default to None if not provided
 
     # Validate required fields
-    if not all([title, type_id, price, quantity, image_url]):
+    if not all([title, animal_type, category, price, quantity, image_url]):
         return jsonify(response(None, "Missing required fields", 400)), 400
     
     try:
@@ -219,15 +179,15 @@ def update_product(product_id):
         if is_alive:
             cursor.execute('''
                 UPDATE Products
-                SET title = ?, type_id = ?, description = ?, price = ?, quantity = ?, is_alive = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?, animal_stage = ?
+                SET title = ?, animal_type = ?, category = ?, description = ?, price = ?, quantity = ?, is_alive = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?, animal_stage = ?
                 WHERE id = ? AND farmer_id = ?
-            ''', (title, type_id, description, price, quantity, is_alive, image_url, rating, discount_percentage, weight_per_unit, animal_stage, product_id, current_user))
+            ''', (title, animal_type, category, description, price, quantity, is_alive, image_url, rating, discount_percentage, weight_per_unit, animal_stage, product_id, current_user))
         elif is_fresh:
             cursor.execute('''
                 UPDATE Products
-                SET title = ?, type_id = ?, description = ?, price = ?, quantity = ?, is_fresh = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?
+                SET title = ?, animal_type = ?, category, description = ?, price = ?, quantity = ?, is_fresh = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?
                 WHERE id = ? AND farmer_id = ?
-            ''', (title, type_id, description, price, quantity, is_fresh, image_url, rating, discount_percentage, weight_per_unit, product_id, current_user))
+            ''', (title, animal_type, category, description, price, quantity, is_fresh, image_url, rating, discount_percentage, weight_per_unit, product_id, current_user))
         
         conn.commit()
         if cursor.rowcount == 0:
@@ -240,7 +200,8 @@ def update_product(product_id):
             data = {
                 'id': product_id,
                 'title': title,
-                'type_id': type_id,
+                'animal_type': animal_type,
+                'category': category,
                 'description': description,
                 'price': price,
                 'quantity': quantity,
@@ -255,7 +216,8 @@ def update_product(product_id):
             data = {
                 'id': product_id,
                 'title': title,
-                'type_id': type_id,
+                'animal_type': animal_type,
+                'category': category,
                 'description': description,
                 'price': price,
                 'quantity': quantity,
@@ -387,5 +349,3 @@ def delete_product_image(product_id):
 
     except Exception as e:
         return jsonify(response(None, f"Error: {e}", 500)), 500
-    
-

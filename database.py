@@ -19,6 +19,9 @@ def create_tables():
             full_name TEXT NOT NULL,
             phone TEXT NOT NULL,
             user_type TEXT NOT NULL CHECK(user_type IN ('farmer', 'consumer')),
+            date_of_birth DATE,
+            is_verified BOOLEAN NOT NULL DEFAULT 0,
+            verification_code TEXT,
             address TEXT,
             profile_image_url TEXT,
             is_active BOOLEAN NOT NULL DEFAULT 1,
@@ -37,52 +40,42 @@ def create_tables():
         )
     ''')
 
-    # Create product type table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ProductTypes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category_id INTEGER NOT NULL,
-            name TEXT NOT NULL,
-            FOREIGN KEY (category_id) REFERENCES Categories(id)
-        )
-    ''')
-
-
     # Create products table
     cursor.execute('''
-    CREATE TABLE IF NOT EXISTS Products (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        farmer_id INTEGER NOT NULL,
-        type_id INTEGER NOT NULL,
-        title TEXT NOT NULL,
-        animal_stage INTEGER CHECK (animal_stage IN (0, 1)) DEFAULT NULL,
-        description TEXT,
-        price REAL NOT NULL,
-        quantity INTEGER NOT NULL,
-        weight_per_unit REAL NOT NULL DEFAULT 1.0,
-        is_alive INTEGER,
-        is_fresh INTEGER,
-        image_url TEXT,
-        rating REAL DEFAULT 4.5,
-        discount_percentage INTEGER DEFAULT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (farmer_id) REFERENCES Users(id),
-        FOREIGN KEY (type_id) REFERENCES ProductTypes(id)
-    )
-''')
+        CREATE TABLE IF NOT EXISTS Products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            category TEXT NOT NULL,
+            animal_stage TEXT CHECK (animal_stage IN ('Young', 'Mature')) DEFAULT NULL,
+            animal_type INTEGER NOT NULL,
+            description TEXT,
+            price REAL NOT NULL,
+            quantity INTEGER NOT NULL,
+            weight_per_unit REAL NOT NULL DEFAULT 1.0,
+            is_alive INTEGER,
+            is_fresh INTEGER,
+            image_url TEXT,
+            rating REAL DEFAULT 4.5,
+            discount_percentage INTEGER DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES Users(id),
+            FOREIGN KEY (animal_type) REFERENCES ProductTypes(id)
+        )
+    ''')
 
 
     # Create orders table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            consumer_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
             total_price REAL NOT NULL,
             status TEXT NOT NULL CHECK(status IN ('pending', 'processing', 'completed', 'cancelled')),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (consumer_id) REFERENCES Users(id)
+            FOREIGN KEY (user_id) REFERENCES Users(id)
         )
     ''')
 
@@ -90,12 +83,14 @@ def create_tables():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS OrderItems (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
             order_id INTEGER NOT NULL,
             product_id INTEGER NOT NULL,
             quantity INTEGER NOT NULL,
             unit_price REAL NOT NULL,
             FOREIGN KEY (order_id) REFERENCES Orders(id),
-            FOREIGN KEY (product_id) REFERENCES Products(id)
+            FOREIGN KEY (product_id) REFERENCES Products(id),
+            FOREIGN KEY (user_id) REFERENCES Users(id)
         )
     ''')
     
