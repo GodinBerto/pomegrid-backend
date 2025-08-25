@@ -47,14 +47,14 @@ def create_tables():
             user_id INTEGER NOT NULL,
             title TEXT NOT NULL,
             category TEXT NOT NULL,
-            animal_stage TEXT CHECK (animal_stage IN ('Young', 'Mature')) DEFAULT NULL,
-            animal_type INTEGER NOT NULL,
+            animal_stage INTEGER CHECK (animal_stage IN ('0', '1')) DEFAULT NULL,
+            animal_type TEXT,
             description TEXT,
             price REAL NOT NULL,
             quantity INTEGER NOT NULL,
             weight_per_unit REAL NOT NULL DEFAULT 1.0,
-            is_alive INTEGER,
-            is_fresh INTEGER,
+            is_alive BOOLEAN,
+            is_fresh BOOLEAN,
             image_url TEXT,
             rating REAL DEFAULT 4.5,
             discount_percentage INTEGER DEFAULT NULL,
@@ -62,6 +62,21 @@ def create_tables():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES Users(id),
             FOREIGN KEY (animal_type) REFERENCES ProductTypes(id)
+        )
+    ''')
+    
+    
+    #Create cart table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS Cart (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            product_id INTEGER NOT NULL,
+            quantity INTEGER NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES Users(id),
+            FOREIGN KEY (product_id) REFERENCES Products(id)
         )
     ''')
 
@@ -86,8 +101,11 @@ def create_tables():
             user_id INTEGER NOT NULL,
             order_id INTEGER NOT NULL,
             product_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             unit_price REAL NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (order_id) REFERENCES Orders(id),
             FOREIGN KEY (product_id) REFERENCES Products(id),
             FOREIGN KEY (user_id) REFERENCES Users(id)

@@ -16,7 +16,7 @@ def get_user(user_id):
 
     try:
         conn, cursor = db_connection()
-        cursor.execute('SELECT email, full_name FROM Users WHERE id = ?', (user_id,))
+        cursor.execute('SELECT id, email, full_name FROM Users WHERE id = ?', (user_id,))
         row = cursor.fetchone()
         if row:
             user = dict(row)

@@ -91,7 +91,7 @@ def login():
         return jsonify(response({}, 'Incorrect password', 401)), 401
     
     user_data = {
-        # 'id': user_id,
+        'id': user_id,
         'username': username,
         'email': email,
         'full_name': full_name,

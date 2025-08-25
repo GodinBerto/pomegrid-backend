@@ -4,6 +4,7 @@ from flask_cors import CORS
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from database import db_connection
 from routes import response
+from datetime import datetime, timedelta
 
 # Initialize the Flask auth
 products = Blueprint('products', __name__)
@@ -65,30 +66,24 @@ def add_product():
     current_user = get_jwt_identity()  # Assuming this is user_id
     
     title = data.get('title')
-    category = data.get('category')  # Assuming this is the category
-    animal_type = data.get('animal_type')  # 1=livestock, 2=vegetables, 3=fruits, 4=fish
-    description = data.get('description', '')
+    category = data.get('category')
+    animal_type = data.get('animal_type')
+    description = request.form.get('description', '')
     price = data.get('price')
     quantity = data.get('quantity')
-    is_alive = data.get('is_live', False)
-    is_fresh = data.get('is_fresh', True)
-    rating = data.get('rating', 4.0)
-    discount_percentage = data.get('discount_percentage', None)
-    weight_per_unit = data.get('weight_per_unit', 1.0)
-    animal_stage = data.get('animal_stage', None)  # Young or Mature, default to None if not provided
-    image_file = request.files.get('image')
+    is_alive = data.get('is_live', 'false')
+    is_fresh = data.get('is_fresh', 'true')
+    rating = float(data.get('rating', 4.0))
+    discount_percentage = data.get('discount_percentage')
+    weight_per_unit = float(data.get('weight_per_unit', 1.0))
+    animal_stage = data.get('animal_stage', None)
 
-    
-    if not image_file:
-        return jsonify(response(None, "Image is required", 400)), 400
+    # Get the image file
+    image_url = data.get('image_url')
 
     try:
-        # Upload image to Cloudinary
-        upload_result = cloudinary.uploader.upload(image_file)
-        image_url = upload_result.get('secure_url')
-
         # Validate required fields
-        if not all([title, animal_type, price, quantity, image_url]):
+        if not all([title, price, quantity, image_url, category]):
             return jsonify(response(None, "Missing required fields", 400)), 400
 
         conn, cursor = db_connection()
@@ -106,9 +101,9 @@ def add_product():
             ''', values)
         elif is_fresh:
             cursor.execute('''
-                INSERT INTO Products (user_id, animal_type, category, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (current_user, animal_type, category, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage))
+                INSERT INTO Products (user_id, category, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (current_user, category, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage))
         product_id = cursor.lastrowid  # Get ID before closing
         conn.commit()
         conn.close()
@@ -134,7 +129,6 @@ def add_product():
             'id': product_id,
             'title': title,
             'category': category,
-            'animal_type': animal_type,
             'description': description,
             'price': price,
             'quantity': quantity,
@@ -156,22 +150,25 @@ def add_product():
 def update_product(product_id):
     data = request.get_json()
     current_user = get_jwt_identity()
+
     title = data.get('title')
     category = data.get('category')
-    animal_type = data.get('animal_type')  # 1=livestock, 2=vegetables, 3=fruits 4=fish
-    description = data.get('description', '')
+    animal_type = data.get('animal_type')
+    description = request.form.get('description')
     price = data.get('price')
     quantity = data.get('quantity')
-    is_alive = data.get('is_alive', False)
-    is_fresh = data.get('is_fresh', True)
-    image_url = data.get('image_url', None)
-    rating = data.get('rating', 4.0)
-    discount_percentage = data.get('discount_percentage', None)
-    weight_per_unit = data.get('weight_per_unit', 1.0)
-    animal_stage = data.get('animal_stage', None)  # Default to None if not provided
+    is_alive = data.get('is_live', 'false')
+    is_fresh = data.get('is_fresh', 'true')
+    rating = float(data.get('rating', 4.0))
+    discount_percentage = data.get('discount_percentage')
+    weight_per_unit = float(data.get('weight_per_unit', 1.0))
+    animal_stage = data.get('animal_stage', None)
+
+    # Get the image file
+    image_url = data.get('image_url')
 
     # Validate required fields
-    if not all([title, animal_type, category, price, quantity, image_url]):
+    if not all([title, category, price, quantity, image_url]):
         return jsonify(response(None, "Missing required fields", 400)), 400
     
     try:
@@ -180,13 +177,13 @@ def update_product(product_id):
             cursor.execute('''
                 UPDATE Products
                 SET title = ?, animal_type = ?, category = ?, description = ?, price = ?, quantity = ?, is_alive = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?, animal_stage = ?
-                WHERE id = ? AND farmer_id = ?
+                WHERE id = ? AND user_id = ?
             ''', (title, animal_type, category, description, price, quantity, is_alive, image_url, rating, discount_percentage, weight_per_unit, animal_stage, product_id, current_user))
         elif is_fresh:
             cursor.execute('''
                 UPDATE Products
                 SET title = ?, animal_type = ?, category, description = ?, price = ?, quantity = ?, is_fresh = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?
-                WHERE id = ? AND farmer_id = ?
+                WHERE id = ? AND user_id = ?
             ''', (title, animal_type, category, description, price, quantity, is_fresh, image_url, rating, discount_percentage, weight_per_unit, product_id, current_user))
         
         conn.commit()
@@ -200,12 +197,12 @@ def update_product(product_id):
             data = {
                 'id': product_id,
                 'title': title,
-                'animal_type': animal_type,
                 'category': category,
+                'animal_type': animal_type,
                 'description': description,
                 'price': price,
                 'quantity': quantity,
-                'is_alive': is_alive,
+                'is_live': is_alive,
                 'image_url': image_url,
                 'weight_per_unit': weight_per_unit,
                 'rating': rating,
@@ -216,7 +213,6 @@ def update_product(product_id):
             data = {
                 'id': product_id,
                 'title': title,
-                'animal_type': animal_type,
                 'category': category,
                 'description': description,
                 'price': price,
@@ -239,7 +235,7 @@ def delete_product(product_id):
     current_user = get_jwt_identity()
     try:
         conn, cursor = db_connection()
-        cursor.execute('DELETE FROM Products WHERE id = ? AND farmer_id = ?', (product_id, current_user))
+        cursor.execute('DELETE FROM Products WHERE id = ? AND user_id = ?', (product_id, current_user))
         conn.commit()
         
         if cursor.rowcount == 0:
@@ -259,7 +255,7 @@ def delete_all_products():
     current_user = get_jwt_identity()
     try:
         conn, cursor = db_connection()
-        cursor.execute('DELETE FROM Products WHERE farmer_id = ?', (current_user,))
+        cursor.execute('DELETE FROM Products WHERE user_id = ?', (current_user,))
         conn.commit()
         
         if cursor.rowcount == 0:
@@ -349,3 +345,56 @@ def delete_product_image(product_id):
 
     except Exception as e:
         return jsonify(response(None, f"Error: {e}", 500)), 500
+    
+    
+@products.route('/stats/overview', methods=['GET'])
+@jwt_required()
+def overview_stats():
+    current_user = get_jwt_identity()
+    try:
+        conn, cursor = db_connection()
+
+        # ==============================
+        # Total products
+        # ==============================
+        cursor.execute("SELECT COUNT(*) as total FROM Products WHERE user_id = ?", (current_user,))
+        total_products = cursor.fetchone()["total"]
+
+        # Products added in the last 7 days
+        one_week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute(
+            "SELECT COUNT(*) as recent FROM Products WHERE user_id = ? AND created_at >= ?",
+            (current_user, one_week_ago)
+        )
+        recent_products = cursor.fetchone()["recent"]
+
+        # ==============================
+        # Revenue stats
+        # ==============================
+        cursor.execute("""
+            SELECT IFNULL(SUM(total_price), 0) as total_revenue
+            FROM Orders
+            WHERE user_id = ? AND status = 'completed'
+        """, (current_user,))
+        total_revenue = cursor.fetchone()["total_revenue"]
+
+        first_day_of_month = datetime.now().replace(day=1).strftime('%Y-%m-%d %H:%M:%S')
+        cursor.execute("""
+            SELECT IFNULL(SUM(total_price), 0) as monthly_revenue
+            FROM Orders
+            WHERE user_id = ? AND status = 'completed' AND created_at >= ?
+        """, (current_user, first_day_of_month))
+        monthly_revenue = cursor.fetchone()["monthly_revenue"]
+
+        conn.close()
+
+        return jsonify(response({
+            "totalProducts": total_products,
+            "recentProducts": recent_products,
+            "totalRevenue": total_revenue,
+            "monthlyRevenue": monthly_revenue
+        }, "Overview stats fetched", 200)), 200
+
+    except Exception as e:
+        return jsonify(response(None, f"Error: {e}", 500)), 500
+

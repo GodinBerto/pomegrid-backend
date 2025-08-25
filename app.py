@@ -8,10 +8,11 @@ from routes.users import users
 from routes.authentication import auth
 from routes.products import products
 from routes.categories import categories
+from routes.orders import orders
+from routes.cart import carts
 
 #Cloudinary
 import cloudinary
-import cloudinary.uploader
 
 
 app = Flask(__name__)
@@ -41,6 +42,8 @@ app.register_blueprint(auth, url_prefix=f'{url}/auth')
 app.register_blueprint(products, url_prefix=f'{url}/products')
 app.register_blueprint(categories, url_prefix=f'{url}/categories')
 app.register_blueprint(users, url_prefix=f'{url}/users')
+app.register_blueprint(orders, url_prefix=f'{url}/orders')
+app.register_blueprint(carts, url_prefix=f'{url}/carts')
 
 
 if __name__ == '__main__':
