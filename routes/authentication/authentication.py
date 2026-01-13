@@ -1,0 +1,159 @@
+import sqlite3
+from flask import Blueprint, request, jsonify
+from flask_cors import CORS
+from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt, jwt_required, get_jwt_identity, set_refresh_cookies, unset_jwt_cookies, verify_jwt_in_request
+from werkzeug.security import generate_password_hash, check_password_hash
+from database import db_connection
+from extensions import redis_client
+from routes import response
+from services.token_service import revoke_token
+
+# Initialize the Flask auth
+auth = Blueprint('auth', __name__)
+
+@auth.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    email = data.get('email')
+    full_name = data.get('full_name')
+    phone = data.get('phone')
+    user_type = data.get('user_type', "consumer")  # Should be 'farmer' or 'consumer'
+    address = data.get('address')  # Optional
+    profile_image_url = data.get('profile_image_url')  # Optional
+    date_of_birth = data.get('date_of_birth')  # Optional
+
+    # Validate required fields
+    if not all([username, password, email, full_name, phone, user_type, date_of_birth]):
+        return jsonify({'message': 'All required fields must be provided'}), 400
+
+    if user_type not in ['farmer', 'consumer']:
+        return jsonify({'message': 'Invalid user_type. Must be "farmer" or "consumer".'}), 400
+    
+    # Check if username or email already exists 
+    conn, cursor = db_connection()
+    cursor.execute('SELECT id FROM Users WHERE username = ? OR email = ?', (username, email))
+    existing_user = cursor.fetchone()
+    conn.close()
+    if existing_user:
+        return jsonify({'message': 'Username or email already exists'}), 409
+
+    hashed_password = generate_password_hash(password)
+
+    try:
+        conn, cursor = db_connection()
+
+        cursor.execute('''
+            INSERT INTO Users (
+                username, email, password_hash, full_name, phone,
+                user_type, address, profile_image_url, date_of_birth
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            username, email, hashed_password, full_name, phone,
+            user_type, address, profile_image_url, date_of_birth
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify(response([], "User registered successfully", 200)), 201
+
+    except Exception as e:
+        print("Registration error:", e)
+        if 'UNIQUE constraint failed' in str(e):
+            return jsonify({'message': 'Username or email already exists'}), 409
+        return jsonify({'message': 'Internal server error'}), 500
+    
+
+@auth.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
+
+    if not email or not password:
+        return jsonify({'message': 'Username and password are required'}), 400
+
+    conn, cursor = db_connection()
+    cursor.execute('SELECT id, username, password_hash, email, full_name, phone, user_type, address, is_admin, is_active, date_of_birth FROM Users WHERE email = ?', (email,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if user is None:
+        return jsonify(response({}, 'Incorrect email', 404)), 404
+
+    # Unpack all values in the correct order
+    (
+        user_id, username, password_hash, email, full_name,
+        phone, user_type, address, is_admin, is_active, date_of_birth
+    ) = user
+
+    if not check_password_hash(password_hash, password):
+        return jsonify(response({}, 'Incorrect password', 401)), 401
+    
+    user_data = {
+        'id': user_id,
+        'username': username,
+        'email': email,
+        'full_name': full_name,
+        'phone': phone,
+        'user_type': user_type,
+        'address': address,
+        'is_admin': is_admin,
+        'is_active': is_active,
+        'date_of_birth': date_of_birth}
+    
+    access_token = create_access_token(identity=str(user_id))
+    refresh_token = create_refresh_token(identity=str(user_id))
+    
+    
+    response = jsonify({
+        'access_token': access_token,
+        'message': 'Login successful',
+        'data': user_data,
+        'status': 200
+    })
+    
+    set_refresh_cookies(response, refresh_token)
+
+    return response, 200
+
+
+@auth.route("/logout", methods=["POST"])
+@jwt_required()
+def logout():
+    jti = get_jwt()["jti"]
+    expires = get_jwt()["exp"] - get_jwt()["iat"]
+
+    revoke_token(jti, expires)
+
+    response = jsonify({"message": "Logged out"})
+    unset_jwt_cookies(response)
+    return response
+
+
+@auth.route('/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    current_user = get_jwt_identity()
+    return jsonify({'message': f'Hello, {current_user["username"]}! This is a protected route.'}), 200
+
+
+@auth.route("/refresh", methods=["POST"])
+@jwt_required(refresh=True)
+def refresh():
+    jti = get_jwt()["jti"]
+
+    # 🚫 revoke old refresh token
+    redis_client.setex(jti, 7 * 24 * 3600, "revoked")
+
+    user_id = get_jwt_identity()
+
+    new_access = create_access_token(identity=user_id)
+    new_refresh = create_refresh_token(identity=user_id)
+
+    response = jsonify({"access_token": new_access})
+    set_refresh_cookies(response, new_refresh)
+
+    return response, 200

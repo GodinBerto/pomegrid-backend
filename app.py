@@ -2,31 +2,48 @@ from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from config import Config
+from datetime import timedelta
+import os
+from services.jwt import jwt 
+
 
 #routes
-from routes.users import users
-from routes.authentication import auth
-from routes.products import products
-from routes.categories import categories
-from routes.orders import orders
-from routes.cart import carts
+from routes.farms.users import users
+from routes.authentication.authentication import auth
+from routes.farms.products import products
+from routes.farms.categories import categories
+from routes.farms.orders import orders
+from routes.farms.cart import carts
 
 #Cloudinary
 import cloudinary
 
 
+# Initialize flask
 app = Flask(__name__)
 
 # Load configuration from the Config object
 app.config.from_object(Config)
+
+# ================================
+# JWT CONFIGURATION
+# ================================
+app.config.update({
+    "JWT_SECRET_KEY": Config.JWT_SECRET_KEY,
+    "JWT_ACCESS_TOKEN_EXPIRES": timedelta(minutes=5),
+    "JWT_REFRESH_TOKEN_EXPIRES": timedelta(days=7),
+
+    "JWT_TOKEN_LOCATION": ["headers", "cookies"],
+    "JWT_REFRESH_COOKIE_NAME": "refresh_token",
+    "JWT_COOKIE_SECURE": True,
+    "JWT_COOKIE_SAMESITE": "Lax",  # ✅ best balance
+    "JWT_COOKIE_CSRF_PROTECT": True,
+})
     
 # Initialize JWT Manager
-jwt = JWTManager(app)
-app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key'  # Change this to a random secret key
-app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # Token expires in 1 hour
-app.config['JWT_REFRESH_TOKEN_EXPIRES'] = 86400  # Refresh token expires in 24 hours
-app.config['JWT_TOKEN_LOCATION'] = ['headers', 'cookies']
+jwt.init_app(app)
 
+# Cloudinary Configuration
 cloudinary.config(
     cloud_name=app.config['CLOUDINARY_API_NAME'],
     api_key=app.config['CLOUDINARY_API_KEY'],
@@ -35,6 +52,7 @@ cloudinary.config(
 
 CORS(app, supports_credentials=True, max_age=86400)
 
+# Load Base URL from config.py
 url = app.config['BASE_URL']
 
 # Register blueprints
