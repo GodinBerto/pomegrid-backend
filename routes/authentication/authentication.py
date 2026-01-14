@@ -73,7 +73,7 @@ def login():
     password = data.get('password')
 
     if not email or not password:
-        return jsonify({'message': 'Username and password are required'}), 400
+        return jsonify(response({}, "Username and password are required", 400)), 400
 
     conn, cursor = db_connection()
     cursor.execute('SELECT id, username, password_hash, email, full_name, phone, user_type, address, is_admin, is_active, date_of_birth FROM Users WHERE email = ?', (email,))
@@ -81,7 +81,7 @@ def login():
     conn.close()
 
     if user is None:
-        return jsonify(response({}, 'Incorrect email', 404)), 404
+        return jsonify(response({}, 'Incorrect email', 404)), 401
 
     # Unpack all values in the correct order
     (
@@ -91,7 +91,7 @@ def login():
 
     if not check_password_hash(password_hash, password):
         return jsonify(response({}, 'Incorrect password', 401)), 401
-    
+        
     user_data = {
         'id': user_id,
         'username': username,
@@ -107,17 +107,18 @@ def login():
     access_token = create_access_token(identity=str(user_id))
     refresh_token = create_refresh_token(identity=str(user_id))
     
-    
-    response = jsonify({
-        'access_token': access_token,
-        'message': 'Login successful',
+   # Prepare the response data
+    res = {
+        'access_token': access_token,  # frontend stores this
         'data': user_data,
-        'status': 200
-    })
-    
-    set_refresh_cookies(response, refresh_token)
+    }
 
-    return response, 200
+    # Create a Flask Response object
+    resp = jsonify(response(res, "Login Successful", 200))
+    
+    set_refresh_cookies(resp, refresh_token)
+    
+    return resp, 200
 
 
 @auth.route("/logout", methods=["POST"])

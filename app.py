@@ -32,10 +32,11 @@ app.config.update({
     "JWT_SECRET_KEY": Config.JWT_SECRET_KEY,
     "JWT_ACCESS_TOKEN_EXPIRES": timedelta(minutes=5),
     "JWT_REFRESH_TOKEN_EXPIRES": timedelta(days=7),
-
+    "JWT_ACCESS_COOKIE_NAME": "access_token_cookie",
+    "JWT_REFRESH_COOKIE_NAME": "refresh_token_cookie",
     "JWT_TOKEN_LOCATION": ["headers", "cookies"],
     "JWT_REFRESH_COOKIE_NAME": "refresh_token",
-    "JWT_COOKIE_SECURE": True,
+    "JWT_COOKIE_SECURE": False,
     "JWT_COOKIE_SAMESITE": "Lax",  # ✅ best balance
     "JWT_COOKIE_CSRF_PROTECT": True,
 })
