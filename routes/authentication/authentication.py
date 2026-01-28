@@ -1,7 +1,7 @@
 import sqlite3
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS
-from flask_jwt_extended import create_access_token, create_refresh_token, get_jwt, jwt_required, get_jwt_identity, set_refresh_cookies, unset_jwt_cookies, verify_jwt_in_request
+from flask_jwt_extended import create_access_token, create_refresh_token, get_csrf_token, get_jwt, jwt_required, get_jwt_identity, set_refresh_cookies, unset_jwt_cookies, verify_jwt_in_request
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import db_connection
 from extensions import redis_client
@@ -106,10 +106,11 @@ def login():
     
     access_token = create_access_token(identity=str(user_id))
     refresh_token = create_refresh_token(identity=str(user_id))
-    
+   
    # Prepare the response data
     res = {
-        'access_token': access_token,  # frontend stores this
+        'access_token': access_token,  # frontend stores 
+        'csrf_token': get_csrf_token(refresh_token),  # ⭐ important
         'data': user_data,
     }
 
@@ -144,17 +145,10 @@ def protected():
 @auth.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
-    jti = get_jwt()["jti"]
-
-    # 🚫 revoke old refresh token
-    redis_client.setex(jti, 7 * 24 * 3600, "revoked")
-
     user_id = get_jwt_identity()
 
     new_access = create_access_token(identity=user_id)
-    new_refresh = create_refresh_token(identity=user_id)
 
-    response = jsonify({"access_token": new_access})
-    set_refresh_cookies(response, new_refresh)
-
-    return response, 200
+    return jsonify({
+        "access_token": new_access
+    }), 200

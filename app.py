@@ -8,12 +8,13 @@ from services.jwt import jwt
 
 
 #routes
-from routes.farms.users import users
+# from routes.farms.users import users
 from routes.authentication.authentication import auth
 from routes.farms.products import products
 from routes.farms.categories import categories
 from routes.farms.orders import orders
 from routes.farms.cart import carts
+from routes.user.user import users
 
 #Cloudinary
 import cloudinary
@@ -33,11 +34,10 @@ app.config.update({
     "JWT_ACCESS_TOKEN_EXPIRES": timedelta(minutes=5),
     "JWT_REFRESH_TOKEN_EXPIRES": timedelta(days=7),
     "JWT_ACCESS_COOKIE_NAME": "access_token_cookie",
-    "JWT_REFRESH_COOKIE_NAME": "refresh_token_cookie",
     "JWT_TOKEN_LOCATION": ["headers", "cookies"],
     "JWT_REFRESH_COOKIE_NAME": "refresh_token",
-    "JWT_COOKIE_SECURE": False,
-    "JWT_COOKIE_SAMESITE": "Lax",  # ✅ best balance
+    "JWT_COOKIE_SECURE": True,
+    "JWT_COOKIE_SAMESITE": "None",  # ✅ best balance
     "JWT_COOKIE_CSRF_PROTECT": True,
 })
     
@@ -51,7 +51,12 @@ cloudinary.config(
     api_secret=app.config['CLOUDINARY_API_SECRET']
 )
 
-CORS(app, supports_credentials=True, max_age=86400)
+CORS(
+    app,
+    supports_credentials=True,
+    origins=["http://localhost:3000"]
+)
+
 
 # Load Base URL from config.py
 url = app.config['BASE_URL']
@@ -63,6 +68,7 @@ app.register_blueprint(categories, url_prefix=f'{url}/categories')
 app.register_blueprint(users, url_prefix=f'{url}/users')
 app.register_blueprint(orders, url_prefix=f'{url}/orders')
 app.register_blueprint(carts, url_prefix=f'{url}/carts')
+# app.register_blueprint(user_routes, url_prefix=f'{url}/user')
 
 
 if __name__ == '__main__':
