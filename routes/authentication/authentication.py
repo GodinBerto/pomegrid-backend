@@ -4,7 +4,7 @@ from flask_cors import CORS
 from flask_jwt_extended import create_access_token, create_refresh_token, get_csrf_token, get_jwt, jwt_required, get_jwt_identity, set_refresh_cookies, unset_jwt_cookies, verify_jwt_in_request
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import db_connection
-from extensions import redis_client
+from extensions.redis_client import get_redis_client
 from routes import response
 from services.token_service import revoke_token
 
@@ -123,16 +123,19 @@ def login():
 
 
 @auth.route("/logout", methods=["POST"])
-@jwt_required()
+@jwt_required()  # ✅ uses access token instead of refresh
 def logout():
-    jti = get_jwt()["jti"]
-    expires = get_jwt()["exp"] - get_jwt()["iat"]
+    jti = get_jwt()["jti"]  # get the unique token ID
+    expires = get_jwt()["exp"] - get_jwt()["iat"]  # remaining lifetime
 
+    # Revoke the access token
     revoke_token(jti, expires)
 
-    response = jsonify({"message": "Logged out"})
-    unset_jwt_cookies(response)
-    return response
+    # Clear JWT cookies if any
+    resp = jsonify({"message": "Logged out"})
+    unset_jwt_cookies(resp)  # optional, clears cookies if set
+
+    return resp, 200
 
 
 @auth.route('/protected', methods=['GET'])
@@ -145,10 +148,34 @@ def protected():
 @auth.route("/refresh", methods=["POST"])
 @jwt_required(refresh=True)
 def refresh():
+    jwt_data = get_jwt()
     user_id = get_jwt_identity()
+    refresh_jti = jwt_data.get("jti")
+    expires_in = jwt_data.get("exp", 0) - jwt_data.get("iat", 0)
+
+    refresh_reused = False
+    try:
+        redis_client = get_redis_client()
+        used_key = f"refresh_used:{refresh_jti}"
+        refresh_reused = redis_client.exists(used_key) == 1
+        if not refresh_reused and expires_in > 0:
+            redis_client.setex(used_key, expires_in, "true")
+    except Exception as e:
+        print("Redis unavailable, skipping refresh reuse check:", e)
 
     new_access = create_access_token(identity=user_id)
+    new_refresh = create_refresh_token(identity=user_id)
+    new_csrf = get_csrf_token(new_refresh)
 
-    return jsonify({
-        "access_token": new_access
-    }), 200
+    payload = {
+        "access_token": new_access,
+        "csrf_token": new_csrf,
+    }
+    if refresh_reused:
+        payload["message"] = "Refresh token already used. We rotated your refresh token; please retry with the new CSRF token."
+        payload["requires_retry"] = True
+
+    resp = jsonify(payload)
+    set_refresh_cookies(resp, new_refresh)
+
+    return resp, 200
