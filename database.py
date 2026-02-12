@@ -112,6 +112,57 @@ def create_tables():
         )
     ''')
     
+    #Create workers table
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Workers(
+               id INTEGER PRIMARY KEY AUTOINCREMENT,
+               name TEXT NOT NULL,
+               phone_number INTEGER NOT NULL,
+               email TEXT,
+               phone_number_2 NUMBER,
+               bio TEXT,
+               profession TEXT NOT NULL,
+               is_varified BOOLEAN DEFAULT false,
+               location TEXT NOT NULL,
+               ratings INTEGER,
+               image TEXT,
+               is_available BOOLEAN DEFAULT false,
+               created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+               updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+    ''')
+    
+    # Create worker rating table
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Jobs(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                worker_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                job_type TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (worker_id) REFERENCES Workers(id),
+                FOREIGN KEY (user_id) REFERENCES Users(id)
+            )
+    ''')
+    
+    # Create worker rating table
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Worker_Ratings(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                worker_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                job_id INTEGER NOT NULL,
+                feedback TEXT,
+                rating INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (worker_id) REFERENCES Workers(id),
+                FOREIGN KEY (job_id) REFERENCES Jobs(id),
+                FOREIGN KEY (user_id) REFERENCES Users(id)
+            )
+    ''')
+    
     conn.commit()
     conn.close()
 

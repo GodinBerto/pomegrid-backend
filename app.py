@@ -6,15 +6,18 @@ from datetime import timedelta
 import os
 from services.jwt import jwt 
 
-
-#routes
-# from routes.farms.users import users
+#Routes Auth
 from routes.authentication.authentication import auth
+
+#Routes Farms
 from routes.farms.products import products
 from routes.farms.categories import categories
 from routes.farms.orders import orders
 from routes.farms.cart import carts
 from routes.user.user import users
+
+#Routes Artisans
+from routes.artisans.workers import workers
 
 #Cloudinary
 import cloudinary
@@ -68,8 +71,9 @@ app.register_blueprint(categories, url_prefix=f'{url}/categories')
 app.register_blueprint(users, url_prefix=f'{url}/users')
 app.register_blueprint(orders, url_prefix=f'{url}/orders')
 app.register_blueprint(carts, url_prefix=f'{url}/carts')
-# app.register_blueprint(user_routes, url_prefix=f'{url}/user')
 
+# Workers Blueprints
+app.register_blueprint(workers, url_prefix=f"{url}/workers")
 
 if __name__ == '__main__':
     # Create the app
