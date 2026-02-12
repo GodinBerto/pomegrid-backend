@@ -6,6 +6,14 @@ def db_connection():
     conn.row_factory = sqlite3.Row
     return conn, conn.cursor()
 
+
+def ensure_column(cursor, table_name, column_name, column_definition):
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns = [row["name"] for row in cursor.fetchall()]
+    if column_name not in columns:
+        cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_definition}")
+
+
 def create_tables():
     conn, cursor = db_connection()
     
@@ -131,6 +139,15 @@ def create_tables():
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
     ''')
+
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS Admins(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(id)
+            )
+    ''')
     
     # Create worker rating table
     cursor.execute('''
@@ -139,6 +156,11 @@ def create_tables():
                 worker_id INTEGER NOT NULL,
                 user_id INTEGER NOT NULL,
                 job_type TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                budget REAL,
+                address TEXT,
+                scheduled_at TIMESTAMP,
+                completed_at TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (worker_id) REFERENCES Workers(id),
@@ -162,6 +184,30 @@ def create_tables():
                 FOREIGN KEY (user_id) REFERENCES Users(id)
             )
     ''')
+
+    ensure_column(cursor, "Workers", "created_by_admin_id", "created_by_admin_id INTEGER")
+    ensure_column(cursor, "Workers", "updated_by_admin_id", "updated_by_admin_id INTEGER")
+    ensure_column(cursor, "Jobs", "status", "status TEXT NOT NULL DEFAULT 'pending'")
+    ensure_column(cursor, "Jobs", "budget", "budget REAL")
+    ensure_column(cursor, "Jobs", "address", "address TEXT")
+    ensure_column(cursor, "Jobs", "scheduled_at", "scheduled_at TIMESTAMP")
+    ensure_column(cursor, "Jobs", "completed_at", "completed_at TIMESTAMP")
+
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_workers_location ON Workers(location)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_jobs_worker_id ON Jobs(worker_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_jobs_user_id ON Jobs(user_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_jobs_status ON Jobs(status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_ratings_worker_id ON Worker_Ratings(worker_id)"
+    )
     
     conn.commit()
     conn.close()

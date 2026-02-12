@@ -1,10 +1,14 @@
 import json
+import logging
 from flask import Blueprint, jsonify, request
+from flask_jwt_extended import get_jwt_identity
 from database import db_connection
+from decorators.roles import admin_required
 from extensions.redis_client import get_redis_client
 from routes import response
 
 workers = Blueprint("workers", __name__)
+logger = logging.getLogger(__name__)
 
 
 def clear_workers_list_cache():
@@ -15,7 +19,7 @@ def clear_workers_list_cache():
             redis_client.delete(*list_keys)
         redis_client.delete("workers:all")
     except Exception as e:
-        print("Redis unavailable, skipping workers cache clear:", e)
+        logger.warning("Redis unavailable, skipping workers cache clear: %s", e)
 
 
 @workers.route("/", methods=["GET"])
@@ -40,7 +44,7 @@ def GetWorkers():
             payload = json.loads(cached)
             return jsonify(response(payload, "Workers Fetched", 200)), 200
     except Exception as e:
-        print("Redis unavailable, skipping workers cache read:", e)
+        logger.warning("Redis unavailable, skipping workers cache read: %s", e)
 
     try:
         conn, cursor = db_connection()
@@ -76,7 +80,7 @@ def GetWorkers():
             redis_client = get_redis_client()
             redis_client.setex(cache_key, cache_ttl_seconds, json.dumps(payload))
         except Exception as e:
-            print("Redis unavailable, skipping workers cache write:", e)
+            logger.warning("Redis unavailable, skipping workers cache write: %s", e)
 
         return jsonify(response(payload, "Workers Fetched", 200)), 200
     except Exception as e:
@@ -95,7 +99,7 @@ def GetWorker(worker_id):
             worker = json.loads(cached)
             return jsonify(response(worker, "Worker Fetched", 200)), 200
     except Exception as e:
-        print("Redis unavailable, skipping worker cache read:", e)
+        logger.warning("Redis unavailable, skipping worker cache read: %s", e)
 
     try:
         conn, cursor = db_connection()
@@ -112,7 +116,7 @@ def GetWorker(worker_id):
             redis_client = get_redis_client()
             redis_client.setex(cache_key, cache_ttl_seconds, json.dumps(worker))
         except Exception as e:
-            print("Redis unavailable, skipping worker cache write:", e)
+            logger.warning("Redis unavailable, skipping worker cache write: %s", e)
 
         return jsonify(response(worker, "Worker Fetched", 200)), 200
     except Exception as e:
@@ -120,6 +124,7 @@ def GetWorker(worker_id):
 
 
 @workers.route("/", methods=["POST"])
+@admin_required
 def CreateWorker():
     data = request.get_json() or {}
 
@@ -138,6 +143,7 @@ def CreateWorker():
     ratings = data.get("ratings")
     image = data.get("image")
     is_available = data.get("is_available")
+    admin_id = get_jwt_identity()
 
     try:
         conn, cursor = db_connection()
@@ -161,6 +167,10 @@ def CreateWorker():
                 image,
                 is_available,
             ),
+        )
+        cursor.execute(
+            "UPDATE Workers SET created_by_admin_id = ?, updated_by_admin_id = ? WHERE id = ?",
+            (admin_id, admin_id, cursor.lastrowid),
         )
         conn.commit()
         worker_id = cursor.lastrowid
@@ -186,7 +196,7 @@ def CreateWorker():
             clear_workers_list_cache()
             redis_client.setex(f"workers:{worker_id}", 60, json.dumps(worker))
         except Exception as e:
-            print("Redis unavailable, skipping workers cache write:", e)
+            logger.warning("Redis unavailable, skipping workers cache write: %s", e)
 
         return jsonify(response(worker, "Worker created successfully.", 201)), 201
     except Exception as e:
@@ -194,6 +204,7 @@ def CreateWorker():
 
 
 @workers.route("/<int:worker_id>", methods=["PUT"])
+@admin_required
 def UpdateWorker(worker_id):
     data = request.get_json() or {}
 
@@ -217,12 +228,13 @@ def UpdateWorker(worker_id):
 
     set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
     values = list(updates.values())
+    values.append(get_jwt_identity())
     values.append(worker_id)
 
     try:
         conn, cursor = db_connection()
         cursor.execute(
-            f"UPDATE Workers SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            f"UPDATE Workers SET {set_clause}, updated_by_admin_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             values,
         )
         conn.commit()
@@ -242,7 +254,7 @@ def UpdateWorker(worker_id):
             clear_workers_list_cache()
             redis_client.setex(f"workers:{worker_id}", 60, json.dumps(worker))
         except Exception as e:
-            print("Redis unavailable, skipping workers cache write:", e)
+            logger.warning("Redis unavailable, skipping workers cache write: %s", e)
 
         return jsonify(response(worker, "Worker updated successfully.", 200)), 200
     except Exception as e:
@@ -250,6 +262,7 @@ def UpdateWorker(worker_id):
 
 
 @workers.route("/<int:worker_id>", methods=["DELETE"])
+@admin_required
 def DeleteWorker(worker_id):
     try:
         conn, cursor = db_connection()
@@ -267,8 +280,36 @@ def DeleteWorker(worker_id):
             clear_workers_list_cache()
             redis_client.delete(f"workers:{worker_id}")
         except Exception as e:
-            print("Redis unavailable, skipping workers cache delete:", e)
+            logger.warning("Redis unavailable, skipping workers cache delete: %s", e)
 
         return jsonify(response(worker_id, "Worker deleted successfully.", 200)), 200
     except Exception as e:
+        return jsonify(response(None, f"Error: {e}", 500)), 500
+
+
+@workers.route("/<int:worker_id>/ratings", methods=["GET"])
+def GetWorkerRatings(worker_id):
+    try:
+        conn, cursor = db_connection()
+        cursor.execute(
+            """
+            SELECT
+                wr.id,
+                wr.job_id,
+                wr.feedback,
+                wr.rating,
+                wr.created_at,
+                u.full_name AS user_name
+            FROM Worker_Ratings wr
+            JOIN Users u ON u.id = wr.user_id
+            WHERE wr.worker_id = ?
+            ORDER BY wr.created_at DESC
+            """,
+            (worker_id,),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        return jsonify(response([dict(row) for row in rows], "Worker ratings fetched", 200)), 200
+    except Exception as e:
+        logger.exception("Failed to fetch worker ratings")
         return jsonify(response(None, f"Error: {e}", 500)), 500

@@ -1,10 +1,9 @@
 from flask import Flask
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager
 from config import Config
 from datetime import timedelta
-import os
 from services.jwt import jwt 
+from services.logging_service import setup_logging
 
 #Routes Auth
 from routes.authentication.authentication import auth
@@ -18,6 +17,8 @@ from routes.user.user import users
 
 #Routes Artisans
 from routes.artisans.workers import workers
+from routes.artisans.jobs import jobs
+from routes.artisans.admins import admins
 
 #Cloudinary
 import cloudinary
@@ -60,6 +61,8 @@ CORS(
     origins=["http://localhost:3000"]
 )
 
+setup_logging(app)
+
 
 # Load Base URL from config.py
 url = app.config['BASE_URL']
@@ -74,6 +77,8 @@ app.register_blueprint(carts, url_prefix=f'{url}/carts')
 
 # Workers Blueprints
 app.register_blueprint(workers, url_prefix=f"{url}/workers")
+app.register_blueprint(jobs, url_prefix=f"{url}/jobs")
+app.register_blueprint(admins, url_prefix=f"{url}/admins")
 
 if __name__ == '__main__':
     # Create the app

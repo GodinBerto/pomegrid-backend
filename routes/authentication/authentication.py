@@ -1,4 +1,5 @@
 import sqlite3
+import logging
 from flask import Blueprint, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import create_access_token, create_refresh_token, get_csrf_token, get_jwt, jwt_required, get_jwt_identity, set_refresh_cookies, unset_jwt_cookies, verify_jwt_in_request
@@ -7,9 +8,11 @@ from database import db_connection
 from extensions.redis_client import get_redis_client
 from routes import response
 from services.token_service import revoke_token
+from config import Config
 
 # Initialize the Flask auth
 auth = Blueprint('auth', __name__)
+logger = logging.getLogger(__name__)
 
 @auth.route('/register', methods=['POST'])
 def register():
@@ -60,7 +63,61 @@ def register():
         return jsonify(response([], "User registered successfully", 200)), 201
 
     except Exception as e:
-        print("Registration error:", e)
+        logger.exception("Registration error")
+        if 'UNIQUE constraint failed' in str(e):
+            return jsonify({'message': 'Username or email already exists'}), 409
+        return jsonify({'message': 'Internal server error'}), 500
+
+
+@auth.route('/register-admin', methods=['POST'])
+def register_admin():
+    data = request.get_json() or {}
+    admin_setup_key = data.get("admin_setup_key")
+    if admin_setup_key != Config.ADMIN_SETUP_KEY:
+        return jsonify(response(None, "Invalid admin setup key", 403)), 403
+
+    username = data.get('username')
+    password = data.get('password')
+    email = data.get('email')
+    full_name = data.get('full_name')
+    phone = data.get('phone')
+    date_of_birth = data.get('date_of_birth')
+    address = data.get('address')
+    profile_image_url = data.get('profile_image_url')
+
+    if not all([username, password, email, full_name, phone, date_of_birth]):
+        return jsonify(response(None, "All required fields must be provided", 400)), 400
+
+    hashed_password = generate_password_hash(password)
+    try:
+        conn, cursor = db_connection()
+        cursor.execute(
+            """
+            INSERT INTO Users (
+                username, email, password_hash, full_name, phone,
+                user_type, address, profile_image_url, date_of_birth, is_admin
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                username,
+                email,
+                hashed_password,
+                full_name,
+                phone,
+                "consumer",
+                address,
+                profile_image_url,
+                date_of_birth,
+                1,
+            ),
+        )
+        user_id = cursor.lastrowid
+        cursor.execute("INSERT OR IGNORE INTO Admins (user_id) VALUES (?)", (user_id,))
+        conn.commit()
+        conn.close()
+        return jsonify(response({"user_id": user_id}, "Admin registered successfully", 201)), 201
+    except Exception as e:
+        logger.exception("Admin registration error")
         if 'UNIQUE constraint failed' in str(e):
             return jsonify({'message': 'Username or email already exists'}), 409
         return jsonify({'message': 'Internal server error'}), 500
@@ -161,7 +218,7 @@ def refresh():
         if not refresh_reused and expires_in > 0:
             redis_client.setex(used_key, expires_in, "true")
     except Exception as e:
-        print("Redis unavailable, skipping refresh reuse check:", e)
+        logger.warning("Redis unavailable, skipping refresh reuse check: %s", e)
 
     new_access = create_access_token(identity=user_id)
     new_refresh = create_refresh_token(identity=user_id)
