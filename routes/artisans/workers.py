@@ -7,34 +7,78 @@ from routes import response
 workers = Blueprint("workers", __name__)
 
 
+def clear_workers_list_cache():
+    try:
+        redis_client = get_redis_client()
+        list_keys = redis_client.keys("workers:list:*")
+        if list_keys:
+            redis_client.delete(*list_keys)
+        redis_client.delete("workers:all")
+    except Exception as e:
+        print("Redis unavailable, skipping workers cache clear:", e)
+
+
 @workers.route("/", methods=["GET"])
 def GetWorkers():
-    cache_key = "workers:all"
+    location = (request.args.get("location") or "").strip()
+    page = request.args.get("page", default=1, type=int)
+    size = request.args.get("size", default=10, type=int)
+
+    if page < 1:
+        page = 1
+    if size < 1:
+        size = 10
+
+    offset = (page - 1) * size
+    cache_key = f"workers:list:location={location or 'all'}:page={page}:size={size}"
     cache_ttl_seconds = 60
 
     try:
         redis_client = get_redis_client()
         cached = redis_client.get(cache_key)
         if cached:
-            workers_list = json.loads(cached)
-            return jsonify(response(workers_list, "Workers Fetched", 200)), 200
+            payload = json.loads(cached)
+            return jsonify(response(payload, "Workers Fetched", 200)), 200
     except Exception as e:
         print("Redis unavailable, skipping workers cache read:", e)
 
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT * FROM Workers")
+        if location:
+            cursor.execute(
+                "SELECT COUNT(*) as total FROM Workers WHERE location = ?",
+                (location,),
+            )
+        else:
+            cursor.execute("SELECT COUNT(*) as total FROM Workers")
+        total = cursor.fetchone()["total"]
+
+        if location:
+            cursor.execute(
+                "SELECT * FROM Workers WHERE location = ? LIMIT ? OFFSET ?",
+                (location, size, offset),
+            )
+        else:
+            cursor.execute("SELECT * FROM Workers LIMIT ? OFFSET ?", (size, offset))
         rows = cursor.fetchall()
         workers_list = [dict(row) for row in rows]
         conn.close()
 
+        payload = {
+            "workers": workers_list,
+            "location": location or None,
+            "page": page,
+            "size": size,
+            "total": total,
+        }
+
         try:
             redis_client = get_redis_client()
-            redis_client.setex(cache_key, cache_ttl_seconds, json.dumps(workers_list))
+            redis_client.setex(cache_key, cache_ttl_seconds, json.dumps(payload))
         except Exception as e:
             print("Redis unavailable, skipping workers cache write:", e)
 
-        return jsonify(response(workers_list, "Workers Fetched", 200)), 200
+        return jsonify(response(payload, "Workers Fetched", 200)), 200
     except Exception as e:
         return jsonify(response([], f"Error: {e}", 500)), 500
 
@@ -139,7 +183,7 @@ def CreateWorker():
 
         try:
             redis_client = get_redis_client()
-            redis_client.delete("workers:all")
+            clear_workers_list_cache()
             redis_client.setex(f"workers:{worker_id}", 60, json.dumps(worker))
         except Exception as e:
             print("Redis unavailable, skipping workers cache write:", e)
@@ -195,7 +239,7 @@ def UpdateWorker(worker_id):
 
         try:
             redis_client = get_redis_client()
-            redis_client.delete("workers:all")
+            clear_workers_list_cache()
             redis_client.setex(f"workers:{worker_id}", 60, json.dumps(worker))
         except Exception as e:
             print("Redis unavailable, skipping workers cache write:", e)
@@ -220,7 +264,7 @@ def DeleteWorker(worker_id):
 
         try:
             redis_client = get_redis_client()
-            redis_client.delete("workers:all")
+            clear_workers_list_cache()
             redis_client.delete(f"workers:{worker_id}")
         except Exception as e:
             print("Redis unavailable, skipping workers cache delete:", e)
