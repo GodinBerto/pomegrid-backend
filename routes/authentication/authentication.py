@@ -14,15 +14,40 @@ from config import Config
 auth = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
 
+ALLOWED_USER_TYPES = {
+    "user",
+    "farmer",
+    "worker",
+    "admin",
+    "super admin",
+}
+PUBLIC_REGISTRATION_USER_TYPES = {"user", "farmer", "worker"}
+
+
+def normalize_user_type(value, default_value="user"):
+    if value is None:
+        return default_value
+
+    normalized = str(value).strip().lower()
+    aliases = {
+        "consumer": "user",
+        "normal-consumer-user": "user",
+        "normal_consumer_user": "user",
+        "normal consumer user": "user",
+        "superadmin": "super admin",
+    }
+    normalized = aliases.get(normalized, normalized)
+    return normalized
+
 @auth.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    data = request.get_json() or {}
     username = data.get('username')
     password = data.get('password')
     email = data.get('email')
     full_name = data.get('full_name')
     phone = data.get('phone')
-    user_type = data.get('user_type', "consumer")  # Should be 'farmer' or 'consumer'
+    user_type = normalize_user_type(data.get('user_type', "user"))
     address = data.get('address')  # Optional
     profile_image_url = data.get('profile_image_url')  # Optional
     date_of_birth = data.get('date_of_birth')  # Optional
@@ -31,8 +56,10 @@ def register():
     if not all([username, password, email, full_name, phone, user_type, date_of_birth]):
         return jsonify({'message': 'All required fields must be provided'}), 400
 
-    if user_type not in ['farmer', 'consumer']:
-        return jsonify({'message': 'Invalid user_type. Must be "farmer" or "consumer".'}), 400
+    if user_type not in ALLOWED_USER_TYPES:
+        return jsonify({'message': 'Invalid user_type.'}), 400
+    if user_type not in PUBLIC_REGISTRATION_USER_TYPES:
+        return jsonify({'message': 'Only user, farmer, or worker can self-register.'}), 403
     
     # Check if username or email already exists 
     conn, cursor = db_connection()
@@ -84,9 +111,12 @@ def register_admin():
     date_of_birth = data.get('date_of_birth')
     address = data.get('address')
     profile_image_url = data.get('profile_image_url')
+    user_type = normalize_user_type(data.get("user_type", "admin"), "admin")
 
     if not all([username, password, email, full_name, phone, date_of_birth]):
         return jsonify(response(None, "All required fields must be provided", 400)), 400
+    if user_type not in {"admin", "super admin"}:
+        return jsonify(response(None, 'user_type must be "admin" or "super admin"', 400)), 400
 
     hashed_password = generate_password_hash(password)
     try:
@@ -104,7 +134,7 @@ def register_admin():
                 hashed_password,
                 full_name,
                 phone,
-                "consumer",
+                user_type,
                 address,
                 profile_image_url,
                 date_of_birth,

@@ -7,7 +7,10 @@ from routes import response
 
 def _get_user(user_id):
     conn, cursor = db_connection()
-    cursor.execute("SELECT id, is_admin, is_active FROM Users WHERE id = ?", (user_id,))
+    cursor.execute(
+        "SELECT id, is_admin, is_active, user_type FROM Users WHERE id = ?",
+        (user_id,),
+    )
     user = cursor.fetchone()
     conn.close()
     return user
@@ -23,7 +26,8 @@ def admin_required(func):
             return jsonify(response(None, "User not found", 404)), 404
         if not user["is_active"]:
             return jsonify(response(None, "User account is inactive", 403)), 403
-        if not user["is_admin"]:
+        is_admin = bool(user["is_admin"]) or user["user_type"] in {"admin", "super admin"}
+        if not is_admin:
             return jsonify(response(None, "Admin access required", 403)), 403
         return func(*args, **kwargs)
 

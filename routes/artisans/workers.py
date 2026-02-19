@@ -1,7 +1,9 @@
 import json
 import logging
+
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity
+
 from database import db_connection
 from decorators.roles import admin_required
 from extensions.redis_client import get_redis_client
@@ -9,6 +11,78 @@ from routes import response
 
 workers = Blueprint("workers", __name__)
 logger = logging.getLogger(__name__)
+
+ALLOWED_PROFESSIONS = {
+    "Electrician",
+    "Plumber",
+    "Mason",
+    "Carpenter",
+    "Mechanic",
+}
+
+API_WORKER_COLUMNS = """
+    id,
+    name,
+    email,
+    CAST(phone_number AS TEXT) AS phone_number,
+    CAST(phone_number_2 AS TEXT) AS phone_number_2,
+    profession,
+    bio,
+    image,
+    location,
+    CAST(COALESCE(ratings, 0) AS REAL) AS ratings,
+    COALESCE(is_available, 1) AS is_available,
+    COALESCE(is_varified, 0) AS is_varified,
+    created_at,
+    updated_at,
+    COALESCE(hourly_rate, 0) AS hourly_rate,
+    COALESCE(years_experience, 0) AS years_experience,
+    COALESCE(completed_jobs, 0) AS completed_jobs,
+    COALESCE(reviews_count, 0) AS reviews_count
+"""
+
+
+def _api_response(data, message, http_status=200, status=True):
+    return jsonify({"status": status, "message": message, "data": data}), http_status
+
+
+def _canonical_profession(value):
+    if not value:
+        return None
+    normalized = str(value).strip().lower()
+    for profession in ALLOWED_PROFESSIONS:
+        if profession.lower() == normalized:
+            return profession
+    return None
+
+
+def _parse_bool_query(value):
+    if value is None:
+        return None
+    normalized = str(value).strip().lower()
+    if normalized == "":
+        return None
+    if normalized in {"1", "true", "yes"}:
+        return True
+    if normalized in {"0", "false", "no"}:
+        return False
+    return "invalid"
+
+
+def _normalize_worker(row):
+    worker = dict(row)
+    worker["is_available"] = bool(worker.get("is_available"))
+    worker["is_varified"] = bool(worker.get("is_varified"))
+    worker["ratings"] = float(worker.get("ratings") or 0)
+    worker["reviews_count"] = int(worker.get("reviews_count") or 0)
+    worker["hourly_rate"] = int(worker.get("hourly_rate") or 0)
+    worker["years_experience"] = int(worker.get("years_experience") or 0)
+    worker["completed_jobs"] = int(worker.get("completed_jobs") or 0)
+    if worker.get("phone_number") is not None:
+        worker["phone_number"] = str(worker["phone_number"])
+    if worker.get("phone_number_2") is not None:
+        worker["phone_number_2"] = str(worker["phone_number_2"])
+    return worker
 
 
 def clear_workers_list_cache():
@@ -25,51 +99,100 @@ def clear_workers_list_cache():
 @workers.route("/", methods=["GET"])
 def GetWorkers():
     location = (request.args.get("location") or "").strip()
-    page = request.args.get("page", default=1, type=int)
-    size = request.args.get("size", default=10, type=int)
+    worker_type_raw = (request.args.get("type") or "").strip()
+    available_raw = request.args.get("available")
+    min_rating_raw = (request.args.get("min_rating") or "").strip()
+    page = request.args.get("page", default=1, type=int) or 1
+    size = request.args.get("size", default=10, type=int) or 10
 
     if page < 1:
         page = 1
     if size < 1:
         size = 10
 
+    worker_type = None
+    if worker_type_raw:
+        worker_type = _canonical_profession(worker_type_raw)
+        if not worker_type:
+            return _api_response(
+                None,
+                "type must be one of: Electrician, Plumber, Mason, Carpenter, Mechanic",
+                400,
+                False,
+            )
+
+    available = _parse_bool_query(available_raw)
+    if available == "invalid":
+        return _api_response(None, "available must be true or false", 400, False)
+
+    min_rating = None
+    if min_rating_raw:
+        try:
+            min_rating = float(min_rating_raw)
+        except ValueError:
+            return _api_response(None, "min_rating must be a number", 400, False)
+        if min_rating < 0:
+            min_rating = 0
+
     offset = (page - 1) * size
-    cache_key = f"workers:list:location={location or 'all'}:page={page}:size={size}"
+    cache_key = (
+        f"workers:list:location={location or 'all'}:"
+        f"type={worker_type or 'all'}:available={available}:"
+        f"min_rating={min_rating if min_rating is not None else 'all'}:"
+        f"page={page}:size={size}"
+    )
     cache_ttl_seconds = 60
 
     try:
         redis_client = get_redis_client()
         cached = redis_client.get(cache_key)
         if cached:
-            payload = json.loads(cached)
-            return jsonify(response(payload, "Workers Fetched", 200)), 200
+            return _api_response(json.loads(cached), "Workers fetched", 200, True)
     except Exception as e:
         logger.warning("Redis unavailable, skipping workers cache read: %s", e)
 
     try:
         conn, cursor = db_connection()
-        if location:
-            cursor.execute(
-                "SELECT COUNT(*) as total FROM Workers WHERE location = ?",
-                (location,),
-            )
-        else:
-            cursor.execute("SELECT COUNT(*) as total FROM Workers")
-        total = cursor.fetchone()["total"]
+        where_clauses = []
+        params = []
 
         if location:
-            cursor.execute(
-                "SELECT * FROM Workers WHERE location = ? LIMIT ? OFFSET ?",
-                (location, size, offset),
-            )
-        else:
-            cursor.execute("SELECT * FROM Workers LIMIT ? OFFSET ?", (size, offset))
+            where_clauses.append("LOWER(location) = LOWER(?)")
+            params.append(location)
+        if worker_type:
+            where_clauses.append("LOWER(profession) = LOWER(?)")
+            params.append(worker_type)
+        if available is not None:
+            where_clauses.append("COALESCE(is_available, 0) = ?")
+            params.append(1 if available else 0)
+        if min_rating is not None:
+            where_clauses.append("COALESCE(ratings, 0) >= ?")
+            params.append(min_rating)
+
+        where_sql = ""
+        if where_clauses:
+            where_sql = f" WHERE {' AND '.join(where_clauses)}"
+
+        cursor.execute(f"SELECT COUNT(*) as total FROM Workers{where_sql}", tuple(params))
+        total = cursor.fetchone()["total"]
+
+        list_params = list(params)
+        list_params.extend([size, offset])
+        cursor.execute(
+            f"""
+            SELECT {API_WORKER_COLUMNS}
+            FROM Workers
+            {where_sql}
+            ORDER BY COALESCE(ratings, 0) DESC, id DESC
+            LIMIT ? OFFSET ?
+            """,
+            tuple(list_params),
+        )
         rows = cursor.fetchall()
-        workers_list = [dict(row) for row in rows]
         conn.close()
 
         payload = {
-            "workers": workers_list,
+            "workers": [_normalize_worker(row) for row in rows],
             "location": location or None,
             "page": page,
             "size": size,
@@ -82,9 +205,9 @@ def GetWorkers():
         except Exception as e:
             logger.warning("Redis unavailable, skipping workers cache write: %s", e)
 
-        return jsonify(response(payload, "Workers Fetched", 200)), 200
+        return _api_response(payload, "Workers fetched", 200, True)
     except Exception as e:
-        return jsonify(response([], f"Error: {e}", 500)), 500
+        return _api_response(None, f"Error: {e}", 500, False)
 
 
 @workers.route("/<int:worker_id>", methods=["GET"])
@@ -96,21 +219,23 @@ def GetWorker(worker_id):
         redis_client = get_redis_client()
         cached = redis_client.get(cache_key)
         if cached:
-            worker = json.loads(cached)
-            return jsonify(response(worker, "Worker Fetched", 200)), 200
+            return _api_response(json.loads(cached), "Worker fetched", 200, True)
     except Exception as e:
         logger.warning("Redis unavailable, skipping worker cache read: %s", e)
 
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT * FROM Workers WHERE id = ?", (worker_id,))
+        cursor.execute(
+            f"SELECT {API_WORKER_COLUMNS} FROM Workers WHERE id = ?",
+            (worker_id,),
+        )
         row = cursor.fetchone()
         conn.close()
 
         if not row:
-            return jsonify(response(None, "Worker not found", 404)), 404
+            return _api_response(None, "Worker not found", 404, False)
 
-        worker = dict(row)
+        worker = _normalize_worker(row)
 
         try:
             redis_client = get_redis_client()
@@ -118,9 +243,52 @@ def GetWorker(worker_id):
         except Exception as e:
             logger.warning("Redis unavailable, skipping worker cache write: %s", e)
 
-        return jsonify(response(worker, "Worker Fetched", 200)), 200
+        return _api_response(worker, "Worker fetched", 200, True)
     except Exception as e:
-        return jsonify(response(None, f"Error: {e}", 500)), 500
+        return _api_response(None, f"Error: {e}", 500, False)
+
+
+@workers.route("/<int:worker_id>/services", methods=["GET"])
+def GetWorkerServices(worker_id):
+    try:
+        conn, cursor = db_connection()
+        cursor.execute("SELECT id FROM Workers WHERE id = ?", (worker_id,))
+        worker = cursor.fetchone()
+        if not worker:
+            conn.close()
+            return _api_response(None, "Worker not found", 404, False)
+
+        cursor.execute(
+            """
+            SELECT
+                id,
+                worker_id,
+                service_code,
+                service_name,
+                description,
+                base_price,
+                COALESCE(is_active, 1) AS is_active,
+                created_at,
+                updated_at
+            FROM worker_services
+            WHERE worker_id = ? AND COALESCE(is_active, 1) = 1
+            ORDER BY created_at DESC
+            """,
+            (worker_id,),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        services = []
+        for row in rows:
+            service = dict(row)
+            service["is_active"] = bool(service.get("is_active"))
+            services.append(service)
+
+        return _api_response(services, "Worker services fetched", 200, True)
+    except Exception as e:
+        logger.exception("Failed to fetch worker services")
+        return _api_response(None, f"Error: {e}", 500, False)
 
 
 @workers.route("/", methods=["POST"])
@@ -130,19 +298,23 @@ def CreateWorker():
 
     name = data.get("name")
     phone_number = data.get("phone_number")
-    profession = data.get("profession")
     location = data.get("location")
+    profession = _canonical_profession(data.get("profession"))
 
-    if not all([name, phone_number, profession, location]):
+    if not all([name, phone_number, location, profession]):
         return jsonify(response(None, "Missing required fields", 400)), 400
 
     email = data.get("email")
     phone_number_2 = data.get("phone_number_2")
     bio = data.get("bio")
-    is_varified = data.get("is_varified")
-    ratings = data.get("ratings")
     image = data.get("image")
-    is_available = data.get("is_available")
+    ratings = data.get("ratings", 0)
+    is_available = data.get("is_available", 1)
+    is_varified = data.get("is_varified", 0)
+    reviews_count = data.get("reviews_count", 0)
+    hourly_rate = data.get("hourly_rate", 0)
+    years_experience = data.get("years_experience", 0)
+    completed_jobs = data.get("completed_jobs", 0)
     admin_id = get_jwt_identity()
 
     try:
@@ -150,46 +322,46 @@ def CreateWorker():
         cursor.execute(
             """
             INSERT INTO Workers (
-                name, phone_number, email, phone_number_2, bio,
-                profession, is_varified, location, ratings, image, is_available
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                name, phone_number, email, phone_number_2, profession, bio, image,
+                location, ratings, reviews_count, is_available, is_varified,
+                hourly_rate, years_experience, completed_jobs
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 name,
                 phone_number,
                 email,
                 phone_number_2,
-                bio,
                 profession,
-                is_varified,
+                bio,
+                image,
                 location,
                 ratings,
-                image,
+                reviews_count,
                 is_available,
+                is_varified,
+                hourly_rate,
+                years_experience,
+                completed_jobs,
             ),
         )
+        worker_id = cursor.lastrowid
         cursor.execute(
-            "UPDATE Workers SET created_by_admin_id = ?, updated_by_admin_id = ? WHERE id = ?",
-            (admin_id, admin_id, cursor.lastrowid),
+            """
+            UPDATE Workers
+            SET created_by_admin_id = ?, updated_by_admin_id = ?
+            WHERE id = ?
+            """,
+            (admin_id, admin_id, worker_id),
         )
         conn.commit()
-        worker_id = cursor.lastrowid
+        cursor.execute(
+            f"SELECT {API_WORKER_COLUMNS} FROM Workers WHERE id = ?",
+            (worker_id,),
+        )
+        row = cursor.fetchone()
         conn.close()
-
-        worker = {
-            "id": worker_id,
-            "name": name,
-            "phone_number": phone_number,
-            "email": email,
-            "phone_number_2": phone_number_2,
-            "bio": bio,
-            "profession": profession,
-            "is_varified": is_varified,
-            "location": location,
-            "ratings": ratings,
-            "image": image,
-            "is_available": is_available,
-        }
+        worker = _normalize_worker(row)
 
         try:
             redis_client = get_redis_client()
@@ -218,13 +390,23 @@ def UpdateWorker(worker_id):
         "is_varified",
         "location",
         "ratings",
+        "reviews_count",
         "image",
         "is_available",
+        "hourly_rate",
+        "years_experience",
+        "completed_jobs",
     ]
 
     updates = {k: data.get(k) for k in allowed_fields if k in data}
     if not updates:
         return jsonify(response(None, "No fields provided for update", 400)), 400
+
+    if "profession" in updates:
+        profession = _canonical_profession(updates["profession"])
+        if not profession:
+            return jsonify(response(None, "Invalid profession", 400)), 400
+        updates["profession"] = profession
 
     set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
     values = list(updates.values())
@@ -234,7 +416,11 @@ def UpdateWorker(worker_id):
     try:
         conn, cursor = db_connection()
         cursor.execute(
-            f"UPDATE Workers SET {set_clause}, updated_by_admin_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            f"""
+            UPDATE Workers
+            SET {set_clause}, updated_by_admin_id = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
             values,
         )
         conn.commit()
@@ -243,11 +429,13 @@ def UpdateWorker(worker_id):
             conn.close()
             return jsonify(response(None, "Worker not found", 404)), 404
 
-        cursor.execute("SELECT * FROM Workers WHERE id = ?", (worker_id,))
+        cursor.execute(
+            f"SELECT {API_WORKER_COLUMNS} FROM Workers WHERE id = ?",
+            (worker_id,),
+        )
         row = cursor.fetchone()
         conn.close()
-
-        worker = dict(row) if row else {"id": worker_id, **updates}
+        worker = _normalize_worker(row)
 
         try:
             redis_client = get_redis_client()

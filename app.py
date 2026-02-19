@@ -19,6 +19,7 @@ from routes.user.user import users
 from routes.artisans.workers import workers
 from routes.artisans.jobs import jobs
 from routes.artisans.admins import admins
+from routes.artisans.bookings import bookings
 
 #Cloudinary
 import cloudinary
@@ -79,6 +80,7 @@ app.register_blueprint(carts, url_prefix=f'{url}/carts')
 app.register_blueprint(workers, url_prefix=f"{url}/workers")
 app.register_blueprint(jobs, url_prefix=f"{url}/jobs")
 app.register_blueprint(admins, url_prefix=f"{url}/admins")
+app.register_blueprint(bookings, url_prefix=f"{url}")
 
 if __name__ == '__main__':
     # Create the app

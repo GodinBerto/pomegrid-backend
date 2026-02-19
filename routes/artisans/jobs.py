@@ -12,10 +12,10 @@ ALLOWED_JOB_STATUSES = {"pending", "accepted", "in_progress", "completed", "canc
 
 def _is_admin(user_id):
     conn, cursor = db_connection()
-    cursor.execute("SELECT is_admin FROM Users WHERE id = ?", (user_id,))
+    cursor.execute("SELECT is_admin, user_type FROM Users WHERE id = ?", (user_id,))
     row = cursor.fetchone()
     conn.close()
-    return bool(row and row["is_admin"])
+    return bool(row and (row["is_admin"] or row["user_type"] in {"admin", "super admin"}))
 
 
 @jobs.route("/hire", methods=["POST"])
@@ -166,7 +166,7 @@ def update_job_status(job_id):
 
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT id, user_id, status FROM Jobs WHERE id = ?", (job_id,))
+        cursor.execute("SELECT id, worker_id, user_id, status FROM Jobs WHERE id = ?", (job_id,))
         job = cursor.fetchone()
         if not job:
             conn.close()
@@ -185,6 +185,23 @@ def update_job_status(job_id):
             WHERE id = ?
             """,
             (status, job_id),
+        )
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS completed_count
+            FROM Jobs
+            WHERE worker_id = ? AND status = 'completed'
+            """,
+            (job["worker_id"],),
+        )
+        completed_count = cursor.fetchone()["completed_count"]
+        cursor.execute(
+            """
+            UPDATE Workers
+            SET completed_jobs = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (completed_count, job["worker_id"]),
         )
         conn.commit()
         cursor.execute("SELECT * FROM Jobs WHERE id = ?", (job_id,))
@@ -247,8 +264,17 @@ def rate_job_artisan(job_id):
         )
         avg_rating = cursor.fetchone()["avg_rating"]
         cursor.execute(
-            "UPDATE Workers SET ratings = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-            (round(avg_rating, 2), job["worker_id"]),
+            "SELECT COUNT(*) AS reviews_count FROM Worker_Ratings WHERE worker_id = ?",
+            (job["worker_id"],),
+        )
+        reviews_count = cursor.fetchone()["reviews_count"]
+        cursor.execute(
+            """
+            UPDATE Workers
+            SET ratings = ?, reviews_count = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (round(avg_rating, 2), reviews_count, job["worker_id"]),
         )
         conn.commit()
         conn.close()

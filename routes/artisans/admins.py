@@ -32,7 +32,19 @@ def promote_user_to_admin(user_id):
             conn.close()
             return jsonify(response(None, "User not found", 404)), 404
 
-        cursor.execute("UPDATE Users SET is_admin = 1 WHERE id = ?", (user_id,))
+        cursor.execute(
+            """
+            UPDATE Users
+            SET
+                is_admin = 1,
+                user_type = CASE
+                    WHEN LOWER(TRIM(user_type)) = 'super admin' THEN 'super admin'
+                    ELSE 'admin'
+                END
+            WHERE id = ?
+            """,
+            (user_id,),
+        )
         cursor.execute(
             "INSERT OR IGNORE INTO Admins (user_id) VALUES (?)",
             (user_id,),
@@ -63,9 +75,13 @@ def create_artisan():
         data.get("profession"),
         data.get("is_varified", 0),
         data.get("location"),
-        data.get("ratings"),
+        data.get("ratings", 0),
+        data.get("reviews_count", 0),
         data.get("image"),
         data.get("is_available", 1),
+        data.get("hourly_rate", 0),
+        data.get("years_experience", 0),
+        data.get("completed_jobs", 0),
         admin_id,
         admin_id,
     )
@@ -76,9 +92,10 @@ def create_artisan():
             """
             INSERT INTO Workers (
                 name, phone_number, email, phone_number_2, bio,
-                profession, is_varified, location, ratings, image, is_available,
+                profession, is_varified, location, ratings, reviews_count, image, is_available,
+                hourly_rate, years_experience, completed_jobs,
                 created_by_admin_id, updated_by_admin_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             payload,
         )
@@ -106,8 +123,12 @@ def update_artisan(worker_id):
         "is_varified",
         "location",
         "ratings",
+        "reviews_count",
         "image",
         "is_available",
+        "hourly_rate",
+        "years_experience",
+        "completed_jobs",
     ]
     updates = {k: data[k] for k in allowed_fields if k in data}
     if not updates:
