@@ -299,3 +299,141 @@
 2026-02-19 01:44:42,512 INFO [app] GET /api/v1/users/me 200 1ms
 2026-02-19 01:44:47,105 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
 2026-02-19 01:44:51,171 INFO [app] GET /api/v1/workers/ 200 4056ms
+2026-02-19 01:54:45,493 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 01:54:45,504 INFO [app] GET /api/v1/users/me 401 2ms
+2026-02-19 01:54:45,518 INFO [app] OPTIONS /api/v1/auth/refresh 200 0ms
+2026-02-19 01:54:47,576 INFO [app] POST /api/v1/auth/refresh 200 2051ms
+2026-02-19 01:54:47,588 INFO [app] GET /api/v1/users/me 200 2ms
+2026-02-19 01:54:47,724 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 01:54:51,827 INFO [app] GET /api/v1/workers/ 200 4098ms
+2026-02-19 01:55:16,656 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 01:55:16,725 INFO [app] GET /api/v1/users/me 200 2ms
+2026-02-19 01:55:18,323 INFO [app] GET /api/v1/users/me 200 40ms
+2026-02-19 01:55:18,560 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 01:55:20,608 INFO [app] GET /api/v1/workers/ 200 2037ms
+2026-02-19 02:13:56,140 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 02:13:58,987 INFO [app] OPTIONS /api/v1/users/me 200 1ms
+2026-02-19 02:13:59,001 INFO [app] GET /api/v1/users/me 401 0ms
+2026-02-19 02:13:59,033 INFO [app] OPTIONS /api/v1/auth/refresh 200 0ms
+2026-02-19 02:14:00,278 INFO [app] GET /api/v1/workers/ 200 4130ms
+2026-02-19 02:14:01,164 INFO [app] POST /api/v1/auth/refresh 200 2080ms
+2026-02-19 02:14:01,175 INFO [app] GET /api/v1/users/me 200 1ms
+2026-02-19 02:14:01,348 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 02:14:03,405 INFO [app] GET /api/v1/workers/ 200 2045ms
+2026-02-19 02:31:23,393 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:31:23,400 INFO [app] GET /api/v1/users/me 401 1ms
+2026-02-19 02:31:23,423 INFO [app] OPTIONS /api/v1/auth/refresh 200 0ms
+2026-02-19 02:31:25,465 INFO [app] POST /api/v1/auth/refresh 200 2030ms
+2026-02-19 02:31:25,479 INFO [app] GET /api/v1/users/me 200 4ms
+2026-02-19 02:31:25,593 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 02:31:29,700 INFO [app] GET /api/v1/workers/ 200 4102ms
+2026-02-19 02:35:47,533 INFO [app] OPTIONS /api/v1/workers/ 200 1ms
+2026-02-19 02:35:51,639 INFO [app] GET /api/v1/workers/ 200 4089ms
+2026-02-19 02:39:50,472 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 02:39:54,578 INFO [app] GET /api/v1/workers/ 200 4100ms
+2026-02-19 02:39:58,512 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:39:58,535 INFO [app] GET /api/v1/users/me 401 4ms
+2026-02-19 02:39:58,551 INFO [app] OPTIONS /api/v1/auth/refresh 200 1ms
+2026-02-19 02:40:00,625 INFO [app] POST /api/v1/auth/refresh 200 2066ms
+2026-02-19 02:40:00,636 INFO [app] GET /api/v1/users/me 200 1ms
+2026-02-19 02:40:00,739 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 02:40:02,795 INFO [app] GET /api/v1/workers/ 200 2048ms
+2026-02-19 02:40:10,805 INFO [app] OPTIONS /api/v1/auth/logout 200 1ms
+2026-02-19 02:40:12,849 INFO [app] POST /api/v1/auth/logout 200 2037ms
+2026-02-19 02:40:16,608 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 02:40:16,721 INFO [app] POST /api/v1/auth/login 200 103ms
+2026-02-19 02:40:16,741 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:40:16,751 INFO [app] GET /api/v1/users/me 200 4ms
+2026-02-19 02:41:51,175 INFO [app] OPTIONS /api/v1/users/me 200 1ms
+2026-02-19 02:41:51,195 INFO [app] GET /api/v1/users/me 200 7ms
+2026-02-19 02:46:37,281 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:46:37,292 INFO [app] GET /api/v1/users/me 401 6ms
+2026-02-19 02:46:37,304 INFO [app] OPTIONS /api/v1/auth/refresh 200 1ms
+2026-02-19 02:46:39,340 INFO [app] POST /api/v1/auth/refresh 200 2025ms
+2026-02-19 02:46:39,360 INFO [app] GET /api/v1/users/me 200 1ms
+2026-02-19 02:53:56,137 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:53:56,306 INFO [app] GET /api/v1/users/me 401 145ms
+2026-02-19 02:53:56,355 INFO [app] OPTIONS /api/v1/auth/refresh 200 0ms
+2026-02-19 02:53:58,470 INFO [app] POST /api/v1/auth/refresh 200 2066ms
+2026-02-19 02:53:58,490 INFO [app] GET /api/v1/users/me 200 6ms
+2026-02-19 02:54:28,710 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:54:28,722 INFO [app] GET /api/v1/users/me 200 3ms
+2026-02-19 02:54:41,448 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:54:41,461 INFO [app] GET /api/v1/users/me 200 1ms
+2026-02-19 02:54:53,871 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:54:53,881 INFO [app] GET /api/v1/users/me 200 2ms
+2026-02-19 02:57:31,657 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:57:31,667 INFO [app] GET /api/v1/users/me 200 2ms
+2026-02-19 02:57:38,737 INFO [app] OPTIONS /api/v1/auth/logout 200 0ms
+2026-02-19 02:57:40,797 INFO [app] POST /api/v1/auth/logout 200 2053ms
+2026-02-19 02:57:43,111 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 02:57:43,235 INFO [app] POST /api/v1/auth/login 200 118ms
+2026-02-19 02:57:43,259 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:57:43,271 INFO [app] GET /api/v1/users/me 200 3ms
+2026-02-19 02:58:00,128 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:58:00,146 INFO [app] GET /api/v1/users/me 200 7ms
+2026-02-19 02:58:04,945 INFO [app] OPTIONS /api/v1/workers/ 200 3ms
+2026-02-19 02:58:09,073 INFO [app] GET /api/v1/workers/ 200 4117ms
+2026-02-19 02:59:01,723 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 02:59:01,745 INFO [app] GET /api/v1/users/me 200 14ms
+2026-02-19 02:59:01,978 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 02:59:04,077 INFO [app] GET /api/v1/workers/ 200 2046ms
+2026-02-19 03:00:13,343 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 03:00:13,352 INFO [app] GET /api/v1/users/me 200 2ms
+2026-02-19 03:00:21,919 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 03:00:21,942 INFO [app] GET /api/v1/users/me 200 3ms
+2026-02-19 03:24:11,016 INFO [app] GET /api/v1/auth/me 200 8ms
+2026-02-19 03:24:11,022 INFO [app] GET /api/v1/admin/dashboard/summary 403 1ms
+2026-02-19 03:24:15,116 INFO [app] GET /api/v1/admin/dashboard/summary 200 4092ms
+2026-02-19 03:24:15,120 INFO [app] GET /api/v1/worker/dashboard/summary 403 3ms
+2026-02-19 03:24:19,214 INFO [app] GET /api/v1/worker/dashboard/summary 200 4092ms
+2026-02-19 03:26:49,044 INFO [app] POST /api/v1/workers/6/bookings 201 23ms
+2026-02-19 03:26:49,055 INFO [app] GET /api/v1/admin/jobs 200 8ms
+2026-02-19 03:26:49,061 INFO [app] GET /api/v1/worker/jobs 200 4ms
+2026-02-19 03:48:05,958 INFO [app] OPTIONS /api/v1/workers/ 200 1ms
+2026-02-19 03:48:05,985 INFO [app] OPTIONS /api/v1/admin/dashboard/summary 200 0ms
+2026-02-19 03:48:06,244 INFO [app] GET /api/v1/admin/dashboard/summary 401 5ms
+2026-02-19 03:48:06,728 INFO [app] OPTIONS /api/v1/auth/refresh 200 0ms
+2026-02-19 03:48:10,397 INFO [app] GET /api/v1/workers/ 200 4164ms
+2026-02-19 03:48:10,848 INFO [app] POST /api/v1/auth/refresh 422 4101ms
+2026-02-19 03:48:50,957 INFO [app] OPTIONS /api/v1/auth/login 200 1ms
+2026-02-19 03:48:53,116 INFO [app] POST /api/v1/auth/login 200 2134ms
+2026-02-19 03:48:53,137 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 03:48:53,154 INFO [app] GET /api/v1/users/me 200 1ms
+2026-02-19 03:48:56,945 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 03:48:56,968 INFO [app] OPTIONS /api/v1/admin/dashboard/summary 200 1ms
+2026-02-19 03:48:58,988 INFO [app] GET /api/v1/workers/ 200 2033ms
+2026-02-19 03:49:01,203 INFO [app] GET /api/v1/admin/dashboard/summary 200 4114ms
+2026-02-19 03:49:26,385 INFO [app] OPTIONS /api/v1/admin/workers 200 0ms
+2026-02-19 03:49:26,395 INFO [app] GET /api/v1/admin/workers 200 3ms
+2026-02-19 03:49:57,537 INFO [app] OPTIONS /api/v1/admin/workers 200 1ms
+2026-02-19 03:49:57,751 INFO [app] POST /api/v1/admin/workers 400 208ms
+2026-02-19 03:50:30,232 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 03:50:32,358 INFO [app] POST /api/v1/auth/login 200 2120ms
+2026-02-19 03:50:32,377 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 03:50:32,387 INFO [app] GET /api/v1/users/me 200 1ms
+2026-02-19 03:50:36,566 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 03:50:36,571 INFO [app] OPTIONS /api/v1/admin/dashboard/summary 200 0ms
+2026-02-19 03:50:40,678 INFO [app] GET /api/v1/workers/ 200 4084ms
+2026-02-19 03:50:40,694 INFO [app] GET /api/v1/admin/dashboard/summary 200 4092ms
+2026-02-19 03:50:40,742 INFO [app] OPTIONS /api/v1/admin/services 200 0ms
+2026-02-19 03:50:40,781 INFO [app] GET /api/v1/admin/services 200 17ms
+2026-02-19 03:51:24,234 INFO [app] OPTIONS /api/v1/admin/services 200 0ms
+2026-02-19 03:51:26,313 INFO [app] POST /api/v1/admin/services 201 2072ms
+2026-02-19 03:51:26,320 INFO [app] OPTIONS /api/v1/admin/services 200 0ms
+2026-02-19 03:51:26,330 INFO [app] GET /api/v1/admin/services 200 4ms
+2026-02-19 03:51:40,746 INFO [app] OPTIONS /api/v1/admin/services/1 200 0ms
+2026-02-19 03:51:40,752 ERROR [app] Unhandled exception: 405 Method Not Allowed: The method is not allowed for the requested URL.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 624, in match
+    raise MethodNotAllowed(valid_methods=list(e.have_match_for)) from None
+werkzeug.exceptions.MethodNotAllowed: 405 Method Not Allowed: The method is not allowed for the requested URL.
+2026-02-19 03:51:40,821 INFO [app] PUT /api/v1/admin/services/1 500 69ms

@@ -3,10 +3,8 @@ import sqlite3
 
 ALLOWED_USER_TYPES = (
     "user",
-    "farmer",
     "worker",
     "admin",
-    "super admin",
 )
 
 
@@ -40,6 +38,8 @@ def ensure_users_user_type_constraint(conn, cursor):
         constraint_is_current
         and "'normal consumer user'" not in users_sql
         and "'consumer'" not in users_sql
+        and "'farmer'" not in users_sql
+        and "'super admin'" not in users_sql
     ):
         return
 
@@ -55,7 +55,7 @@ def ensure_users_user_type_constraint(conn, cursor):
                 password_hash TEXT NOT NULL,
                 full_name TEXT NOT NULL,
                 phone TEXT NOT NULL,
-                user_type TEXT NOT NULL CHECK(user_type IN ('user', 'farmer', 'worker', 'admin', 'super admin')),
+                user_type TEXT NOT NULL CHECK(user_type IN ('user', 'worker', 'admin')),
                 date_of_birth DATE,
                 is_verified BOOLEAN NOT NULL DEFAULT 0,
                 verification_code TEXT,
@@ -84,10 +84,10 @@ def ensure_users_user_type_constraint(conn, cursor):
                 full_name,
                 phone,
                 CASE
-                    WHEN LOWER(TRIM(user_type)) = 'super admin' THEN 'super admin'
+                    WHEN LOWER(TRIM(user_type)) = 'super admin' THEN 'admin'
                     WHEN LOWER(TRIM(user_type)) = 'admin' OR COALESCE(is_admin, 0) = 1 THEN 'admin'
                     WHEN LOWER(TRIM(user_type)) = 'worker' THEN 'worker'
-                    WHEN LOWER(TRIM(user_type)) = 'farmer' THEN 'farmer'
+                    WHEN LOWER(TRIM(user_type)) = 'farmer' THEN 'user'
                     ELSE 'user'
                 END AS user_type,
                 date_of_birth,
@@ -125,7 +125,9 @@ def ensure_bookings_user_link(conn, cursor):
 
     bookings_sql = row["sql"].lower()
     has_user_fk = "foreign key (user_id) references users(id)" in bookings_sql
-    if has_user_id and has_user_fk:
+    has_confirmed = "'confirmed'" in bookings_sql
+    has_in_progress = "'in_progress'" in bookings_sql
+    if has_user_id and has_user_fk and has_confirmed and has_in_progress:
         return
 
     conn.commit()
@@ -147,7 +149,7 @@ def ensure_bookings_user_link(conn, cursor):
                 job_description TEXT NOT NULL,
                 estimated_price INTEGER,
                 status TEXT NOT NULL DEFAULT 'pending'
-                    CHECK(status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled')),
+                    CHECK(status IN ('pending', 'accepted', 'confirmed', 'in_progress', 'rejected', 'completed', 'cancelled')),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (worker_id) REFERENCES Workers(id) ON DELETE CASCADE,
@@ -220,6 +222,89 @@ def ensure_bookings_user_link(conn, cursor):
         conn.execute("PRAGMA foreign_keys = ON")
 
 
+def ensure_worker_services_schema(cursor):
+    ensure_column(cursor, "worker_services", "service_id", "service_id INTEGER")
+    ensure_column(cursor, "worker_services", "custom_price", "custom_price INTEGER")
+    cursor.execute(
+        """
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_worker_services_unique_worker_service
+        ON worker_services(worker_id, service_id)
+        WHERE service_id IS NOT NULL
+        """
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_worker_services_service_id ON worker_services(service_id)"
+    )
+
+
+def ensure_bookings_extended_fields(cursor):
+    ensure_column(cursor, "bookings", "code", "code TEXT")
+    ensure_column(cursor, "bookings", "customer_id", "customer_id INTEGER")
+    ensure_column(cursor, "bookings", "service_name_snapshot", "service_name_snapshot TEXT")
+    ensure_column(cursor, "bookings", "description", "description TEXT")
+    ensure_column(cursor, "bookings", "address", "address TEXT")
+    ensure_column(cursor, "bookings", "scheduled_date", "scheduled_date DATE")
+    ensure_column(cursor, "bookings", "scheduled_time", "scheduled_time TEXT")
+    ensure_column(cursor, "bookings", "total_price", "total_price INTEGER")
+    ensure_column(cursor, "bookings", "is_custom_service", "is_custom_service BOOLEAN DEFAULT 0")
+    ensure_column(cursor, "bookings", "admin_note", "admin_note TEXT")
+
+    cursor.execute(
+        """
+        UPDATE bookings
+        SET customer_id = user_id
+        WHERE customer_id IS NULL AND user_id IS NOT NULL
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE bookings
+        SET service_name_snapshot = service_name
+        WHERE (service_name_snapshot IS NULL OR service_name_snapshot = '')
+          AND service_name IS NOT NULL
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE bookings
+        SET description = job_description
+        WHERE (description IS NULL OR description = '')
+          AND job_description IS NOT NULL
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE bookings
+        SET address = service_address
+        WHERE (address IS NULL OR address = '')
+          AND service_address IS NOT NULL
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE bookings
+        SET scheduled_date = requested_date
+        WHERE scheduled_date IS NULL
+          AND requested_date IS NOT NULL
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE bookings
+        SET total_price = estimated_price
+        WHERE total_price IS NULL
+          AND estimated_price IS NOT NULL
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE bookings
+        SET is_custom_service = CASE WHEN service_code = 'other' THEN 1 ELSE 0 END
+        WHERE is_custom_service IS NULL
+        """
+    )
+
+
 def create_tables():
     conn, cursor = db_connection()
     
@@ -232,7 +317,7 @@ def create_tables():
             password_hash TEXT NOT NULL,
             full_name TEXT NOT NULL,
             phone TEXT NOT NULL,
-            user_type TEXT NOT NULL CHECK(user_type IN ('user', 'farmer', 'worker', 'admin', 'super admin')),
+            user_type TEXT NOT NULL CHECK(user_type IN ('user', 'worker', 'admin')),
             date_of_birth DATE,
             is_verified BOOLEAN NOT NULL DEFAULT 0,
             verification_code TEXT,
@@ -332,16 +417,20 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS Workers(
                id INTEGER PRIMARY KEY AUTOINCREMENT,
                name TEXT NOT NULL,
-               phone_number INTEGER NOT NULL,
                email TEXT,
-               phone_number_2 NUMBER,
-               bio TEXT,
+               phone_number TEXT,
+               phone_number_2 TEXT,
                profession TEXT NOT NULL,
-               is_varified BOOLEAN DEFAULT false,
-               location TEXT NOT NULL,
-               ratings INTEGER,
+               bio TEXT,
                image TEXT,
-               is_available BOOLEAN DEFAULT false,
+               location TEXT,
+               ratings REAL DEFAULT 0,
+               reviews_count INTEGER DEFAULT 0,
+               is_available BOOLEAN DEFAULT 1,
+               is_varified BOOLEAN DEFAULT false,
+               hourly_rate INTEGER DEFAULT 0,
+               years_experience INTEGER DEFAULT 0,
+               completed_jobs INTEGER DEFAULT 0,
                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -353,15 +442,59 @@ def create_tables():
             CREATE TABLE IF NOT EXISTS worker_services(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 worker_id INTEGER NOT NULL,
+                service_id INTEGER,
                 service_code TEXT NOT NULL,
                 service_name TEXT NOT NULL,
                 description TEXT,
                 base_price INTEGER,
+                custom_price INTEGER,
                 is_active BOOLEAN DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE(worker_id, service_code),
-                FOREIGN KEY (worker_id) REFERENCES Workers(id) ON DELETE CASCADE
+                UNIQUE(worker_id, service_id),
+                FOREIGN KEY (worker_id) REFERENCES Workers(id) ON DELETE CASCADE,
+                FOREIGN KEY (service_id) REFERENCES services(id) ON DELETE SET NULL
+            )
+        '''
+    )
+    ensure_worker_services_schema(cursor)
+
+    # Create worker profiles table
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS worker_profiles(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                profession TEXT,
+                bio TEXT,
+                location TEXT,
+                hourly_rate INTEGER DEFAULT 0,
+                is_available BOOLEAN DEFAULT 1,
+                ratings REAL DEFAULT 0,
+                reviews_count INTEGER DEFAULT 0,
+                verified BOOLEAN DEFAULT 0,
+                legacy_worker_id INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+                FOREIGN KEY (legacy_worker_id) REFERENCES Workers(id) ON DELETE SET NULL
+            )
+        '''
+    )
+
+    # Create service catalog table
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS services(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                description TEXT,
+                worker_type TEXT,
+                base_price INTEGER,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         '''
     )
@@ -383,7 +516,7 @@ def create_tables():
                 job_description TEXT NOT NULL,
                 estimated_price INTEGER,
                 status TEXT NOT NULL DEFAULT 'pending'
-                    CHECK(status IN ('pending', 'accepted', 'rejected', 'completed', 'cancelled')),
+                    CHECK(status IN ('pending', 'accepted', 'confirmed', 'in_progress', 'rejected', 'completed', 'cancelled')),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (worker_id) REFERENCES Workers(id) ON DELETE CASCADE,
@@ -393,6 +526,218 @@ def create_tables():
         '''
     )
     ensure_bookings_user_link(conn, cursor)
+    ensure_bookings_extended_fields(cursor)
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS job_status_history(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL,
+                from_status TEXT,
+                to_status TEXT NOT NULL,
+                changed_by INTEGER NOT NULL,
+                note TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (job_id) REFERENCES bookings(id) ON DELETE CASCADE,
+                FOREIGN KEY (changed_by) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS reviews(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_id INTEGER NOT NULL,
+                worker_id INTEGER NOT NULL,
+                customer_id INTEGER NOT NULL,
+                rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+                comment TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (job_id) REFERENCES bookings(id) ON DELETE CASCADE,
+                FOREIGN KEY (worker_id) REFERENCES Users(id) ON DELETE CASCADE,
+                FOREIGN KEY (customer_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS wallets(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                balance REAL DEFAULT 0,
+                pending_balance REAL DEFAULT 0,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS wallet_transactions(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                wallet_id INTEGER NOT NULL,
+                type TEXT NOT NULL CHECK(type IN ('credit', 'debit')),
+                amount REAL NOT NULL,
+                title TEXT,
+                reference TEXT,
+                status TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS withdrawal_requests(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                worker_id INTEGER NOT NULL,
+                amount REAL NOT NULL,
+                bank_name TEXT,
+                account_number_masked TEXT,
+                status TEXT NOT NULL DEFAULT 'pending'
+                    CHECK(status IN ('pending', 'approved', 'rejected', 'paid')),
+                processed_by INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                processed_at TIMESTAMP,
+                FOREIGN KEY (worker_id) REFERENCES Users(id) ON DELETE CASCADE,
+                FOREIGN KEY (processed_by) REFERENCES Users(id) ON DELETE SET NULL
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS conversations(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                type TEXT NOT NULL
+                    CHECK(type IN ('worker_admin', 'worker_customer', 'admin_customer')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS conversation_participants(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                UNIQUE(conversation_id, user_id),
+                FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS messages(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id INTEGER NOT NULL,
+                sender_id INTEGER NOT NULL,
+                body TEXT NOT NULL,
+                channel TEXT NOT NULL DEFAULT 'in_app'
+                    CHECK(channel IN ('in_app', 'whatsapp', 'email')),
+                read_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+                FOREIGN KEY (sender_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS notifications(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                type TEXT,
+                title TEXT,
+                message TEXT,
+                is_read BOOLEAN DEFAULT 0,
+                payload_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS inventory_items(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                sku TEXT NOT NULL UNIQUE,
+                name TEXT NOT NULL,
+                category TEXT,
+                quantity INTEGER DEFAULT 0,
+                unit_cost REAL DEFAULT 0,
+                reorder_level INTEGER DEFAULT 0,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS inventory_movements(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                item_id INTEGER NOT NULL,
+                movement_type TEXT NOT NULL CHECK(movement_type IN ('in', 'out', 'adjustment')),
+                quantity INTEGER NOT NULL,
+                note TEXT,
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+                FOREIGN KEY (created_by) REFERENCES Users(id) ON DELETE SET NULL
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS payment_gateways(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                provider TEXT NOT NULL,
+                config_json TEXT,
+                is_active BOOLEAN DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS sync_runs(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                source TEXT,
+                status TEXT NOT NULL CHECK(status IN ('running', 'success', 'failed')),
+                started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                ended_at TIMESTAMP,
+                log_text TEXT
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS admin_settings(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key TEXT NOT NULL UNIQUE,
+                value_json TEXT,
+                updated_by INTEGER,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (updated_by) REFERENCES Users(id) ON DELETE SET NULL
+            )
+        '''
+    )
 
     cursor.execute('''
             CREATE TABLE IF NOT EXISTS Admins(
@@ -445,6 +790,7 @@ def create_tables():
     ensure_column(cursor, "Workers", "hourly_rate", "hourly_rate INTEGER DEFAULT 0")
     ensure_column(cursor, "Workers", "years_experience", "years_experience INTEGER DEFAULT 0")
     ensure_column(cursor, "Workers", "completed_jobs", "completed_jobs INTEGER DEFAULT 0")
+    ensure_column(cursor, "Users", "avatar", "avatar TEXT")
     ensure_column(cursor, "Jobs", "status", "status TEXT NOT NULL DEFAULT 'pending'")
     ensure_column(cursor, "Jobs", "budget", "budget REAL")
     ensure_column(cursor, "Jobs", "address", "address TEXT")
@@ -476,6 +822,9 @@ def create_tables():
         "CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id)"
     )
     cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_bookings_customer_id ON bookings(customer_id)"
+    )
+    cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_bookings_service_id ON bookings(service_id)"
     )
     cursor.execute(
@@ -483,6 +832,78 @@ def create_tables():
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_bookings_requested_date ON bookings(requested_date)"
+    )
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_bookings_code_unique ON bookings(code)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_worker_profiles_user_id ON worker_profiles(user_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_worker_profiles_location ON worker_profiles(location)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_worker_profiles_verified ON worker_profiles(verified)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_services_worker_type ON services(worker_type)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_services_is_active ON services(is_active)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_job_status_history_job_id ON job_status_history(job_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_reviews_worker_id ON reviews(worker_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_reviews_customer_id ON reviews(customer_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_wallet_transactions_wallet_id ON wallet_transactions(wallet_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_wallet_transactions_status ON wallet_transactions(status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_worker_id ON withdrawal_requests(worker_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_status ON withdrawal_requests(status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_conv_participants_user_id ON conversation_participants(user_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON messages(conversation_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_inventory_items_category ON inventory_items(category)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_inventory_items_is_active ON inventory_items(is_active)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_inventory_movements_item_id ON inventory_movements(item_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_payment_gateways_is_active ON payment_gateways(is_active)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_sync_runs_status ON sync_runs(status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_sync_runs_started_at ON sync_runs(started_at)"
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_jobs_worker_id ON Jobs(worker_id)"

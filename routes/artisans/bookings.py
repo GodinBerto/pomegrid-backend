@@ -1,4 +1,6 @@
 import re
+import uuid
+import logging
 from datetime import date, datetime
 
 from flask import Blueprint, jsonify, request
@@ -6,10 +8,20 @@ from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from database import db_connection
 from decorators.roles import admin_required
+from extensions.redis_client import get_redis_client
 
 bookings = Blueprint("bookings", __name__)
+logger = logging.getLogger(__name__)
 
-ALLOWED_BOOKING_STATUSES = {"pending", "accepted", "rejected", "completed", "cancelled"}
+ALLOWED_BOOKING_STATUSES = {
+    "pending",
+    "accepted",
+    "confirmed",
+    "in_progress",
+    "rejected",
+    "completed",
+    "cancelled",
+}
 
 
 def _api_response(data, message, http_status=200, status=True):
@@ -30,6 +42,45 @@ def _is_valid_phone(value):
     return len(digits) >= 10
 
 
+def _invalidate_admin_cache():
+    try:
+        redis_client = get_redis_client()
+        keys = redis_client.keys("admin:*")
+        if keys:
+            redis_client.delete(*keys)
+    except Exception as e:
+        logger.warning("Redis unavailable, skipping admin cache invalidate: %s", e)
+
+
+def _invalidate_worker_dashboard_cache(worker_id):
+    try:
+        conn, cursor = db_connection()
+        cursor.execute(
+            """
+            SELECT user_id
+            FROM worker_profiles
+            WHERE legacy_worker_id = ?
+            """,
+            (worker_id,),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        user_ids = {int(worker_id)}
+        for row in rows:
+            if row["user_id"] is not None:
+                user_ids.add(int(row["user_id"]))
+
+        redis_client = get_redis_client()
+        keys = []
+        for user_id in user_ids:
+            keys.extend(redis_client.keys(f"worker:dashboard:summary:{user_id}"))
+        if keys:
+            redis_client.delete(*keys)
+    except Exception as e:
+        logger.warning("Redis unavailable, skipping worker cache invalidate: %s", e)
+
+
 @bookings.route("/workers/<int:worker_id>/bookings", methods=["POST"])
 @jwt_required()
 def create_booking(worker_id):
@@ -43,6 +94,7 @@ def create_booking(worker_id):
     service_code = (data.get("service_code") or "").strip()
     custom_service_text = (data.get("custom_service_text") or "").strip()
     requested_date_raw = (data.get("requested_date") or "").strip()
+    scheduled_time = (data.get("scheduled_time") or "").strip()
     customer_phone = (data.get("customer_phone") or "").strip()
     service_address = (data.get("service_address") or "").strip()
     job_description = (data.get("job_description") or "").strip()
@@ -90,6 +142,7 @@ def create_booking(worker_id):
             estimated_price = int(estimated_price)
         except (TypeError, ValueError):
             return _api_response(None, "estimated_price must be an integer", 400, False)
+    booking_code = (data.get("code") or f"BK-{uuid.uuid4().hex[:10]}").strip()
 
     try:
         conn, cursor = db_connection()
@@ -149,23 +202,33 @@ def create_booking(worker_id):
         cursor.execute(
             """
             INSERT INTO bookings (
-                worker_id, user_id, service_id, service_code, service_name, custom_service_text,
-                requested_date, customer_phone, service_address, job_description,
-                estimated_price
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                code, worker_id, user_id, customer_id, service_id, service_code, service_name,
+                service_name_snapshot, custom_service_text, requested_date, scheduled_date,
+                scheduled_time, customer_phone, service_address, address, job_description,
+                description, estimated_price, total_price, is_custom_service
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
+                booking_code,
                 worker_id,
+                user_id,
                 user_id,
                 resolved_service_id,
                 service_code,
                 resolved_service_name,
+                resolved_service_name,
                 custom_service_text if custom_service_text else None,
                 requested_date.isoformat(),
+                requested_date.isoformat(),
+                scheduled_time if scheduled_time else None,
                 customer_phone,
                 service_address,
+                service_address,
+                job_description,
                 job_description,
                 estimated_price,
+                estimated_price,
+                1 if service_code == "other" else 0,
             ),
         )
         booking_id = cursor.lastrowid
@@ -174,6 +237,8 @@ def create_booking(worker_id):
         cursor.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,))
         row = cursor.fetchone()
         conn.close()
+        _invalidate_admin_cache()
+        _invalidate_worker_dashboard_cache(worker_id)
 
         return _api_response(_serialize_booking(row), "Booking request sent", 201, True)
     except Exception as e:
@@ -224,7 +289,10 @@ def update_booking_status(booking_id):
         conn.commit()
         cursor.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,))
         row = cursor.fetchone()
+        worker_id = row["worker_id"]
         conn.close()
+        _invalidate_admin_cache()
+        _invalidate_worker_dashboard_cache(worker_id)
 
         return _api_response(_serialize_booking(row), "Booking status updated", 200, True)
     except Exception as e:

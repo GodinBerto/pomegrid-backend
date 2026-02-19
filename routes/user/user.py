@@ -2,6 +2,7 @@ import logging
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from database import db_connection
+from decorators.roles import normalize_role
 from routes import response
 
 
@@ -11,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 def _serialize_user_row(row):
     user = dict(row)
-    user["is_admin"] = bool(user.get("is_admin"))
+    user_type = normalize_role(user.get("user_type"), user.get("is_admin"))
+    user["user_type"] = user_type
+    user["is_admin"] = int(bool(user.get("is_admin")) or user_type == "admin")
     user["is_active"] = bool(user.get("is_active"))
     user["is_verified"] = bool(user.get("is_verified"))
     return user
@@ -38,6 +41,7 @@ def get_current_user():
                 is_verified,
                 address,
                 profile_image_url,
+                avatar,
                 date_of_birth,
                 created_at,
                 updated_at
@@ -94,6 +98,7 @@ def update_current_user():
                 is_verified,
                 address,
                 profile_image_url,
+                avatar,
                 date_of_birth,
                 created_at,
                 updated_at
