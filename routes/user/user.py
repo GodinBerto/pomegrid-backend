@@ -9,16 +9,42 @@ users = Blueprint('users', __name__)
 logger = logging.getLogger(__name__)
 
 
+def _serialize_user_row(row):
+    user = dict(row)
+    user["is_admin"] = bool(user.get("is_admin"))
+    user["is_active"] = bool(user.get("is_active"))
+    user["is_verified"] = bool(user.get("is_verified"))
+    return user
+
+
 @users.route("/me", methods=["GET"])
 @jwt_required()
 def get_current_user():
-    user_id = get_jwt_identity()  # 🔐 from access token
+    user_id = get_jwt_identity()
 
     try:
         conn, cursor = db_connection()
         cursor.execute(
-            "SELECT id, email, full_name FROM Users WHERE id = ?",
-            (user_id,)
+            """
+            SELECT
+                id,
+                username,
+                email,
+                full_name,
+                phone,
+                user_type,
+                is_admin,
+                is_active,
+                is_verified,
+                address,
+                profile_image_url,
+                date_of_birth,
+                created_at,
+                updated_at
+            FROM Users
+            WHERE id = ?
+            """,
+            (user_id,),
         )
         row = cursor.fetchone()
         conn.close()
@@ -26,7 +52,7 @@ def get_current_user():
         if not row:
             return jsonify(response(None, "User not found", 404)), 404
 
-        return jsonify(response(dict(row), "User retrieved", 200)), 200
+        return jsonify(response(_serialize_user_row(row), "User retrieved", 200)), 200
 
     except Exception as e:
         logger.exception("Failed to fetch current user")
@@ -55,14 +81,32 @@ def update_current_user():
         )
         conn.commit()
         cursor.execute(
-            "SELECT id, email, username, full_name, phone, address, profile_image_url, date_of_birth, is_admin FROM Users WHERE id = ?",
+            """
+            SELECT
+                id,
+                username,
+                email,
+                full_name,
+                phone,
+                user_type,
+                is_admin,
+                is_active,
+                is_verified,
+                address,
+                profile_image_url,
+                date_of_birth,
+                created_at,
+                updated_at
+            FROM Users
+            WHERE id = ?
+            """,
             (user_id,),
         )
         row = cursor.fetchone()
         conn.close()
         if not row:
             return jsonify(response(None, "User not found", 404)), 404
-        return jsonify(response(dict(row), "User profile updated", 200)), 200
+        return jsonify(response(_serialize_user_row(row), "User profile updated", 200)), 200
     except Exception as e:
         logger.exception("Failed to update current user")
         return jsonify(response(None, f"Error: {e}", 500)), 500
