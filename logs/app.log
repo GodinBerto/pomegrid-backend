@@ -668,3 +668,4 @@ werkzeug.exceptions.MethodNotAllowed: 405 Method Not Allowed: The method is not 
 2026-02-20 23:01:27,934 INFO [app] POST /api/v1/auth/login 200 2098ms
 2026-02-20 23:01:37,719 INFO [app] GET /api/v1/auth/me 401 0ms
 2026-02-20 23:01:41,815 INFO [app] POST /api/v1/auth/refresh 422 4073ms
+2026-02-20 23:01:49,236 INFO [app] POST /api/v1/auth/login 200 2111ms
