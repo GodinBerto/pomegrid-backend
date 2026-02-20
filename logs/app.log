@@ -437,3 +437,142 @@ Traceback (most recent call last):
     raise MethodNotAllowed(valid_methods=list(e.have_match_for)) from None
 werkzeug.exceptions.MethodNotAllowed: 405 Method Not Allowed: The method is not allowed for the requested URL.
 2026-02-19 03:51:40,821 INFO [app] PUT /api/v1/admin/services/1 500 69ms
+2026-02-19 03:59:41,130 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 03:59:43,260 INFO [app] POST /api/v1/auth/login 200 2125ms
+2026-02-19 03:59:43,281 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-02-19 03:59:43,293 INFO [app] GET /api/v1/users/me 200 4ms
+2026-02-19 03:59:47,568 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 03:59:47,587 INFO [app] OPTIONS /api/v1/admin/dashboard/summary 200 0ms
+2026-02-19 03:59:51,726 INFO [app] GET /api/v1/admin/dashboard/summary 200 4078ms
+2026-02-19 03:59:51,733 INFO [app] GET /api/v1/workers/ 200 4097ms
+2026-02-19 04:00:12,232 INFO [app] OPTIONS /api/v1/admin/workers 200 0ms
+2026-02-19 04:00:12,239 INFO [app] GET /api/v1/admin/workers 200 2ms
+2026-02-19 04:00:14,453 INFO [app] OPTIONS /api/v1/admin/messageworkers/conversations 200 0ms
+2026-02-19 04:00:14,477 INFO [app] GET /api/v1/admin/messageworkers/conversations 200 18ms
+2026-02-19 04:00:26,013 INFO [app] OPTIONS /api/v1/admin/messageworkers/send 200 0ms
+2026-02-19 04:00:28,072 INFO [app] POST /api/v1/admin/messageworkers/send 400 2052ms
+2026-02-19 04:00:37,159 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 04:00:39,292 INFO [app] POST /api/v1/auth/login 200 2126ms
+2026-02-19 04:00:39,317 INFO [app] OPTIONS /api/v1/users/me 200 1ms
+2026-02-19 04:00:39,325 INFO [app] GET /api/v1/users/me 200 2ms
+2026-02-19 04:00:45,050 INFO [app] OPTIONS /api/v1/workers/ 200 0ms
+2026-02-19 04:00:45,069 INFO [app] OPTIONS /api/v1/admin/dashboard/summary 200 0ms
+2026-02-19 04:00:47,113 INFO [app] GET /api/v1/workers/ 200 2016ms
+2026-02-19 04:00:47,130 INFO [app] GET /api/v1/admin/dashboard/summary 200 2026ms
+2026-02-19 04:00:49,156 INFO [app] OPTIONS /api/v1/admin/services 200 0ms
+2026-02-19 04:00:49,165 INFO [app] GET /api/v1/admin/services 200 4ms
+2026-02-19 04:00:50,756 INFO [app] OPTIONS /api/v1/admin/jobs 200 0ms
+2026-02-19 04:00:50,767 INFO [app] GET /api/v1/admin/jobs 200 6ms
+2026-02-19 04:00:55,990 INFO [app] OPTIONS /api/v1/admin/jobs/2 200 0ms
+2026-02-19 04:00:56,009 INFO [app] GET /api/v1/admin/jobs/2 200 6ms
+2026-02-19 04:01:20,808 INFO [app] OPTIONS /api/v1/admin/jobs/2 200 0ms
+2026-02-19 04:01:20,815 ERROR [app] Unhandled exception: 405 Method Not Allowed: The method is not allowed for the requested URL.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 624, in match
+    raise MethodNotAllowed(valid_methods=list(e.have_match_for)) from None
+werkzeug.exceptions.MethodNotAllowed: 405 Method Not Allowed: The method is not allowed for the requested URL.
+2026-02-19 04:01:20,816 INFO [app] PUT /api/v1/admin/jobs/2 500 0ms
+2026-02-19 11:52:11,459 INFO [app] OPTIONS /api/v1/auth/login 200 1ms
+2026-02-19 11:52:25,600 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 11:54:54,065 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 11:56:03,151 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 12:11:57,462 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 12:14:50,093 INFO [app] OPTIONS /api/v1/auth/login 200 1ms
+2026-02-19 12:15:55,192 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-02-19 12:18:57,473 INFO [app] GET /api/v1/auth/protected 401 0ms
+2026-02-19 12:18:59,472 INFO [app] POST /api/v1/auth/login 401 2050ms
+2026-02-19 12:21:01,347 INFO [app] POST /api/v1/auth/login 200 2111ms
+2026-02-19 12:21:01,421 INFO [app] GET /api/v1/products/ 200 3ms
+2026-02-19 12:21:01,425 INFO [app] GET /api/v1/carts/ 200 5ms
+2026-02-19 12:21:31,257 INFO [app] GET /api/v1/categories/ 200 17ms
+2026-02-19 12:21:31,282 INFO [app] GET /api/v1/auth/me 200 5ms
+2026-02-19 12:21:31,298 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-19 12:21:49,886 INFO [app] GET /api/v1/orders/get-user-orders 200 11ms
+2026-02-19 12:22:01,549 INFO [app] GET /api/v1/categories/ 200 1ms
+2026-02-19 12:22:01,595 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-19 12:22:01,609 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-19 12:22:18,072 INFO [app] GET /api/v1/categories/ 200 0ms
+2026-02-19 12:22:18,140 INFO [app] GET /api/v1/auth/me 200 12ms
+2026-02-19 12:22:18,165 INFO [app] GET /api/v1/auth/me 200 7ms
+2026-02-19 12:22:25,502 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-19 12:22:27,748 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-19 12:22:53,625 INFO [app] GET /api/v1/products/ 200 3ms
+2026-02-19 12:22:53,636 INFO [app] GET /api/v1/carts/ 200 7ms
+2026-02-19 12:22:53,643 INFO [app] GET /api/v1/categories/ 200 8ms
+2026-02-19 12:22:54,179 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-02-19 12:22:58,721 INFO [app] GET /api/v1/categories/ 200 2ms
+2026-02-19 12:22:58,792 INFO [app] GET /api/v1/auth/me 200 4ms
+2026-02-19 12:22:58,821 INFO [app] GET /api/v1/auth/me 200 8ms
+2026-02-20 19:44:47,157 INFO [app] GET /api/v1/carts/ 401 1ms
+2026-02-20 19:44:47,159 INFO [app] GET /api/v1/products/ 200 2ms
+2026-02-20 19:44:47,306 INFO [app] POST /api/v1/auth/refresh 401 2ms
+2026-02-20 19:45:01,755 INFO [app] POST /api/v1/auth/login 200 2134ms
+2026-02-20 19:45:01,794 INFO [app] GET /api/v1/carts/ 200 2ms
+2026-02-20 19:45:25,449 INFO [app] GET /api/v1/categories/ 200 1ms
+2026-02-20 19:45:25,558 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-20 19:45:25,580 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-02-20 19:45:40,049 INFO [app] POST /api/v1/carts/ 201 11ms
+2026-02-20 19:45:40,063 INFO [app] GET /api/v1/carts/ 200 3ms
+2026-02-20 19:45:40,147 INFO [app] POST /api/v1/carts/ 201 14ms
+2026-02-20 19:45:40,160 INFO [app] GET /api/v1/carts/ 200 2ms
+2026-02-20 19:45:46,193 INFO [app] GET /api/v1/categories/ 200 2ms
+2026-02-20 19:45:46,208 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-20 19:45:46,217 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-20 19:45:47,913 INFO [app] POST /api/v1/carts/ 201 14ms
+2026-02-20 19:45:47,925 INFO [app] GET /api/v1/carts/ 200 4ms
+2026-02-20 19:46:00,723 INFO [app] PUT /api/v1/carts/22 200 12ms
+2026-02-20 19:46:00,737 INFO [app] GET /api/v1/carts/ 200 3ms
+2026-02-20 19:46:02,886 INFO [app] PUT /api/v1/carts/22 200 16ms
+2026-02-20 19:46:02,901 INFO [app] GET /api/v1/carts/ 200 3ms
+2026-02-20 19:46:19,530 INFO [app] PUT /api/v1/carts/21 200 13ms
+2026-02-20 19:46:19,557 INFO [app] GET /api/v1/carts/ 200 7ms
+2026-02-20 19:46:23,272 INFO [app] DELETE /api/v1/carts/21 200 19ms
+2026-02-20 19:46:23,290 INFO [app] GET /api/v1/carts/ 200 3ms
+2026-02-20 19:46:35,276 INFO [app] GET /api/v1/products/ 200 1ms
+2026-02-20 19:46:35,278 INFO [app] GET /api/v1/carts/ 200 2ms
+2026-02-20 19:46:40,288 INFO [app] GET /api/v1/categories/ 200 2ms
+2026-02-20 19:46:40,334 INFO [app] GET /api/v1/auth/me 200 6ms
+2026-02-20 19:46:40,349 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-20 19:47:09,693 INFO [app] GET /api/v1/categories/ 200 1ms
+2026-02-20 19:47:09,729 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-02-20 19:47:09,766 INFO [app] GET /api/v1/auth/me 200 12ms
+2026-02-20 19:47:22,527 INFO [app] GET /api/v1/products/ 200 7ms
+2026-02-20 19:47:22,530 INFO [app] GET /api/v1/carts/ 200 8ms
+2026-02-20 19:47:22,531 INFO [app] GET /api/v1/categories/ 200 5ms
+2026-02-20 19:47:22,702 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-20 19:47:22,718 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-20 19:48:12,228 INFO [app] GET /api/v1/categories/ 200 2ms
+2026-02-20 19:48:12,265 INFO [app] GET /api/v1/auth/me 200 7ms
+2026-02-20 19:48:12,289 INFO [app] GET /api/v1/auth/me 200 10ms
+2026-02-20 19:48:18,220 INFO [app] GET /api/v1/categories/ 200 10ms
+2026-02-20 19:49:14,307 INFO [app] GET /api/v1/categories/ 200 8ms
+2026-02-20 19:50:16,903 INFO [app] GET /api/v1/categories/ 200 1ms
+2026-02-20 19:50:22,458 INFO [app] GET /api/v1/categories/ 200 4ms
+2026-02-20 19:50:55,054 INFO [app] GET /api/v1/categories/ 200 13ms
+2026-02-20 19:50:57,663 INFO [app] GET /api/v1/categories/ 200 2ms
+2026-02-20 19:52:52,560 INFO [app] GET /api/v1/carts/ 401 2ms
+2026-02-20 19:52:52,561 INFO [app] GET /api/v1/products/ 200 4ms
+2026-02-20 19:52:52,602 INFO [app] GET /api/v1/auth/me 401 0ms
+2026-02-20 19:52:56,675 INFO [app] GET /api/v1/categories/ 200 4112ms
+2026-02-20 19:52:56,700 INFO [app] POST /api/v1/auth/refresh 422 4101ms
+2026-02-20 19:52:56,747 INFO [app] POST /api/v1/auth/refresh 422 4129ms
+2026-02-20 19:55:57,063 INFO [app] POST /api/v1/auth/login 200 2136ms
+2026-02-20 19:55:57,161 INFO [app] GET /api/v1/products/ 200 4ms
+2026-02-20 19:56:01,434 INFO [app] GET /api/v1/carts/ 200 4274ms
+2026-02-20 19:56:36,893 INFO [app] GET /api/v1/products/ 200 3ms
+2026-02-20 19:56:37,323 INFO [app] GET /api/v1/auth/me 200 129ms
+2026-02-20 19:56:38,935 INFO [app] GET /api/v1/carts/ 200 2043ms
+2026-02-20 20:00:47,573 INFO [app] GET /api/v1/products/ 200 7ms
+2026-02-20 20:00:48,145 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-20 20:00:51,667 INFO [app] GET /api/v1/carts/ 200 4100ms
+2026-02-20 20:02:24,055 INFO [app] GET /api/v1/categories/ 200 4091ms
+2026-02-20 20:03:04,314 INFO [app] GET /api/v1/orders/get-user-orders 401 1ms
+2026-02-20 20:03:08,393 INFO [app] POST /api/v1/auth/refresh 422 4059ms
