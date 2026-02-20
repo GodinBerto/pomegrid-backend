@@ -18,6 +18,7 @@ from database import db_connection
 from decorators.rate_limit import rate_limit
 from decorators.roles import normalize_role
 from extensions.redis_client import get_redis_client
+from routes.api_envelope import envelope
 from routes import response
 from services.token_service import revoke_token
 
@@ -177,13 +178,13 @@ def login():
     password = data.get("password")
 
     if not email or not password:
-        return jsonify(response({}, "Username and password are required", 400)), 400
+        return jsonify(envelope(None, "email and password are required", 400, False)), 400
 
     conn, cursor = db_connection()
     cursor.execute(
         """
         SELECT id, username, password_hash, email, full_name, phone, user_type,
-               address, is_admin, is_active, date_of_birth
+               role, status, address, is_admin, is_active, date_of_birth
         FROM Users
         WHERE email = ?
         """,
@@ -193,7 +194,7 @@ def login():
     conn.close()
 
     if user is None:
-        return jsonify(response({}, "Incorrect email", 404)), 401
+        return jsonify(envelope(None, "Invalid credentials", 401, False)), 401
 
     (
         user_id,
@@ -203,6 +204,8 @@ def login():
         full_name,
         phone,
         user_type,
+        role,
+        status,
         address,
         is_admin,
         is_active,
@@ -210,32 +213,37 @@ def login():
     ) = user
 
     if not check_password_hash(password_hash, password):
-        return jsonify(response({}, "Incorrect password", 401)), 401
+        return jsonify(envelope(None, "Invalid credentials", 401, False)), 401
+    if not bool(is_active):
+        return jsonify(envelope(None, "User account is inactive", 403, False)), 403
 
-    normalized_role = normalize_role(user_type, is_admin)
+    normalized_role = normalize_role(role or user_type, is_admin)
+    user_status = str(status or ("active" if bool(is_active) else "inactive")).strip().lower()
     user_data = {
         "id": user_id,
         "username": username,
         "email": email,
         "full_name": full_name,
         "phone": phone,
+        "role": normalized_role,
         "user_type": normalized_role,
+        "status": user_status,
         "address": address,
         "is_admin": int(bool(is_admin) or normalized_role == "admin"),
-        "is_active": is_active,
+        "is_active": bool(is_active),
         "date_of_birth": date_of_birth,
     }
 
     access_token = create_access_token(identity=str(user_id))
     refresh_token = create_refresh_token(identity=str(user_id))
 
-    res = {
+    payload = {
         "access_token": access_token,
         "csrf_token": get_csrf_token(refresh_token),
-        "data": user_data,
+        "user": user_data,
     }
 
-    resp = jsonify(response(res, "Login Successful", 200))
+    resp = jsonify(envelope(payload, "Login successful", 200))
     set_refresh_cookies(resp, refresh_token)
 
     return resp, 200
@@ -287,7 +295,7 @@ def refresh():
         payload["message"] = "Refresh token already used. We rotated your refresh token; please retry with the new CSRF token."
         payload["requires_retry"] = True
 
-    resp = jsonify(payload)
+    resp = jsonify(envelope(payload, "Token refreshed", 200))
     set_refresh_cookies(resp, new_refresh)
 
     return resp, 200

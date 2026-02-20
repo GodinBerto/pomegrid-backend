@@ -9,6 +9,7 @@ from database import db_connection
 from decorators.rate_limit import rate_limit
 from decorators.roles import admin_required
 from extensions.redis_client import get_redis_client
+from routes.api_envelope import build_meta, envelope, parse_pagination
 from routes import response
 
 
@@ -389,66 +390,313 @@ def message_workers_send():
 @admin_api.route("/messages/conversations", methods=["GET"])
 @admin_required
 def admin_messages_conversations():
+    page, per_page, offset = parse_pagination(request.args)
+    admin_id = _admin_id()
     conn, cursor = db_connection()
-    rows = _conversation_list(cursor, _admin_id())
-    conn.close()
-    return jsonify(response(rows, "Conversations fetched", 200)), 200
-
-
-@admin_api.route("/messages/conversations/<int:conversation_id>/messages", methods=["GET"])
-@admin_required
-def admin_messages_list(conversation_id):
-    conn, cursor = db_connection()
-    cursor.execute("SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?", (conversation_id, _admin_id()))
-    if not cursor.fetchone():
-        conn.close()
-        return jsonify(response(None, "Conversation not found", 404)), 404
     cursor.execute(
         """
-        SELECT m.*, u.full_name AS sender_name
-        FROM messages m
-        JOIN Users u ON u.id = m.sender_id
-        WHERE m.conversation_id = ?
-        ORDER BY m.created_at ASC, m.id ASC
+        SELECT COUNT(*) AS total
+        FROM admin_conversations c
+        WHERE c.admin_id = ? OR c.admin_id IS NULL
         """,
-        (conversation_id,),
+        (admin_id,),
+    )
+    total = int(cursor.fetchone()["total"] or 0)
+    cursor.execute(
+        """
+        SELECT
+            c.id,
+            c.user_id,
+            c.admin_id,
+            c.last_message_at,
+            c.created_at,
+            c.updated_at,
+            u.full_name AS user_name,
+            u.email AS user_email,
+            (
+                SELECT am.content
+                FROM admin_messages am
+                WHERE am.conversation_id = c.id
+                ORDER BY am.created_at DESC, am.id DESC
+                LIMIT 1
+            ) AS last_message,
+            (
+                SELECT COUNT(*)
+                FROM admin_messages am2
+                WHERE am2.conversation_id = c.id
+                  AND am2.receiver_id = ?
+                  AND COALESCE(am2.is_read, 0) = 0
+            ) AS unread_count
+        FROM admin_conversations c
+        JOIN Users u ON u.id = c.user_id
+        WHERE c.admin_id = ? OR c.admin_id IS NULL
+        ORDER BY COALESCE(c.last_message_at, c.updated_at, c.created_at) DESC, c.created_at DESC
+        LIMIT ? OFFSET ?
+        """,
+        (admin_id, admin_id, per_page, offset),
     )
     rows = [dict(row) for row in cursor.fetchall()]
     conn.close()
-    return jsonify(response(rows, "Messages fetched", 200)), 200
+    meta = build_meta(page, per_page, total)
+    return jsonify(envelope(rows, "Conversations fetched", 200, True, meta)), 200
 
 
-@admin_api.route("/messages/conversations/<int:conversation_id>/messages", methods=["POST"])
+@admin_api.route("/messages/conversations/<conv_id>", methods=["GET"])
 @admin_required
-@rate_limit("admin-messages-send", limit=30, window_seconds=60)
-def admin_messages_send(conversation_id):
-    data = request.get_json() or {}
-    body = (data.get("body") or "").strip()
-    channel = (data.get("channel") or "in_app").strip().lower()
-    if not body:
-        return jsonify(response(None, "body is required", 400)), 400
-    if channel not in {"in_app", "whatsapp", "email"}:
-        return jsonify(response(None, "Invalid channel", 400)), 400
-
+def admin_messages_conversation_detail(conv_id):
+    admin_id = _admin_id()
     conn, cursor = db_connection()
-    cursor.execute("SELECT 1 FROM conversation_participants WHERE conversation_id = ? AND user_id = ?", (conversation_id, _admin_id()))
+    cursor.execute(
+        """
+        SELECT
+            c.id,
+            c.user_id,
+            c.admin_id,
+            c.last_message_at,
+            c.created_at,
+            c.updated_at,
+            u.full_name AS user_name,
+            u.email AS user_email,
+            (
+                SELECT COUNT(*)
+                FROM admin_messages am
+                WHERE am.conversation_id = c.id
+            ) AS message_count,
+            (
+                SELECT COUNT(*)
+                FROM admin_messages am2
+                WHERE am2.conversation_id = c.id
+                  AND am2.receiver_id = ?
+                  AND COALESCE(am2.is_read, 0) = 0
+            ) AS unread_count
+        FROM admin_conversations c
+        JOIN Users u ON u.id = c.user_id
+        WHERE c.id = ? AND (c.admin_id = ? OR c.admin_id IS NULL)
+        """,
+        (admin_id, conv_id, admin_id),
+    )
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        return jsonify(envelope(None, "Conversation not found", 404, False)), 404
+    return jsonify(envelope(dict(row), "Conversation fetched", 200)), 200
+
+
+@admin_api.route("/messages/conversations/<conv_id>/messages", methods=["GET"])
+@admin_required
+def admin_messages_list(conv_id):
+    page, per_page, offset = parse_pagination(request.args)
+    admin_id = _admin_id()
+    conn, cursor = db_connection()
+    cursor.execute(
+        """
+        SELECT 1
+        FROM admin_conversations
+        WHERE id = ? AND (admin_id = ? OR admin_id IS NULL)
+        """,
+        (conv_id, admin_id),
+    )
     if not cursor.fetchone():
         conn.close()
-        return jsonify(response(None, "Conversation not found", 404)), 404
+        return jsonify(envelope(None, "Conversation not found", 404, False)), 404
+
     cursor.execute(
-        "INSERT INTO messages (conversation_id, sender_id, body, channel) VALUES (?, ?, ?, ?)",
-        (conversation_id, _admin_id(), body, channel),
+        "SELECT COUNT(*) AS total FROM admin_messages WHERE conversation_id = ?",
+        (conv_id,),
+    )
+    total = int(cursor.fetchone()["total"] or 0)
+
+    cursor.execute(
+        """
+        SELECT
+            am.id,
+            am.conversation_id,
+            am.sender_id,
+            am.receiver_id,
+            am.content,
+            am.is_read,
+            am.created_at,
+            su.full_name AS sender_name,
+            ru.full_name AS receiver_name
+        FROM admin_messages am
+        LEFT JOIN Users su ON su.id = am.sender_id
+        LEFT JOIN Users ru ON ru.id = am.receiver_id
+        WHERE am.conversation_id = ?
+        ORDER BY am.created_at DESC, am.id DESC
+        LIMIT ? OFFSET ?
+        """,
+        (conv_id, per_page, offset),
+    )
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    meta = build_meta(page, per_page, total)
+    return jsonify(envelope(rows, "Messages fetched", 200, True, meta)), 200
+
+
+@admin_api.route("/messages/conversations/<conv_id>/messages", methods=["POST"])
+@admin_required
+@rate_limit("admin-messages-send", limit=30, window_seconds=60)
+def admin_messages_send(conv_id):
+    data = request.get_json() or {}
+    content = str(data.get("content") or data.get("body") or "").strip()
+    if not content:
+        return jsonify(envelope(None, "content is required", 400, False)), 400
+
+    admin_id = _admin_id()
+    conn, cursor = db_connection()
+    cursor.execute(
+        """
+        SELECT id, user_id, admin_id
+        FROM admin_conversations
+        WHERE id = ? AND (admin_id = ? OR admin_id IS NULL)
+        """,
+        (conv_id, admin_id),
+    )
+    conversation = cursor.fetchone()
+    if not conversation:
+        conn.close()
+        return jsonify(envelope(None, "Conversation not found", 404, False)), 404
+
+    receiver_id = int(conversation["user_id"])
+    cursor.execute(
+        """
+        INSERT INTO admin_messages (conversation_id, sender_id, receiver_id, content, is_read)
+        VALUES (?, ?, ?, ?, 0)
+        """,
+        (conv_id, admin_id, receiver_id, content),
     )
     message_id = cursor.lastrowid
-    cursor.execute("SELECT user_id FROM conversation_participants WHERE conversation_id = ? AND user_id != ?", (conversation_id, _admin_id()))
-    recipients = [int(row["user_id"]) for row in cursor.fetchall()]
-    for recipient_id in recipients:
-        _notify(cursor, recipient_id, "message", "New message", body, {"conversation_id": conversation_id, "message_id": message_id})
+    cursor.execute(
+        """
+        UPDATE admin_conversations
+        SET admin_id = ?, last_message_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        """,
+        (admin_id, conv_id),
+    )
     conn.commit()
     conn.close()
-    for recipient_id in recipients:
-        _invalidate_worker_dashboard_cache(recipient_id)
-    return jsonify(response({"message_id": message_id}, "Message sent", 201)), 201
+    return jsonify(envelope({"id": message_id, "conversation_id": conv_id}, "Message sent", 201)), 201
+
+
+@admin_api.route("/messages/conversations/<conv_id>/read", methods=["POST"])
+@admin_required
+def admin_messages_mark_read(conv_id):
+    admin_id = _admin_id()
+    conn, cursor = db_connection()
+    cursor.execute(
+        """
+        SELECT 1
+        FROM admin_conversations
+        WHERE id = ? AND (admin_id = ? OR admin_id IS NULL)
+        """,
+        (conv_id, admin_id),
+    )
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify(envelope(None, "Conversation not found", 404, False)), 404
+
+    cursor.execute(
+        """
+        UPDATE admin_messages
+        SET is_read = 1
+        WHERE conversation_id = ? AND receiver_id = ? AND COALESCE(is_read, 0) = 0
+        """,
+        (conv_id, admin_id),
+    )
+    updated = int(cursor.rowcount or 0)
+    conn.commit()
+    conn.close()
+    return jsonify(envelope({"updated": updated}, "Messages marked as read", 200)), 200
+
+
+@admin_api.route("/notifications", methods=["GET"])
+@admin_required
+def admin_notifications_list():
+    page, per_page, offset = parse_pagination(request.args)
+    conn, cursor = db_connection()
+    cursor.execute("SELECT COUNT(*) AS total FROM admin_notifications")
+    total = int(cursor.fetchone()["total"] or 0)
+    cursor.execute(
+        """
+        SELECT id, type, title, description, href, read, created_at
+        FROM admin_notifications
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+        """,
+        (per_page, offset),
+    )
+    rows = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    meta = build_meta(page, per_page, total)
+    return jsonify(envelope(rows, "Admin notifications fetched", 200, True, meta)), 200
+
+
+@admin_api.route("/notifications", methods=["POST"])
+@admin_required
+def admin_notifications_create():
+    data = request.get_json() or {}
+    notification_type = str(data.get("type") or "").strip().lower()
+    title = str(data.get("title") or "").strip()
+    description = str(data.get("description") or "").strip()
+    href = str(data.get("href") or "").strip() or None
+
+    if notification_type not in {"order", "message", "system"}:
+        return jsonify(envelope(None, "type must be order|message|system", 400, False)), 400
+    if not title:
+        return jsonify(envelope(None, "title is required", 400, False)), 400
+
+    notification_id = str(uuid.uuid4())
+    conn, cursor = db_connection()
+    cursor.execute(
+        """
+        INSERT INTO admin_notifications (id, type, title, description, href, read)
+        VALUES (?, ?, ?, ?, ?, 0)
+        """,
+        (notification_id, notification_type, title, description, href),
+    )
+    conn.commit()
+    conn.close()
+    payload = {
+        "id": notification_id,
+        "type": notification_type,
+        "title": title,
+        "description": description,
+        "href": href,
+        "read": 0,
+    }
+    return jsonify(envelope(payload, "Admin notification created", 201)), 201
+
+
+@admin_api.route("/notifications/<notification_id>/read", methods=["PATCH"])
+@admin_required
+def admin_notifications_mark_read(notification_id):
+    conn, cursor = db_connection()
+    cursor.execute(
+        """
+        UPDATE admin_notifications
+        SET read = 1
+        WHERE id = ?
+        """,
+        (notification_id,),
+    )
+    conn.commit()
+    if cursor.rowcount == 0:
+        conn.close()
+        return jsonify(envelope(None, "Notification not found", 404, False)), 404
+    conn.close()
+    return jsonify(envelope({"id": notification_id, "read": 1}, "Notification marked as read", 200)), 200
+
+
+@admin_api.route("/notifications/read-all", methods=["PATCH"])
+@admin_required
+def admin_notifications_mark_all_read():
+    conn, cursor = db_connection()
+    cursor.execute("UPDATE admin_notifications SET read = 1 WHERE COALESCE(read, 0) = 0")
+    updated = int(cursor.rowcount or 0)
+    conn.commit()
+    conn.close()
+    return jsonify(envelope({"updated": updated}, "All notifications marked as read", 200)), 200
 
 
 @admin_api.route("/services", methods=["GET"])

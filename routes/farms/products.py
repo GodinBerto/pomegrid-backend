@@ -1,41 +1,38 @@
 import json
 import logging
-from datetime import datetime, timedelta
+from urllib.parse import urlparse
 
-import cloudinary
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 
 from database import db_connection
-from decorators.roles import user_required
+from decorators.roles import admin_required
 from extensions.redis_client import get_redis_client
-from routes import response
+from routes.api_envelope import build_meta, envelope, parse_pagination
 
-# Initialize the Flask auth
-products = Blueprint('products', __name__)
+
+products = Blueprint("products", __name__)
 logger = logging.getLogger(__name__)
 
-PRODUCTS_LIST_CACHE_KEY = "farms:products:list"
-PRODUCT_TYPES_CACHE_KEY = "farms:products:types"
 PRODUCT_CACHE_KEY_PREFIX = "farms:products:item"
-PRODUCT_IMAGE_CACHE_KEY_PREFIX = "farms:products:image"
-PRODUCT_OVERVIEW_CACHE_KEY_PREFIX = "farms:products:overview"
+PRODUCT_LIST_CACHE_KEY_PREFIX = "farms:products:list"
+PRODUCT_STATS_CACHE_KEY = "farms:products:stats:overview"
 
 
 def _cache_get(key):
     try:
         redis_client = get_redis_client()
-        payload = redis_client.get(key)
-        return json.loads(payload) if payload else None
+        value = redis_client.get(key)
+        return json.loads(value) if value else None
     except Exception as e:
         logger.warning("Redis unavailable, skipping products cache read: %s", e)
         return None
 
 
-def _cache_set(key, value, ttl=60):
+def _cache_set(key, payload, ttl=60):
     try:
         redis_client = get_redis_client()
-        redis_client.setex(key, ttl, json.dumps(value))
+        redis_client.setex(key, ttl, json.dumps(payload))
     except Exception as e:
         logger.warning("Redis unavailable, skipping products cache write: %s", e)
 
@@ -66,476 +63,637 @@ def _product_cache_key(product_id):
     return f"{PRODUCT_CACHE_KEY_PREFIX}:{product_id}"
 
 
-def _product_image_cache_key(product_id):
-    return f"{PRODUCT_IMAGE_CACHE_KEY_PREFIX}:{product_id}"
+def _product_list_cache_key(raw_query):
+    return f"{PRODUCT_LIST_CACHE_KEY_PREFIX}:{raw_query or 'default'}"
 
 
-def _product_overview_cache_key(user_id):
-    return f"{PRODUCT_OVERVIEW_CACHE_KEY_PREFIX}:{user_id}"
+def _is_valid_url(value):
+    parsed = urlparse(str(value or "").strip())
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
 
 
-def _invalidate_product_cache(product_id=None, user_id=None):
-    keys = [PRODUCTS_LIST_CACHE_KEY, PRODUCT_TYPES_CACHE_KEY]
+def _normalize_bool(value, default=False):
+    if value is None:
+        return bool(default)
+    if isinstance(value, bool):
+        return value
+    normalized = str(value).strip().lower()
+    if normalized in {"1", "true", "yes"}:
+        return True
+    if normalized in {"0", "false", "no"}:
+        return False
+    return bool(default)
+
+
+def _normalize_media_arrays(payload):
+    image_url = str(payload.get("image_url") or "").strip()
+    image_urls = payload.get("image_urls")
+    video_urls = payload.get("video_urls")
+
+    if image_urls is None:
+        image_urls_list = [image_url] if image_url else []
+    elif isinstance(image_urls, list):
+        image_urls_list = [str(item).strip() for item in image_urls if str(item).strip()]
+    elif isinstance(image_urls, str):
+        image_urls_list = [image_urls.strip()] if image_urls.strip() else []
+    else:
+        image_urls_list = []
+
+    deduped_images = []
+    seen_images = set()
+    for item in image_urls_list:
+        if item and item not in seen_images:
+            seen_images.add(item)
+            deduped_images.append(item)
+
+    if image_url and image_url not in seen_images:
+        deduped_images.insert(0, image_url)
+
+    if video_urls is None:
+        video_urls_list = []
+    elif isinstance(video_urls, list):
+        video_urls_list = [str(item).strip() for item in video_urls if str(item).strip()]
+    elif isinstance(video_urls, str):
+        video_urls_list = [video_urls.strip()] if video_urls.strip() else []
+    else:
+        video_urls_list = []
+
+    deduped_videos = []
+    seen_videos = set()
+    for item in video_urls_list:
+        if item and item not in seen_videos:
+            seen_videos.add(item)
+            deduped_videos.append(item)
+
+    invalid_video_urls = [item for item in deduped_videos if not _is_valid_url(item)]
+    if invalid_video_urls:
+        return None, None, None, f"Invalid video URL(s): {invalid_video_urls}"
+
+    if not deduped_images:
+        return None, None, None, "At least one image is required (image_url or image_urls)."
+
+    primary_image = deduped_images[0]
+    return primary_image, deduped_images, deduped_videos, None
+
+
+def _serialize_product_row(row):
+    product = dict(row)
+    parsed_images = []
+    parsed_videos = []
+
+    if product.get("image_urls"):
+        try:
+            decoded = json.loads(product["image_urls"])
+            if isinstance(decoded, list):
+                parsed_images = [str(item).strip() for item in decoded if str(item).strip()]
+        except Exception:
+            parsed_images = []
+
+    if product.get("image_url") and product["image_url"] not in parsed_images:
+        parsed_images.insert(0, product["image_url"])
+    if parsed_images:
+        product["image_url"] = parsed_images[0]
+    product["image_urls"] = parsed_images
+
+    if product.get("video_urls"):
+        try:
+            decoded_videos = json.loads(product["video_urls"])
+            if isinstance(decoded_videos, list):
+                parsed_videos = [str(item).strip() for item in decoded_videos if str(item).strip()]
+        except Exception:
+            parsed_videos = []
+    product["video_urls"] = parsed_videos
+
+    product["quantity"] = int(product.get("quantity") or 0)
+    product["price"] = float(product.get("price") or 0)
+    product["weight_per_unit"] = float(product.get("weight_per_unit") or 0)
+    product["rating"] = float(product.get("rating") or 0)
+    product["discount_percentage"] = int(product.get("discount_percentage") or 0) if product.get("discount_percentage") is not None else None
+    product["is_alive"] = bool(product.get("is_alive"))
+    product["is_fresh"] = bool(product.get("is_fresh"))
+    return product
+
+
+def _invalidate_products_cache(product_id=None):
+    keys = [PRODUCT_STATS_CACHE_KEY]
     if product_id is not None:
         keys.append(_product_cache_key(product_id))
-        keys.append(_product_image_cache_key(product_id))
-    if user_id is not None:
-        keys.append(_product_overview_cache_key(user_id))
     _cache_delete(*keys)
-    _cache_delete_patterns(f"{PRODUCT_OVERVIEW_CACHE_KEY_PREFIX}:*")
+    _cache_delete_patterns(f"{PRODUCT_LIST_CACHE_KEY_PREFIX}:*")
 
-@products.route('/', methods=['GET'])
-def get_products():
-    cached = _cache_get(PRODUCTS_LIST_CACHE_KEY)
+
+@products.route("", methods=["GET"])
+@products.route("/", methods=["GET"])
+def list_products():
+    page, per_page, offset = parse_pagination(request.args)
+
+    search = str(request.args.get("search") or "").strip()
+    category = str(request.args.get("category") or "").strip()
+    stock_status = str(request.args.get("stock_status") or "").strip().lower()
+    sort_by = str(request.args.get("sort_by") or "created_at").strip().lower()
+    sort_dir = str(request.args.get("sort_dir") or "desc").strip().lower()
+
+    if stock_status and stock_status not in {"in-stock", "low-stock", "out-of-stock"}:
+        return jsonify(envelope(None, "stock_status must be in-stock|low-stock|out-of-stock", 400, False)), 400
+
+    sort_fields = {
+        "name": "p.title",
+        "price": "p.price",
+        "stock": "p.quantity",
+        "created_at": "p.created_at",
+    }
+    order_field = sort_fields.get(sort_by, "p.created_at")
+    direction = "ASC" if sort_dir == "asc" else "DESC"
+
+    cache_key = _product_list_cache_key(request.query_string.decode("utf-8"))
+    cached = _cache_get(cache_key)
     if cached is not None:
-        logger.info("Products list served from cache")
-        return jsonify(response(cached, "Successfully retrieved products.", 200)), 200
+        return jsonify(envelope(cached.get("items", []), "Products fetched", 200, True, cached.get("meta"))), 200
+
+    where = ["1=1"]
+    params = []
+
+    if search:
+        like = f"%{search}%"
+        where.append("(LOWER(p.title) LIKE LOWER(?) OR LOWER(COALESCE(p.description, '')) LIKE LOWER(?))")
+        params.extend([like, like])
+
+    if category:
+        where.append("(LOWER(COALESCE(c.name, p.category, '')) = LOWER(?) OR CAST(p.category_id AS TEXT) = ?)")
+        params.extend([category, category])
+
+    if stock_status == "in-stock":
+        where.append("p.quantity > 10")
+    elif stock_status == "low-stock":
+        where.append("p.quantity BETWEEN 1 AND 10")
+    elif stock_status == "out-of-stock":
+        where.append("p.quantity <= 0")
+
+    where_sql = " AND ".join(where)
 
     try:
         conn, cursor = db_connection()
-        cursor.execute('SELECT * FROM Products')
+        cursor.execute(
+            f"""
+            SELECT COUNT(*) AS total
+            FROM Products p
+            LEFT JOIN Categories c ON c.id = p.category_id
+            WHERE {where_sql}
+            """,
+            tuple(params),
+        )
+        total = int(cursor.fetchone()["total"] or 0)
+
+        query_params = list(params) + [per_page, offset]
+        cursor.execute(
+            f"""
+            SELECT
+                p.id,
+                p.title,
+                p.description,
+                p.price,
+                p.quantity,
+                p.category_id,
+                COALESCE(c.name, p.category) AS category,
+                p.image_url,
+                p.image_urls,
+                p.video_urls,
+                p.weight_per_unit,
+                p.rating,
+                p.discount_percentage,
+                p.animal_type,
+                p.animal_stage,
+                p.is_alive,
+                p.is_fresh,
+                p.created_at,
+                p.updated_at
+            FROM Products p
+            LEFT JOIN Categories c ON c.id = p.category_id
+            WHERE {where_sql}
+            ORDER BY {order_field} {direction}, p.id DESC
+            LIMIT ? OFFSET ?
+            """,
+            tuple(query_params),
+        )
         rows = cursor.fetchall()
-        products = [dict(row) for row in rows]
         conn.close()
 
-        _cache_set(PRODUCTS_LIST_CACHE_KEY, products)
-        logger.info("Products list loaded from DB")
-        return jsonify(response(products, "Successfully retrieved products.", 200)), 200
-
+        items = [_serialize_product_row(row) for row in rows]
+        meta = build_meta(page, per_page, total)
+        _cache_set(cache_key, {"items": items, "meta": meta})
+        return jsonify(envelope(items, "Products fetched", 200, True, meta)), 200
     except Exception as e:
-        logger.exception("Failed to fetch products list")
-        return jsonify(response( [],f"Error: {e}", 500)), 500
-    
+        logger.exception("Failed to list products")
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
-@products.route('/<int:product_id>', methods=['GET'])
-@user_required
+
+@products.route("/<int:product_id>", methods=["GET"])
 def get_product(product_id):
     cache_key = _product_cache_key(product_id)
     cached = _cache_get(cache_key)
     if cached is not None:
-        logger.info("Product %s served from cache", product_id)
-        return jsonify(response(cached, "Successfully retrieved product.", 200)), 200
+        return jsonify(envelope(cached, "Product fetched", 200)), 200
 
     try:
         conn, cursor = db_connection()
-        cursor.execute('SELECT * FROM Products WHERE id = ?', (product_id,))
+        cursor.execute(
+            """
+            SELECT
+                p.id,
+                p.title,
+                p.description,
+                p.price,
+                p.quantity,
+                p.category_id,
+                COALESCE(c.name, p.category) AS category,
+                p.image_url,
+                p.image_urls,
+                p.video_urls,
+                p.weight_per_unit,
+                p.rating,
+                p.discount_percentage,
+                p.animal_type,
+                p.animal_stage,
+                p.is_alive,
+                p.is_fresh,
+                p.created_at,
+                p.updated_at
+            FROM Products p
+            LEFT JOIN Categories c ON c.id = p.category_id
+            WHERE p.id = ?
+            """,
+            (product_id,),
+        )
         row = cursor.fetchone()
-        if row:
-            product = dict(row)
-            conn.close()
-            _cache_set(cache_key, product)
-            logger.info("Product %s loaded from DB", product_id)
-            return jsonify(response(product, "Successfully retrieved product.", 200)), 200
-        else:
-            conn.close()
-            return jsonify(response(None, "Product not found", 404)), 404
-
-    except Exception as e:
-        logger.exception("Failed to fetch product %s", product_id)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-    
-
-# Product types GET endpoint
-@products.route('/types', methods=['GET'])
-@user_required
-def get_product_types():
-    cached = _cache_get(PRODUCT_TYPES_CACHE_KEY)
-    if cached is not None:
-        logger.info("Product types served from cache")
-        return jsonify(response(cached, "Successfully retrieved product types.", 200)), 200
-
-    try:
-        conn, cursor = db_connection()
-        cursor.execute('SELECT * FROM ProductTypes')
-        rows = cursor.fetchall()
-        product_types = [dict(row) for row in rows]
         conn.close()
-        _cache_set(PRODUCT_TYPES_CACHE_KEY, product_types)
-        logger.info("Product types loaded from DB")
-        return jsonify(response(product_types, "Successfully retrieved product types.", 200)), 200
-
+        if not row:
+            return jsonify(envelope(None, "Product not found", 404, False)), 404
+        payload = _serialize_product_row(row)
+        _cache_set(cache_key, payload)
+        return jsonify(envelope(payload, "Product fetched", 200)), 200
     except Exception as e:
-        logger.exception("Failed to fetch product types")
-        return jsonify(response([], f"Error: {e}", 500)), 500
+        logger.exception("Failed to get product %s", product_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
 
-@products.route('/', methods=['POST'])
-@user_required
-def add_product():
+@products.route("", methods=["POST"])
+@products.route("/", methods=["POST"])
+@admin_required
+def create_product():
     data = request.get_json() or {}
-    current_user = get_jwt_identity()  # Assuming this is user_id
-    
-    title = data.get('title')
-    category = data.get('category')
-    animal_type = data.get('animal_type')
-    description = request.form.get('description', '')
-    price = data.get('price')
-    quantity = data.get('quantity')
-    is_alive = data.get('is_live', 'false')
-    is_fresh = data.get('is_fresh', 'true')
-    rating = float(data.get('rating', 4.0))
-    discount_percentage = data.get('discount_percentage')
-    weight_per_unit = float(data.get('weight_per_unit', 1.0))
-    animal_stage = data.get('animal_stage', None)
+    admin_id = get_jwt_identity()
 
-    # Get the image file
-    image_url = data.get('image_url')
+    title = str(data.get("title") or "").strip()
+    description = str(data.get("description") or "").strip()
+    category = str(data.get("category") or "").strip()
+    category_id = data.get("category_id")
+    animal_type = data.get("animal_type")
+    animal_stage = data.get("animal_stage")
 
     try:
-        # Validate required fields
-        if not all([title, price, quantity, image_url, category]):
-            return jsonify(response(None, "Missing required fields", 400)), 400
+        price = float(data.get("price", 0))
+        quantity = int(data.get("quantity", 0))
+        weight_per_unit = float(data.get("weight_per_unit", 1.0))
+        rating = float(data.get("rating", 4.0))
+        discount_percentage = int(data.get("discount_percentage")) if data.get("discount_percentage") is not None else None
+    except (TypeError, ValueError):
+        return jsonify(envelope(None, "Invalid numeric fields", 400, False)), 400
 
+    if not title:
+        return jsonify(envelope(None, "title is required", 400, False)), 400
+    if price < 0 or quantity < 0:
+        return jsonify(envelope(None, "price and quantity must be non-negative", 400, False)), 400
+    if category_id not in (None, ""):
+        try:
+            category_id = int(category_id)
+        except (TypeError, ValueError):
+            return jsonify(envelope(None, "category_id must be an integer", 400, False)), 400
+
+    image_url, image_urls, video_urls, media_error = _normalize_media_arrays(data)
+    if media_error:
+        return jsonify(envelope(None, media_error, 400, False)), 400
+
+    is_alive = _normalize_bool(data.get("is_alive") if "is_alive" in data else data.get("is_live"), False)
+    is_fresh = _normalize_bool(data.get("is_fresh"), True)
+
+    try:
         conn, cursor = db_connection()
-        if is_alive:
-            columns = '''user_id, animal_type, category, title, description, price, quantity, is_alive, image_url, weight_per_unit, rating, discount_percentage'''
-            values = [current_user, animal_type, category, title, description, price, quantity, is_alive, image_url, weight_per_unit, rating, discount_percentage]
-
-            if animal_stage is not None:
-                columns += ', animal_stage'
-                values.append(animal_stage)
-
-            cursor.execute(f'''
-                INSERT INTO Products ({columns})
-                VALUES ({','.join(['?'] * len(values))})
-            ''', values)
-        elif is_fresh:
-            cursor.execute('''
-                INSERT INTO Products (user_id, category, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (current_user, category, title, description, price, quantity, is_fresh, image_url, weight_per_unit, rating, discount_percentage))
-        product_id = cursor.lastrowid  # Get ID before closing
+        cursor.execute(
+            """
+            INSERT INTO Products (
+                user_id, title, description, price, quantity, category_id, category,
+                image_url, image_urls, video_urls,
+                weight_per_unit, rating, discount_percentage,
+                animal_type, animal_stage, is_alive, is_fresh
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                int(admin_id),
+                title,
+                description,
+                price,
+                quantity,
+                category_id if category_id not in (None, "") else None,
+                category,
+                image_url,
+                json.dumps(image_urls),
+                json.dumps(video_urls),
+                weight_per_unit,
+                rating,
+                discount_percentage,
+                animal_type,
+                animal_stage,
+                1 if is_alive else 0,
+                1 if is_fresh else 0,
+            ),
+        )
+        product_id = cursor.lastrowid
         conn.commit()
+
+        cursor.execute(
+            """
+            SELECT
+                p.id,
+                p.title,
+                p.description,
+                p.price,
+                p.quantity,
+                p.category_id,
+                COALESCE(c.name, p.category) AS category,
+                p.image_url,
+                p.image_urls,
+                p.video_urls,
+                p.weight_per_unit,
+                p.rating,
+                p.discount_percentage,
+                p.animal_type,
+                p.animal_stage,
+                p.is_alive,
+                p.is_fresh,
+                p.created_at,
+                p.updated_at
+            FROM Products p
+            LEFT JOIN Categories c ON c.id = p.category_id
+            WHERE p.id = ?
+            """,
+            (product_id,),
+        )
+        row = cursor.fetchone()
         conn.close()
-        
-        if is_alive:
-            data = {
-            'id': product_id,
-            'title': title,
-            'category': category,
-            'animal_type': animal_type,
-            'description': description,
-            'price': price,
-            'quantity': quantity,
-            'is_live': is_alive,
-            'image_url': image_url,
-            'weight_per_unit': weight_per_unit,
-            'rating': rating,
-            'discount_percentage': discount_percentage,
-            'animal_stage': animal_stage
-        }
-        else:
-            data = {
-            'id': product_id,
-            'title': title,
-            'category': category,
-            'description': description,
-            'price': price,
-            'quantity': quantity,
-            'is_fresh': is_fresh,
-            'image_url': image_url,
-            'weight_per_unit': weight_per_unit,
-            'rating': rating,
-            'discount_percentage': discount_percentage
-        }
 
-        _invalidate_product_cache(product_id=product_id, user_id=current_user)
-        logger.info("Product %s created by user %s", product_id, current_user)
-        return jsonify(response(data, "Product added successfully", 201)), 201
-
+        payload = _serialize_product_row(row)
+        _invalidate_products_cache(product_id=product_id)
+        return jsonify(envelope(payload, "Product created", 201)), 201
     except Exception as e:
-        logger.exception("Failed to create product for user %s", current_user)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-    
+        logger.exception("Failed to create product")
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
-@products.route('/<int:product_id>', methods=['PUT'])
-@user_required
+
+@products.route("/<int:product_id>", methods=["PUT"])
+@admin_required
 def update_product(product_id):
     data = request.get_json() or {}
-    current_user = get_jwt_identity()
 
-    title = data.get('title')
-    category = data.get('category')
-    animal_type = data.get('animal_type')
-    description = request.form.get('description')
-    price = data.get('price')
-    quantity = data.get('quantity')
-    is_alive = data.get('is_live', 'false')
-    is_fresh = data.get('is_fresh', 'true')
-    rating = float(data.get('rating', 4.0))
-    discount_percentage = data.get('discount_percentage')
-    weight_per_unit = float(data.get('weight_per_unit', 1.0))
-    animal_stage = data.get('animal_stage', None)
-
-    # Get the image file
-    image_url = data.get('image_url')
-
-    # Validate required fields
-    if not all([title, category, price, quantity, image_url]):
-        return jsonify(response(None, "Missing required fields", 400)), 400
-    
     try:
         conn, cursor = db_connection()
-        if is_alive:
-            cursor.execute('''
-                UPDATE Products
-                SET title = ?, animal_type = ?, category = ?, description = ?, price = ?, quantity = ?, is_alive = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?, animal_stage = ?
-                WHERE id = ? AND user_id = ?
-            ''', (title, animal_type, category, description, price, quantity, is_alive, image_url, rating, discount_percentage, weight_per_unit, animal_stage, product_id, current_user))
-        elif is_fresh:
-            cursor.execute('''
-                UPDATE Products
-                SET title = ?, animal_type = ?, category, description = ?, price = ?, quantity = ?, is_fresh = ?, image_url = ?, rating = ?, discount_percentage = ?, weight_per_unit = ?
-                WHERE id = ? AND user_id = ?
-            ''', (title, animal_type, category, description, price, quantity, is_fresh, image_url, rating, discount_percentage, weight_per_unit, product_id, current_user))
-        
-        conn.commit()
-        if cursor.rowcount == 0:
+        cursor.execute("SELECT * FROM Products WHERE id = ?", (product_id,))
+        existing = cursor.fetchone()
+        if not existing:
             conn.close()
-            return jsonify(response(None, "Product not found or not authorized", 404)), 404
-        
-        conn.close()
-        
-        if is_alive:
-            data = {
-                'id': product_id,
-                'title': title,
-                'category': category,
-                'animal_type': animal_type,
-                'description': description,
-                'price': price,
-                'quantity': quantity,
-                'is_live': is_alive,
-                'image_url': image_url,
-                'weight_per_unit': weight_per_unit,
-                'rating': rating,
-                'discount_percentage': discount_percentage,
-                'animal_stage': animal_stage
-            }
-        else:
-            data = {
-                'id': product_id,
-                'title': title,
-                'category': category,
-                'description': description,
-                'price': price,
-                'quantity': quantity,
-                'is_fresh': is_fresh,
-                'image_url': image_url,
-                'weight_per_unit': weight_per_unit,
-                'rating': rating,
-                'discount_percentage': discount_percentage
-            }
-        
-        _invalidate_product_cache(product_id=product_id, user_id=current_user)
-        logger.info("Product %s updated by user %s", product_id, current_user)
-        return jsonify(response(data, "Product updated successfully", 200)), 200
+            return jsonify(envelope(None, "Product not found", 404, False)), 404
     except Exception as e:
-        logger.exception("Failed to update product %s", product_id)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-    
+        logger.exception("Failed to read product %s before update", product_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
-@products.route('/<int:product_id>', methods=['DELETE'])
-@user_required
+    title = str(data.get("title", existing["title"]) or "").strip()
+    description = str(data.get("description", existing["description"] or "")).strip()
+    category = str(data.get("category", existing["category"] or "")).strip()
+    category_id = data.get("category_id", existing["category_id"])
+    animal_type = data.get("animal_type", existing["animal_type"])
+    animal_stage = data.get("animal_stage", existing["animal_stage"])
+
+    try:
+        price = float(data.get("price", existing["price"]))
+        quantity = int(data.get("quantity", existing["quantity"]))
+        weight_per_unit = float(data.get("weight_per_unit", existing["weight_per_unit"]))
+        rating = float(data.get("rating", existing["rating"] if existing["rating"] is not None else 4.0))
+        discount_percentage_raw = data.get("discount_percentage", existing["discount_percentage"])
+        discount_percentage = int(discount_percentage_raw) if discount_percentage_raw is not None else None
+    except (TypeError, ValueError):
+        conn.close()
+        return jsonify(envelope(None, "Invalid numeric fields", 400, False)), 400
+
+    if not title:
+        conn.close()
+        return jsonify(envelope(None, "title is required", 400, False)), 400
+    if price < 0 or quantity < 0:
+        conn.close()
+        return jsonify(envelope(None, "price and quantity must be non-negative", 400, False)), 400
+    if category_id not in (None, ""):
+        try:
+            category_id = int(category_id)
+        except (TypeError, ValueError):
+            conn.close()
+            return jsonify(envelope(None, "category_id must be an integer", 400, False)), 400
+
+    merged_media_payload = dict(data)
+    if "image_url" not in merged_media_payload:
+        merged_media_payload["image_url"] = existing["image_url"]
+    if "image_urls" not in merged_media_payload:
+        merged_media_payload["image_urls"] = existing["image_urls"]
+    if "video_urls" not in merged_media_payload:
+        merged_media_payload["video_urls"] = existing["video_urls"]
+
+    image_url, image_urls, video_urls, media_error = _normalize_media_arrays(merged_media_payload)
+    if media_error:
+        conn.close()
+        return jsonify(envelope(None, media_error, 400, False)), 400
+
+    is_alive = _normalize_bool(
+        data.get("is_alive", data.get("is_live", existing["is_alive"])),
+        bool(existing["is_alive"]),
+    )
+    is_fresh = _normalize_bool(data.get("is_fresh", existing["is_fresh"]), bool(existing["is_fresh"]))
+
+    try:
+        cursor.execute(
+            """
+            UPDATE Products
+            SET
+                title = ?,
+                description = ?,
+                price = ?,
+                quantity = ?,
+                category_id = ?,
+                category = ?,
+                image_url = ?,
+                image_urls = ?,
+                video_urls = ?,
+                weight_per_unit = ?,
+                rating = ?,
+                discount_percentage = ?,
+                animal_type = ?,
+                animal_stage = ?,
+                is_alive = ?,
+                is_fresh = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                title,
+                description,
+                price,
+                quantity,
+                category_id if category_id not in (None, "") else None,
+                category,
+                image_url,
+                json.dumps(image_urls),
+                json.dumps(video_urls),
+                weight_per_unit,
+                rating,
+                discount_percentage,
+                animal_type,
+                animal_stage,
+                1 if is_alive else 0,
+                1 if is_fresh else 0,
+                product_id,
+            ),
+        )
+        conn.commit()
+
+        cursor.execute(
+            """
+            SELECT
+                p.id,
+                p.title,
+                p.description,
+                p.price,
+                p.quantity,
+                p.category_id,
+                COALESCE(c.name, p.category) AS category,
+                p.image_url,
+                p.image_urls,
+                p.video_urls,
+                p.weight_per_unit,
+                p.rating,
+                p.discount_percentage,
+                p.animal_type,
+                p.animal_stage,
+                p.is_alive,
+                p.is_fresh,
+                p.created_at,
+                p.updated_at
+            FROM Products p
+            LEFT JOIN Categories c ON c.id = p.category_id
+            WHERE p.id = ?
+            """,
+            (product_id,),
+        )
+        row = cursor.fetchone()
+        conn.close()
+
+        payload = _serialize_product_row(row)
+        _invalidate_products_cache(product_id=product_id)
+        return jsonify(envelope(payload, "Product updated", 200)), 200
+    except Exception as e:
+        conn.close()
+        logger.exception("Failed to update product %s", product_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
+@products.route("/<int:product_id>", methods=["DELETE"])
+@admin_required
 def delete_product(product_id):
-    current_user = get_jwt_identity()
     try:
         conn, cursor = db_connection()
-        cursor.execute('DELETE FROM Products WHERE id = ? AND user_id = ?', (product_id, current_user))
+        cursor.execute("DELETE FROM Products WHERE id = ?", (product_id,))
         conn.commit()
-        
-        if cursor.rowcount == 0:
-            conn.close()
-            return jsonify(response(None, "Product not found or not authorized", 404)), 404
-        
+        deleted = cursor.rowcount
         conn.close()
-        _invalidate_product_cache(product_id=product_id, user_id=current_user)
-        logger.info("Product %s deleted by user %s", product_id, current_user)
-        return jsonify(response(None, "Product deleted successfully", 200)), 200
+        if deleted == 0:
+            return jsonify(envelope(None, "Product not found", 404, False)), 404
 
+        _invalidate_products_cache(product_id=product_id)
+        return jsonify(envelope({"id": product_id}, "Product deleted", 200)), 200
     except Exception as e:
         logger.exception("Failed to delete product %s", product_id)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-    
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
-@products.route('/all', methods=['DELETE'])
-@user_required
-def delete_all_products():
-    current_user = get_jwt_identity()
-    try:
-        conn, cursor = db_connection()
-        cursor.execute('DELETE FROM Products WHERE user_id = ?', (current_user,))
-        conn.commit()
-        
-        if cursor.rowcount == 0:
-            conn.close()
-            return jsonify(response(None, "No products found for this user", 404)), 404
-        
-        conn.close()
-        _invalidate_product_cache(user_id=current_user)
-        _cache_delete_patterns(f"{PRODUCT_CACHE_KEY_PREFIX}:*", f"{PRODUCT_IMAGE_CACHE_KEY_PREFIX}:*")
-        logger.info("All products deleted by user %s", current_user)
-        return jsonify(response(None, "All products deleted successfully", 200)), 200
 
-    except Exception as e:
-        logger.exception("Failed to delete all products for user %s", current_user)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-    
-    
-@products.route('/<int:product_id>/image', methods=['POST'])
-@user_required
-def upload_product_image(product_id):
-    current_user = get_jwt_identity()
-    if 'image' not in request.files:
-        return jsonify(response(None, "No image file provided", 400)), 400
-
-    image_file = request.files['image']
-    if image_file.filename == '':
-        return jsonify(response(None, "No selected file", 400)), 400
+@products.route("", methods=["DELETE"])
+@products.route("/", methods=["DELETE"])
+@admin_required
+def bulk_delete_products():
+    data = request.get_json(silent=True) or {}
+    ids = data.get("ids")
 
     try:
-        # Save the image file
-        image_url = f"/images/products/{product_id}/{image_file.filename}"
-        image_file.save(f"./static{image_url}")
-
-        # Update the product with the new image URL
         conn, cursor = db_connection()
-        cursor.execute('UPDATE Products SET image_url = ? WHERE id = ? AND farmer_id = ?', (image_url, product_id, current_user))
-        conn.commit()
+        if isinstance(ids, list) and ids:
+            valid_ids = []
+            for raw_id in ids:
+                try:
+                    valid_ids.append(int(raw_id))
+                except (TypeError, ValueError):
+                    continue
+            if not valid_ids:
+                conn.close()
+                return jsonify(envelope(None, "ids must contain valid product ids", 400, False)), 400
 
-        if cursor.rowcount == 0:
+            placeholders = ",".join("?" for _ in valid_ids)
+            cursor.execute(f"DELETE FROM Products WHERE id IN ({placeholders})", tuple(valid_ids))
+            deleted_count = cursor.rowcount
+            conn.commit()
             conn.close()
-            return jsonify(response(None, "Product not found or not authorized", 404)), 404
+            _invalidate_products_cache()
+            return jsonify(envelope({"deleted": deleted_count, "ids": valid_ids}, "Products deleted", 200)), 200
 
+        cursor.execute("DELETE FROM Products")
+        deleted_count = cursor.rowcount
+        conn.commit()
         conn.close()
-        _invalidate_product_cache(product_id=product_id, user_id=current_user)
-        _cache_set(_product_image_cache_key(product_id), {"image_url": image_url})
-        logger.info("Image uploaded for product %s by user %s", product_id, current_user)
-        return jsonify(response({'image_url': image_url}, "Image uploaded successfully", 200)), 200
-
+        _invalidate_products_cache()
+        return jsonify(envelope({"deleted": deleted_count}, "All products deleted", 200)), 200
     except Exception as e:
-        logger.exception("Failed to upload image for product %s", product_id)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-    
+        logger.exception("Failed to bulk delete products")
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
-@products.route('/<int:product_id>/image', methods=['GET'])
-@user_required
-def get_product_image(product_id):
-    cache_key = _product_image_cache_key(product_id)
-    cached = _cache_get(cache_key)
+
+@products.route("/stats/overview", methods=["GET"])
+@admin_required
+def product_stats_overview():
+    cached = _cache_get(PRODUCT_STATS_CACHE_KEY)
     if cached is not None:
-        logger.info("Product image served from cache for product %s", product_id)
-        return jsonify(response(cached, "Image retrieved successfully", 200)), 200
+        return jsonify(envelope(cached, "Product stats fetched", 200)), 200
 
     try:
         conn, cursor = db_connection()
-        cursor.execute('SELECT image_url FROM Products WHERE id = ?', (product_id,))
-        row = cursor.fetchone()
-        if row and row['image_url']:
-            image_url = row['image_url']
-            conn.close()
-            payload = {'image_url': image_url}
-            _cache_set(cache_key, payload)
-            logger.info("Product image loaded from DB for product %s", product_id)
-            return jsonify(response(payload, "Image retrieved successfully", 200)), 200
-        else:
-            conn.close()
-            return jsonify(response(None, "Image not found", 404)), 404
+        cursor.execute("SELECT COUNT(*) AS c FROM Products")
+        total_products = int(cursor.fetchone()["c"] or 0)
 
-    except Exception as e:
-        logger.exception("Failed to fetch image for product %s", product_id)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-    
+        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE quantity > 10")
+        in_stock = int(cursor.fetchone()["c"] or 0)
 
-@products.route('/<int:product_id>/image', methods=['DELETE'])
-@user_required
-def delete_product_image(product_id):
-    current_user = get_jwt_identity()
-    try:
-        conn, cursor = db_connection()
-        cursor.execute('SELECT image_url FROM Products WHERE id = ? AND farmer_id = ?', (product_id, current_user))
-        row = cursor.fetchone()
-        
-        if not row or not row['image_url']:
-            conn.close()
-            return jsonify(response(None, "Image not found or not authorized", 404)), 404
-        
-        image_url = row['image_url']
-        cursor.execute('UPDATE Products SET image_url = NULL WHERE id = ? AND farmer_id = ?', (product_id, current_user))
-        conn.commit()
-        
-        # Optionally delete the image file from the server
-        # os.remove(f"./static{image_url}")
+        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE quantity BETWEEN 1 AND 10")
+        low_stock = int(cursor.fetchone()["c"] or 0)
 
-        conn.close()
-        _invalidate_product_cache(product_id=product_id, user_id=current_user)
-        logger.info("Image deleted for product %s by user %s", product_id, current_user)
-        return jsonify(response(None, "Image deleted successfully", 200)), 200
+        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE quantity <= 0")
+        out_of_stock = int(cursor.fetchone()["c"] or 0)
 
-    except Exception as e:
-        logger.exception("Failed to delete image for product %s", product_id)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-    
-    
-@products.route('/stats/overview', methods=['GET'])
-@user_required
-def overview_stats():
-    current_user = get_jwt_identity()
-    cache_key = _product_overview_cache_key(current_user)
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        logger.info("Product overview served from cache for user %s", current_user)
-        return jsonify(response(cached, "Overview stats fetched", 200)), 200
-
-    try:
-        conn, cursor = db_connection()
-
-        # ==============================
-        # Total products
-        # ==============================
-        cursor.execute("SELECT COUNT(*) as total FROM Products WHERE user_id = ?", (current_user,))
-        total_products = cursor.fetchone()["total"]
-
-        # Products added in the last 7 days
-        one_week_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute(
-            "SELECT COUNT(*) as recent FROM Products WHERE user_id = ? AND created_at >= ?",
-            (current_user, one_week_ago)
-        )
-        recent_products = cursor.fetchone()["recent"]
-
-        # ==============================
-        # Revenue stats
-        # ==============================
-        cursor.execute("""
-            SELECT IFNULL(SUM(total_price), 0) as total_revenue
-            FROM Orders
-            WHERE user_id = ? AND status = 'completed'
-        """, (current_user,))
-        total_revenue = cursor.fetchone()["total_revenue"]
-
-        first_day_of_month = datetime.now().replace(day=1).strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute("""
-            SELECT IFNULL(SUM(total_price), 0) as monthly_revenue
-            FROM Orders
-            WHERE user_id = ? AND status = 'completed' AND created_at >= ?
-        """, (current_user, first_day_of_month))
-        monthly_revenue = cursor.fetchone()["monthly_revenue"]
-
+        cursor.execute("SELECT COALESCE(SUM(price * quantity), 0) AS v FROM Products")
+        inventory_value = float(cursor.fetchone()["v"] or 0)
         conn.close()
 
         payload = {
             "totalProducts": total_products,
-            "recentProducts": recent_products,
-            "totalRevenue": total_revenue,
-            "monthlyRevenue": monthly_revenue
+            "inStock": in_stock,
+            "lowStock": low_stock,
+            "outOfStock": out_of_stock,
+            "inventoryValue": round(inventory_value, 2),
         }
-        _cache_set(cache_key, payload)
-        logger.info("Product overview loaded from DB for user %s", current_user)
-
-        return jsonify(response(payload, "Overview stats fetched", 200)), 200
-
+        _cache_set(PRODUCT_STATS_CACHE_KEY, payload)
+        return jsonify(envelope(payload, "Product stats fetched", 200)), 200
     except Exception as e:
-        logger.exception("Failed to fetch product overview for user %s", current_user)
-        return jsonify(response(None, f"Error: {e}", 500)), 500
-
+        logger.exception("Failed to fetch product stats")
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500

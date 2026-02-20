@@ -1,3 +1,4 @@
+import json
 import sqlite3
 
 
@@ -56,11 +57,14 @@ def ensure_users_user_type_constraint(conn, cursor):
                 full_name TEXT NOT NULL,
                 phone TEXT NOT NULL,
                 user_type TEXT NOT NULL CHECK(user_type IN ('user', 'worker', 'admin')),
+                role TEXT NOT NULL DEFAULT 'user',
+                status TEXT NOT NULL DEFAULT 'active',
                 date_of_birth DATE,
                 is_verified BOOLEAN NOT NULL DEFAULT 0,
                 verification_code TEXT,
                 address TEXT,
                 profile_image_url TEXT,
+                avatar TEXT,
                 is_active BOOLEAN NOT NULL DEFAULT 1,
                 is_admin BOOLEAN NOT NULL DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -73,8 +77,8 @@ def ensure_users_user_type_constraint(conn, cursor):
             """
             INSERT INTO Users_new (
                 id, username, email, password_hash, full_name, phone, user_type,
-                date_of_birth, is_verified, verification_code, address,
-                profile_image_url, is_active, is_admin, created_at, updated_at
+                role, status, date_of_birth, is_verified, verification_code, address,
+                profile_image_url, avatar, is_active, is_admin, created_at, updated_at
             )
             SELECT
                 id,
@@ -90,11 +94,23 @@ def ensure_users_user_type_constraint(conn, cursor):
                     WHEN LOWER(TRIM(user_type)) = 'farmer' THEN 'user'
                     ELSE 'user'
                 END AS user_type,
+                CASE
+                    WHEN LOWER(TRIM(user_type)) = 'super admin' THEN 'admin'
+                    WHEN LOWER(TRIM(user_type)) = 'admin' OR COALESCE(is_admin, 0) = 1 THEN 'admin'
+                    WHEN LOWER(TRIM(user_type)) = 'worker' THEN 'worker'
+                    WHEN LOWER(TRIM(user_type)) = 'farmer' THEN 'user'
+                    ELSE 'user'
+                END AS role,
+                CASE
+                    WHEN COALESCE(is_active, 1) = 1 THEN 'active'
+                    ELSE 'inactive'
+                END AS status,
                 date_of_birth,
                 is_verified,
                 verification_code,
                 address,
                 profile_image_url,
+                profile_image_url AS avatar,
                 is_active,
                 CASE
                     WHEN LOWER(TRIM(user_type)) IN ('admin', 'super admin') OR COALESCE(is_admin, 0) = 1 THEN 1
@@ -318,11 +334,14 @@ def create_tables():
             full_name TEXT NOT NULL,
             phone TEXT NOT NULL,
             user_type TEXT NOT NULL CHECK(user_type IN ('user', 'worker', 'admin')),
+            role TEXT NOT NULL DEFAULT 'user',
+            status TEXT NOT NULL DEFAULT 'active',
             date_of_birth DATE,
             is_verified BOOLEAN NOT NULL DEFAULT 0,
             verification_code TEXT,
             address TEXT,
             profile_image_url TEXT,
+            avatar TEXT,
             is_active BOOLEAN NOT NULL DEFAULT 1,
             is_admin BOOLEAN NOT NULL DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -346,6 +365,7 @@ def create_tables():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             title TEXT NOT NULL,
+            category_id INTEGER,
             category TEXT NOT NULL,
             animal_stage INTEGER CHECK (animal_stage IN ('0', '1')) DEFAULT NULL,
             animal_type TEXT,
@@ -356,11 +376,14 @@ def create_tables():
             is_alive BOOLEAN,
             is_fresh BOOLEAN,
             image_url TEXT,
+            image_urls TEXT,
+            video_urls TEXT,
             rating REAL DEFAULT 4.5,
             discount_percentage INTEGER DEFAULT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES Users(id),
+            FOREIGN KEY (category_id) REFERENCES Categories(id),
             FOREIGN KEY (animal_type) REFERENCES ProductTypes(id)
         )
     ''')
@@ -388,6 +411,9 @@ def create_tables():
             user_id INTEGER NOT NULL,
             total_price REAL NOT NULL,
             status TEXT NOT NULL CHECK(status IN ('pending', 'processing', 'completed', 'cancelled')),
+            payment_method TEXT,
+            shipping_address TEXT,
+            notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES Users(id)
@@ -668,6 +694,52 @@ def create_tables():
 
     cursor.execute(
         '''
+            CREATE TABLE IF NOT EXISTS admin_conversations(
+                id TEXT PRIMARY KEY,
+                user_id INTEGER NOT NULL,
+                admin_id INTEGER,
+                last_message_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+                FOREIGN KEY (admin_id) REFERENCES Users(id) ON DELETE SET NULL
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS admin_messages(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                conversation_id TEXT NOT NULL,
+                sender_id INTEGER NOT NULL,
+                receiver_id INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                is_read BOOLEAN DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (conversation_id) REFERENCES admin_conversations(id) ON DELETE CASCADE,
+                FOREIGN KEY (sender_id) REFERENCES Users(id) ON DELETE CASCADE,
+                FOREIGN KEY (receiver_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS admin_notifications(
+                id TEXT PRIMARY KEY,
+                type TEXT NOT NULL CHECK(type IN ('order', 'message', 'system')),
+                title TEXT NOT NULL,
+                description TEXT,
+                href TEXT,
+                read BOOLEAN DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
             CREATE TABLE IF NOT EXISTS inventory_items(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 sku TEXT NOT NULL UNIQUE,
@@ -790,12 +862,83 @@ def create_tables():
     ensure_column(cursor, "Workers", "hourly_rate", "hourly_rate INTEGER DEFAULT 0")
     ensure_column(cursor, "Workers", "years_experience", "years_experience INTEGER DEFAULT 0")
     ensure_column(cursor, "Workers", "completed_jobs", "completed_jobs INTEGER DEFAULT 0")
+    ensure_column(cursor, "Users", "role", "role TEXT NOT NULL DEFAULT 'user'")
+    ensure_column(cursor, "Users", "status", "status TEXT NOT NULL DEFAULT 'active'")
     ensure_column(cursor, "Users", "avatar", "avatar TEXT")
+    ensure_column(cursor, "Products", "category_id", "category_id INTEGER")
+    ensure_column(cursor, "Products", "image_urls", "image_urls TEXT")
+    ensure_column(cursor, "Products", "video_urls", "video_urls TEXT")
+    ensure_column(cursor, "Orders", "payment_method", "payment_method TEXT")
+    ensure_column(cursor, "Orders", "shipping_address", "shipping_address TEXT")
+    ensure_column(cursor, "Orders", "notes", "notes TEXT")
     ensure_column(cursor, "Jobs", "status", "status TEXT NOT NULL DEFAULT 'pending'")
     ensure_column(cursor, "Jobs", "budget", "budget REAL")
     ensure_column(cursor, "Jobs", "address", "address TEXT")
     ensure_column(cursor, "Jobs", "scheduled_at", "scheduled_at TIMESTAMP")
     ensure_column(cursor, "Jobs", "completed_at", "completed_at TIMESTAMP")
+
+    cursor.execute(
+        """
+        UPDATE Users
+        SET role = CASE
+            WHEN LOWER(COALESCE(user_type, '')) = 'admin' OR COALESCE(is_admin, 0) = 1 THEN 'admin'
+            WHEN LOWER(COALESCE(user_type, '')) = 'worker' THEN 'worker'
+            ELSE 'user'
+        END
+        WHERE role IS NULL OR TRIM(role) = ''
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE Users
+        SET status = CASE WHEN COALESCE(is_active, 1) = 1 THEN 'active' ELSE 'inactive' END
+        WHERE status IS NULL OR TRIM(status) = ''
+        """
+    )
+
+    cursor.execute("SELECT id, image_url, image_urls, video_urls FROM Products")
+    for product in cursor.fetchall():
+        product_id = int(product["id"])
+        stored_image_url = product["image_url"]
+        stored_image_urls = product["image_urls"]
+        stored_video_urls = product["video_urls"]
+
+        parsed_image_urls = []
+        if stored_image_urls:
+            try:
+                parsed = json.loads(stored_image_urls)
+                if isinstance(parsed, list):
+                    parsed_image_urls = [str(item).strip() for item in parsed if str(item).strip()]
+            except Exception:
+                parsed_image_urls = []
+
+        if stored_image_url and stored_image_url not in parsed_image_urls:
+            parsed_image_urls.insert(0, str(stored_image_url).strip())
+
+        first_image_url = parsed_image_urls[0] if parsed_image_urls else None
+
+        parsed_video_urls = []
+        if stored_video_urls:
+            try:
+                parsed_videos = json.loads(stored_video_urls)
+                if isinstance(parsed_videos, list):
+                    parsed_video_urls = [str(item).strip() for item in parsed_videos if str(item).strip()]
+            except Exception:
+                parsed_video_urls = []
+
+        cursor.execute(
+            """
+            UPDATE Products
+            SET image_url = ?, image_urls = ?, video_urls = ?
+            WHERE id = ?
+            """,
+            (
+                first_image_url,
+                json.dumps(parsed_image_urls),
+                json.dumps(parsed_video_urls),
+                product_id,
+            ),
+        )
 
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_workers_location ON Workers(location)"
@@ -886,6 +1029,39 @@ def create_tables():
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_users_role ON Users(role)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_users_status ON Users(status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_products_category_id ON Products(category_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_orders_created_at ON Orders(created_at)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_orders_status ON Orders(status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON OrderItems(order_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON OrderItems(product_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_conversations_user_id ON admin_conversations(user_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_messages_conversation_id ON admin_messages(conversation_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_messages_is_read ON admin_messages(is_read)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_admin_notifications_read ON admin_notifications(read)"
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_inventory_items_category ON inventory_items(category)"
