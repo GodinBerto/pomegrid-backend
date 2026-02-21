@@ -13,15 +13,20 @@ from routes.farms.products import products
 from routes.farms.categories import categories
 from routes.farms.orders import orders
 from routes.farms.cart import carts
+from routes.farms.admin.product import products_admin
+from routes.farms.admin.category import categories_admin
+from routes.farms.admin.order import orders_admin
 from routes.user.user import users
 
 #Routes Artisans
 from routes.artisans.workers import workers
 from routes.artisans.jobs import jobs
-from routes.artisans.admins import admins
+from routes.artisans.admin.admins import admins
 from routes.artisans.bookings import bookings
-from routes.admin.dashboard import admin_api
-from routes.worker.dashboard import worker_api
+from routes.artisans.admin.workers import workers_admin
+from routes.artisans.admin.bookings import bookings_admin
+from routes.artisans.admin.dashboard import admin_api
+from routes.artisans.worker.dashboard import worker_api
 
 #Cloudinary
 import cloudinary
@@ -77,12 +82,17 @@ app.register_blueprint(categories, url_prefix=f'{url}/categories')
 app.register_blueprint(users, url_prefix=f'{url}/users')
 app.register_blueprint(orders, url_prefix=f'{url}/orders')
 app.register_blueprint(carts, url_prefix=f'{url}/carts')
+app.register_blueprint(products_admin, url_prefix=f'{url}/products')
+app.register_blueprint(categories_admin, url_prefix=f'{url}/categories')
+app.register_blueprint(orders_admin, url_prefix=f'{url}/orders')
 
 # Workers Blueprints
 app.register_blueprint(workers, url_prefix=f"{url}/workers")
+app.register_blueprint(workers_admin, url_prefix=f"{url}/workers")
 app.register_blueprint(jobs, url_prefix=f"{url}/jobs")
 app.register_blueprint(admins, url_prefix=f"{url}/admins")
 app.register_blueprint(bookings, url_prefix=f"{url}")
+app.register_blueprint(bookings_admin, url_prefix=f"{url}")
 app.register_blueprint(admin_api, url_prefix=f"{url}/admin")
 app.register_blueprint(worker_api, url_prefix=f"{url}/worker")
 

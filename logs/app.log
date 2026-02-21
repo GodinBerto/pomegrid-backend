@@ -944,3 +944,5 @@ werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on 
 2026-02-21 00:03:03,913 INFO [app] GET /api/v1/users 200 13ms
 2026-02-21 00:03:07,993 INFO [app] GET /api/v1/orders 200 4090ms
 2026-02-21 00:03:07,993 INFO [app] GET /api/v1/orders/stats/overview 200 4084ms
+2026-02-21 00:13:22,833 INFO [app] GET /api/v1/auth/me 401 0ms
+2026-02-21 00:13:26,962 INFO [app] POST /api/v1/auth/refresh 422 4102ms

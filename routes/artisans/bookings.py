@@ -7,7 +7,6 @@ from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
 
 from database import db_connection
-from decorators.roles import admin_required
 from extensions.redis_client import get_redis_client
 
 bookings = Blueprint("bookings", __name__)
@@ -260,40 +259,3 @@ def get_booking(booking_id):
     except Exception as e:
         return _api_response(None, f"Error: {e}", 500, False)
 
-
-@bookings.route("/bookings/<int:booking_id>/status", methods=["PATCH"])
-@admin_required
-def update_booking_status(booking_id):
-    data = request.get_json() or {}
-    status = (data.get("status") or "").strip().lower()
-
-    if status not in ALLOWED_BOOKING_STATUSES:
-        return _api_response(None, "Invalid status", 400, False)
-
-    try:
-        conn, cursor = db_connection()
-        cursor.execute("SELECT id FROM bookings WHERE id = ?", (booking_id,))
-        booking = cursor.fetchone()
-        if not booking:
-            conn.close()
-            return _api_response(None, "Booking not found", 404, False)
-
-        cursor.execute(
-            """
-            UPDATE bookings
-            SET status = ?, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-            """,
-            (status, booking_id),
-        )
-        conn.commit()
-        cursor.execute("SELECT * FROM bookings WHERE id = ?", (booking_id,))
-        row = cursor.fetchone()
-        worker_id = row["worker_id"]
-        conn.close()
-        _invalidate_admin_cache()
-        _invalidate_worker_dashboard_cache(worker_id)
-
-        return _api_response(_serialize_booking(row), "Booking status updated", 200, True)
-    except Exception as e:
-        return _api_response(None, f"Error: {e}", 500, False)
