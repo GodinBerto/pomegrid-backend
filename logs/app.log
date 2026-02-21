@@ -669,3 +669,278 @@ werkzeug.exceptions.MethodNotAllowed: 405 Method Not Allowed: The method is not 
 2026-02-20 23:01:37,719 INFO [app] GET /api/v1/auth/me 401 0ms
 2026-02-20 23:01:41,815 INFO [app] POST /api/v1/auth/refresh 422 4073ms
 2026-02-20 23:01:49,236 INFO [app] POST /api/v1/auth/login 200 2111ms
+2026-02-20 23:05:30,489 INFO [app] GET /api/v1/auth/me 401 0ms
+2026-02-20 23:05:34,539 INFO [app] POST /api/v1/auth/refresh 422 4041ms
+2026-02-20 23:09:30,944 INFO [app] POST /api/v1/auth/login 200 2122ms
+2026-02-20 23:09:34,684 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:09:34,687 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:09:34,688 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-02-20 23:09:34,689 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:09:34,697 INFO [app] GET /api/v1/admin/users 500 13ms
+2026-02-20 23:09:34,700 INFO [app] GET /api/v1/admin/orders 500 13ms
+2026-02-20 23:09:34,703 INFO [app] GET /api/v1/admin/orders/stats/overview 500 13ms
+2026-02-20 23:09:34,769 INFO [app] GET /api/v1/admin/messages/conversations 200 18ms
+2026-02-20 23:09:34,886 INFO [app] GET /api/v1/users 200 9ms
+2026-02-20 23:09:35,143 INFO [app] GET /api/v1/carts/ 200 4091ms
+2026-02-20 23:09:35,161 INFO [app] GET /api/v1/products/ 200 4112ms
+2026-02-20 23:09:38,980 INFO [app] GET /api/v1/orders 200 4107ms
+2026-02-20 23:09:38,980 INFO [app] GET /api/v1/orders/stats/overview 200 4106ms
+2026-02-20 23:09:44,707 INFO [app] GET /api/v1/categories/ 200 4091ms
+2026-02-20 23:11:05,923 INFO [app] POST /api/v1/products/ 500 11ms
+2026-02-20 23:11:05,944 INFO [app] POST /api/v1/products/ 500 5ms
+2026-02-20 23:11:45,643 INFO [app] POST /api/v1/products/ 500 6ms
+2026-02-20 23:11:45,663 INFO [app] POST /api/v1/products/ 500 3ms
+2026-02-20 23:15:42,016 INFO [app] POST /api/v1/auth/login 200 2137ms
+2026-02-20 23:15:46,093 INFO [app] POST /api/v1/products 201 4075ms
+2026-02-20 23:47:37,837 INFO [app] POST /api/v1/products/ 401 0ms
+2026-02-20 23:47:41,978 INFO [app] POST /api/v1/auth/refresh 422 4101ms
+2026-02-20 23:47:42,000 INFO [app] POST /api/v1/products/ 401 0ms
+2026-02-20 23:47:45,823 INFO [app] POST /api/v1/auth/logout 401 0ms
+2026-02-20 23:47:55,592 INFO [app] POST /api/v1/auth/login 200 2137ms
+2026-02-20 23:47:59,767 INFO [app] GET /api/v1/products/ 200 4076ms
+2026-02-20 23:47:59,784 INFO [app] GET /api/v1/carts/ 200 4064ms
+2026-02-20 23:47:59,867 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-02-20 23:47:59,875 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:47:59,878 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:47:59,879 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:47:59,899 INFO [app] GET /api/v1/admin/users 500 23ms
+2026-02-20 23:47:59,900 INFO [app] GET /api/v1/admin/messages/conversations 200 20ms
+2026-02-20 23:47:59,909 INFO [app] GET /api/v1/admin/orders/stats/overview 500 29ms
+2026-02-20 23:47:59,911 INFO [app] GET /api/v1/admin/orders 500 33ms
+2026-02-20 23:48:00,015 INFO [app] GET /api/v1/users 200 18ms
+2026-02-20 23:48:04,100 INFO [app] GET /api/v1/orders/stats/overview 200 4099ms
+2026-02-20 23:48:04,152 INFO [app] GET /api/v1/orders 200 4149ms
+2026-02-20 23:48:13,265 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:48:13,268 INFO [app] GET /api/v1/admin/orders 500 3ms
+2026-02-20 23:48:17,350 INFO [app] GET /api/v1/orders 200 4071ms
+2026-02-20 23:48:21,458 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:48:21,460 INFO [app] GET /api/v1/admin/orders/2 500 1ms
+2026-02-20 23:48:25,567 INFO [app] GET /api/v1/orders/2 200 4086ms
+2026-02-20 23:48:42,039 INFO [app] GET /api/v1/categories/ 200 4110ms
+2026-02-20 23:49:58,366 INFO [app] POST /api/v1/products/ 201 4099ms
+2026-02-20 23:50:02,485 INFO [app] GET /api/v1/products/ 200 4109ms
+2026-02-20 23:51:01,809 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:51:01,813 INFO [app] GET /api/v1/admin/orders 500 4ms
+2026-02-20 23:51:01,815 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:51:01,823 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-02-20 23:51:01,827 INFO [app] GET /api/v1/admin/orders/stats/overview 500 11ms
+2026-02-20 23:51:06,024 INFO [app] GET /api/v1/orders 200 4078ms
+2026-02-20 23:51:06,039 INFO [app] GET /api/v1/orders/stats/overview 200 4092ms
+2026-02-20 23:51:06,661 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:51:06,663 INFO [app] GET /api/v1/admin/orders 500 2ms
+2026-02-20 23:51:08,625 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:51:08,626 INFO [app] GET /api/v1/admin/orders/2 500 1ms
+2026-02-20 23:51:10,769 INFO [app] GET /api/v1/orders 200 4096ms
+2026-02-20 23:51:12,767 INFO [app] GET /api/v1/orders/2 200 4113ms
+2026-02-20 23:55:54,327 INFO [app] GET /api/v1/admin/notifications 401 1ms
+2026-02-20 23:55:54,591 INFO [app] GET /api/v1/auth/me 401 0ms
+2026-02-20 23:55:58,635 INFO [app] POST /api/v1/auth/refresh 422 4059ms
+2026-02-20 23:55:58,671 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-20 23:55:58,674 INFO [app] GET /api/v1/notifications 500 3ms
+2026-02-21 00:02:31,881 INFO [app] POST /api/v1/auth/login 200 2178ms
+2026-02-21 00:02:36,096 INFO [app] GET /api/v1/products/ 200 4091ms
+2026-02-21 00:02:36,096 INFO [app] GET /api/v1/carts/ 200 4087ms
+2026-02-21 00:02:53,440 INFO [app] GET /api/v1/categories/ 200 4088ms
+2026-02-21 00:03:03,713 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-21 00:03:03,716 INFO [app] GET /api/v1/admin/users 500 2ms
+2026-02-21 00:03:03,721 INFO [app] GET /api/v1/admin/notifications 200 12ms
+2026-02-21 00:03:03,728 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-21 00:03:03,731 INFO [app] GET /api/v1/admin/orders 500 3ms
+2026-02-21 00:03:03,737 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-02-21 00:03:03,751 INFO [app] GET /api/v1/admin/orders/stats/overview 500 14ms
+2026-02-21 00:03:03,782 INFO [app] GET /api/v1/admin/messages/conversations 200 13ms
+2026-02-21 00:03:03,913 INFO [app] GET /api/v1/users 200 13ms
+2026-02-21 00:03:07,993 INFO [app] GET /api/v1/orders 200 4090ms
+2026-02-21 00:03:07,993 INFO [app] GET /api/v1/orders/stats/overview 200 4084ms

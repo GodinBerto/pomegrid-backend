@@ -85,6 +85,25 @@ def _normalize_bool(value, default=False):
     return bool(default)
 
 
+def _normalize_animal_type(value):
+    normalized = str(value or "").strip()
+    return normalized or None
+
+
+def _ensure_product_type(cursor, animal_type):
+    normalized = _normalize_animal_type(animal_type)
+    if not normalized:
+        return None
+    cursor.execute(
+        """
+        INSERT OR IGNORE INTO ProductTypes (id, name)
+        VALUES (?, ?)
+        """,
+        (normalized, normalized),
+    )
+    return normalized
+
+
 def _normalize_media_arrays(payload):
     image_url = str(payload.get("image_url") or "").strip()
     image_urls = payload.get("image_urls")
@@ -347,7 +366,7 @@ def create_product():
     description = str(data.get("description") or "").strip()
     category = str(data.get("category") or "").strip()
     category_id = data.get("category_id")
-    animal_type = data.get("animal_type")
+    animal_type = _normalize_animal_type(data.get("animal_type"))
     animal_stage = data.get("animal_stage")
 
     try:
@@ -378,6 +397,7 @@ def create_product():
 
     try:
         conn, cursor = db_connection()
+        animal_type = _ensure_product_type(cursor, animal_type)
         cursor.execute(
             """
             INSERT INTO Products (
@@ -470,7 +490,7 @@ def update_product(product_id):
     description = str(data.get("description", existing["description"] or "")).strip()
     category = str(data.get("category", existing["category"] or "")).strip()
     category_id = data.get("category_id", existing["category_id"])
-    animal_type = data.get("animal_type", existing["animal_type"])
+    animal_type = _normalize_animal_type(data.get("animal_type", existing["animal_type"]))
     animal_stage = data.get("animal_stage", existing["animal_stage"])
 
     try:
@@ -517,6 +537,7 @@ def update_product(product_id):
     is_fresh = _normalize_bool(data.get("is_fresh", existing["is_fresh"]), bool(existing["is_fresh"]))
 
     try:
+        animal_type = _ensure_product_type(cursor, animal_type)
         cursor.execute(
             """
             UPDATE Products

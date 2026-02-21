@@ -359,6 +359,16 @@ def create_tables():
         )
     ''')
 
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS ProductTypes (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT
+        )
+        '''
+    )
+
     # Create products table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Products (
@@ -895,6 +905,17 @@ def create_tables():
         WHERE status IS NULL OR TRIM(status) = ''
         """
     )
+
+    cursor.execute("SELECT DISTINCT animal_type FROM Products WHERE animal_type IS NOT NULL AND TRIM(animal_type) != ''")
+    for animal_type_row in cursor.fetchall():
+        animal_type_value = str(animal_type_row["animal_type"]).strip()
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO ProductTypes (id, name)
+            VALUES (?, ?)
+            """,
+            (animal_type_value, animal_type_value),
+        )
 
     cursor.execute("SELECT id, image_url, image_urls, video_urls FROM Products")
     for product in cursor.fetchall():
