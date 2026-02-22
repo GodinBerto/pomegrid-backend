@@ -283,8 +283,8 @@ def refresh():
     except Exception as e:
         logger.warning("Redis unavailable, skipping refresh reuse check: %s", e)
 
-    new_access = create_access_token(identity=user_id)
-    new_refresh = create_refresh_token(identity=user_id)
+    new_access = create_access_token(identity=str(user_id))
+    new_refresh = create_refresh_token(identity=str(user_id))
     new_csrf = get_csrf_token(new_refresh)
 
     payload = {
@@ -295,7 +295,7 @@ def refresh():
         payload["message"] = "Refresh token already used. We rotated your refresh token; please retry with the new CSRF token."
         payload["requires_retry"] = True
 
-    resp = jsonify(envelope(payload, "Token refreshed", 200))
+    resp = jsonify(payload)
     set_refresh_cookies(resp, new_refresh)
 
     return resp, 200
