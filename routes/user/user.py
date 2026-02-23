@@ -1,10 +1,10 @@
 import logging
 
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 
 from database import db_connection
-from decorators.roles import admin_required, normalize_role
+from decorators.roles import admin_required, get_authenticated_user_id, normalize_role
 from routes.api_envelope import build_meta, envelope, parse_pagination
 
 
@@ -26,7 +26,9 @@ def _serialize_user_row(row):
 @users.route("/me", methods=["GET"])
 @jwt_required()
 def get_current_user():
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
     try:
         conn, cursor = db_connection()
         cursor.execute(
@@ -67,7 +69,9 @@ def get_current_user():
 @users.route("/me", methods=["PUT"])
 @jwt_required()
 def update_current_user():
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
     data = request.get_json() or {}
     allowed_fields = ["full_name", "phone", "address", "profile_image_url", "date_of_birth", "avatar"]
     updates = {k: data[k] for k in allowed_fields if k in data}

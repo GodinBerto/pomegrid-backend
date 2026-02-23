@@ -2536,3 +2536,398 @@ ValueError: invalid literal for int() with base 10: 'None'
 2026-02-23 07:35:24,790 INFO [app] GET /api/v1/products/ 200 2054ms
 2026-02-23 07:35:24,790 INFO [app] GET /api/v1/orders/stats/overview 200 2057ms
 2026-02-23 07:35:24,806 INFO [app] GET /api/v1/orders 200 2076ms
+2026-02-23 07:52:05,703 INFO [app] GET /api/v1/categories/ 200 4132ms
+2026-02-23 07:54:27,336 INFO [app] POST /api/v1/products/ 401 3ms
+2026-02-23 07:54:29,403 ERROR [app] Unhandled exception: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\rate_limit.py", line 48, in wrapper
+    return func(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\routes\authentication\authentication.py", line 272, in refresh
+    user_id = int(get_jwt_identity())
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2026-02-23 07:54:29,416 INFO [app] POST /api/v1/auth/refresh 500 2057ms
+2026-02-23 07:54:29,444 INFO [app] POST /api/v1/products/ 401 1ms
+2026-02-23 07:58:13,656 INFO [app] POST /api/v1/auth/login 200 2110ms
+2026-02-23 07:58:17,827 INFO [app] GET /api/v1/products/ 200 4078ms
+2026-02-23 07:58:17,874 INFO [app] GET /api/v1/carts/ 200 4115ms
+2026-02-23 08:00:48,802 INFO [app] GET /api/v1/admin/notifications 200 19ms
+2026-02-23 08:00:48,822 INFO [app] GET /api/v1/users 200 27ms
+2026-02-23 08:00:48,823 INFO [app] GET /api/v1/admin/messages/conversations 200 26ms
+2026-02-23 08:00:52,877 INFO [app] GET /api/v1/orders 200 4077ms
+2026-02-23 08:00:52,878 INFO [app] GET /api/v1/orders/stats/overview 200 4079ms
+2026-02-23 08:00:56,965 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-23 08:00:57,200 INFO [app] GET /api/v1/admin/notifications 200 11ms
+2026-02-23 08:00:57,201 INFO [app] GET /api/v1/users 200 8ms
+2026-02-23 08:00:57,232 INFO [app] GET /api/v1/admin/messages/conversations 200 26ms
+2026-02-23 08:00:59,264 INFO [app] GET /api/v1/orders 200 2061ms
+2026-02-23 08:00:59,264 INFO [app] GET /api/v1/orders/stats/overview 200 2060ms
+2026-02-23 08:01:01,240 INFO [app] GET /api/v1/products/ 200 4050ms
+2026-02-23 08:01:08,080 INFO [app] GET /api/v1/orders 200 4081ms
+2026-02-23 08:02:04,110 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-02-23 08:02:04,205 INFO [app] GET /api/v1/admin/notifications 200 12ms
+2026-02-23 08:02:08,248 INFO [app] GET /api/v1/products/ 200 4048ms
+2026-02-23 08:03:20,702 INFO [app] GET /api/v1/auth/me 401 0ms
+2026-02-23 08:03:24,784 INFO [app] POST /api/v1/auth/refresh 200 4061ms
+2026-02-23 08:03:24,795 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\routes\authentication\authentication.py", line 307, in auth_me
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:03:24,798 INFO [app] GET /api/v1/auth/me 500 3ms
+2026-02-23 08:04:37,747 INFO [app] POST /api/v1/auth/login 200 2113ms
+2026-02-23 08:04:41,929 INFO [app] GET /api/v1/products/ 200 4073ms
+2026-02-23 08:04:41,944 INFO [app] GET /api/v1/carts/ 200 4082ms
+2026-02-23 08:49:32,015 INFO [app] GET /api/v1/admin/notifications 401 1ms
+2026-02-23 08:49:32,025 INFO [app] GET /api/v1/users 401 0ms
+2026-02-23 08:49:32,031 INFO [app] GET /api/v1/orders 401 0ms
+2026-02-23 08:49:32,033 INFO [app] GET /api/v1/orders/stats/overview 401 0ms
+2026-02-23 08:49:32,057 INFO [app] GET /api/v1/admin/messages/conversations 401 1ms
+2026-02-23 08:49:36,076 INFO [app] GET /api/v1/products/ 200 4053ms
+2026-02-23 08:49:36,374 INFO [app] POST /api/v1/auth/refresh 200 4072ms
+2026-02-23 08:49:36,387 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:36,388 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:36,391 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:36,393 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:36,396 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:36,398 INFO [app] GET /api/v1/admin/notifications 500 11ms
+2026-02-23 08:49:36,400 INFO [app] GET /api/v1/users 500 12ms
+2026-02-23 08:49:36,401 INFO [app] GET /api/v1/orders 500 10ms
+2026-02-23 08:49:36,402 INFO [app] GET /api/v1/orders/stats/overview 500 10ms
+2026-02-23 08:49:36,403 INFO [app] GET /api/v1/admin/messages/conversations 500 7ms
+2026-02-23 08:49:37,420 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:37,422 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:37,422 INFO [app] GET /api/v1/admin/notifications 500 1ms
+2026-02-23 08:49:37,424 INFO [app] GET /api/v1/users 500 2ms
+2026-02-23 08:49:37,450 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:37,458 INFO [app] GET /api/v1/orders 500 9ms
+2026-02-23 08:49:37,460 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:37,534 INFO [app] GET /api/v1/orders/stats/overview 500 73ms
+2026-02-23 08:49:37,559 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:37,571 INFO [app] GET /api/v1/admin/messages/conversations 500 24ms
+2026-02-23 08:49:39,447 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:39,448 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:39,449 INFO [app] GET /api/v1/admin/notifications 500 2ms
+2026-02-23 08:49:39,450 INFO [app] GET /api/v1/users 500 2ms
+2026-02-23 08:49:39,570 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:39,571 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:39,572 INFO [app] GET /api/v1/orders 500 1ms
+2026-02-23 08:49:39,572 INFO [app] GET /api/v1/orders/stats/overview 500 1ms
+2026-02-23 08:49:39,583 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:39,584 INFO [app] GET /api/v1/admin/messages/conversations 500 1ms
+2026-02-23 08:49:43,475 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:43,476 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:43,477 INFO [app] GET /api/v1/users 500 2ms
+2026-02-23 08:49:43,479 INFO [app] GET /api/v1/admin/notifications 500 3ms
+2026-02-23 08:49:43,600 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:43,601 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:43,603 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\roles.py", line 46, in wrapper
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-23 08:49:43,604 INFO [app] GET /api/v1/orders 500 5ms
+2026-02-23 08:49:43,605 INFO [app] GET /api/v1/orders/stats/overview 500 3ms
+2026-02-23 08:49:43,605 INFO [app] GET /api/v1/admin/messages/conversations 500 1ms
+2026-02-23 09:01:33,362 INFO [app] GET /api/v1/auth/me 401 3ms
+2026-02-23 09:01:35,603 INFO [app] POST /api/v1/auth/refresh 401 2081ms
+2026-02-23 09:01:54,167 INFO [app] POST /api/v1/auth/login 200 2116ms
+2026-02-23 09:01:58,330 INFO [app] GET /api/v1/carts/ 200 4076ms
+2026-02-23 09:01:58,330 INFO [app] GET /api/v1/products/ 200 4078ms
+2026-02-23 09:01:59,355 INFO [app] GET /api/v1/admin/notifications 200 1ms
+2026-02-23 09:01:59,370 INFO [app] GET /api/v1/users 200 8ms
+2026-02-23 09:01:59,373 INFO [app] GET /api/v1/admin/messages/conversations 200 6ms
+2026-02-23 09:02:03,467 INFO [app] GET /api/v1/orders 200 4103ms
+2026-02-23 09:02:03,468 INFO [app] GET /api/v1/orders/stats/overview 200 4102ms
+2026-02-23 09:03:10,531 INFO [app] GET /api/v1/admin/messages/conversations 200 3ms
+2026-02-23 09:03:11,046 INFO [app] GET /api/v1/orders/stats/overview 200 4112ms
+2026-02-23 09:03:11,046 INFO [app] GET /api/v1/orders 200 4114ms
+2026-02-23 09:04:05,787 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-23 09:04:05,986 INFO [app] GET /api/v1/admin/notifications 200 15ms
+2026-02-23 09:04:06,010 INFO [app] GET /api/v1/users 200 26ms
+2026-02-23 09:04:06,025 INFO [app] GET /api/v1/admin/messages/conversations 200 14ms
+2026-02-23 09:04:08,052 INFO [app] GET /api/v1/orders/stats/overview 200 2058ms
+2026-02-23 09:04:10,091 INFO [app] GET /api/v1/orders 200 4105ms
+2026-02-23 09:04:10,092 INFO [app] GET /api/v1/products/ 200 4112ms
+2026-02-23 09:04:16,086 INFO [app] GET /api/v1/orders 200 4118ms
+2026-02-23 09:05:44,060 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-23 09:05:44,168 INFO [app] GET /api/v1/admin/notifications 200 18ms
+2026-02-23 09:05:44,192 INFO [app] GET /api/v1/users 200 23ms
+2026-02-23 09:05:44,195 INFO [app] GET /api/v1/admin/messages/conversations 200 5ms
+2026-02-23 09:05:48,261 INFO [app] GET /api/v1/products/ 200 4099ms
+2026-02-23 09:05:48,300 INFO [app] GET /api/v1/orders/stats/overview 200 4116ms
+2026-02-23 09:05:48,300 INFO [app] GET /api/v1/orders 200 4124ms
+2026-02-23 09:06:16,572 INFO [app] GET /api/v1/orders 200 4076ms
+2026-02-23 09:06:24,458 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-23 09:06:24,616 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-02-23 09:06:24,647 INFO [app] GET /api/v1/users 200 29ms
+2026-02-23 09:06:24,660 INFO [app] GET /api/v1/admin/messages/conversations 200 6ms
+2026-02-23 09:06:26,665 INFO [app] GET /api/v1/products/ 200 2052ms
+2026-02-23 09:06:26,712 INFO [app] GET /api/v1/orders 200 2081ms
+2026-02-23 09:06:26,712 INFO [app] GET /api/v1/orders/stats/overview 200 2078ms
+2026-02-23 09:06:56,714 INFO [app] GET /api/v1/auth/me 401 1ms
+2026-02-23 09:06:58,772 INFO [app] POST /api/v1/auth/refresh 401 2048ms
+2026-02-23 09:07:30,066 INFO [app] POST /api/v1/auth/login 200 2123ms
+2026-02-23 09:07:34,253 INFO [app] GET /api/v1/carts/ 200 4100ms
+2026-02-23 09:07:34,270 INFO [app] GET /api/v1/products/ 200 4119ms
+2026-02-23 09:11:57,648 INFO [app] GET /api/v1/products/ 200 4104ms
+2026-02-23 09:12:06,619 INFO [app] POST /api/v1/auth/login 200 2090ms
+2026-02-23 09:12:10,785 INFO [app] GET /api/v1/carts/ 200 4091ms
+2026-02-23 09:12:16,734 INFO [app] GET /api/v1/admin/notifications 200 2ms
+2026-02-23 09:12:16,750 INFO [app] GET /api/v1/users 200 12ms
+2026-02-23 09:12:16,756 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-02-23 09:12:20,843 INFO [app] GET /api/v1/orders 200 4102ms
+2026-02-23 09:12:20,843 INFO [app] GET /api/v1/orders/stats/overview 200 4097ms
+2026-02-23 09:14:06,719 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-23 09:14:06,965 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-02-23 09:14:06,977 INFO [app] GET /api/v1/users 200 16ms
+2026-02-23 09:14:07,004 INFO [app] GET /api/v1/admin/messages/conversations 200 20ms
+2026-02-23 09:14:11,034 INFO [app] GET /api/v1/products/ 200 4076ms
+2026-02-23 09:14:11,067 INFO [app] GET /api/v1/orders 200 4089ms
+2026-02-23 09:14:11,080 INFO [app] GET /api/v1/orders/stats/overview 200 4098ms
+2026-02-23 09:14:21,052 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-02-23 09:14:21,145 INFO [app] GET /api/v1/admin/notifications 200 12ms
+2026-02-23 09:14:21,171 INFO [app] GET /api/v1/users 200 31ms
+2026-02-23 09:14:21,179 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-02-23 09:14:23,181 INFO [app] GET /api/v1/products/ 200 2045ms
+2026-02-23 09:14:23,228 INFO [app] GET /api/v1/orders 200 2077ms
+2026-02-23 09:14:23,232 INFO [app] GET /api/v1/orders/stats/overview 200 2065ms
+2026-02-23 09:15:11,247 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-23 09:15:11,337 INFO [app] GET /api/v1/admin/notifications 200 15ms
+2026-02-23 09:15:11,338 INFO [app] GET /api/v1/users 200 9ms
+2026-02-23 09:15:11,345 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-02-23 09:15:15,415 INFO [app] GET /api/v1/orders 200 4085ms
+2026-02-23 09:15:15,416 INFO [app] GET /api/v1/orders/stats/overview 200 4082ms
+2026-02-23 09:15:15,418 INFO [app] GET /api/v1/products/ 200 4091ms
+2026-02-23 09:15:23,543 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-23 09:15:23,638 INFO [app] GET /api/v1/admin/notifications 200 13ms
+2026-02-23 09:15:23,645 INFO [app] GET /api/v1/users 200 13ms
+2026-02-23 09:15:23,655 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-02-23 09:15:25,685 INFO [app] GET /api/v1/products/ 200 2058ms
+2026-02-23 09:15:25,717 INFO [app] GET /api/v1/orders 200 2081ms
+2026-02-23 09:15:25,719 INFO [app] GET /api/v1/orders/stats/overview 200 2079ms
+2026-02-23 09:15:59,198 INFO [app] GET /api/v1/orders 200 4101ms
+2026-02-23 09:16:24,208 INFO [app] GET /api/v1/carts/ 200 4091ms
+2026-02-23 09:16:25,692 INFO [app] GET /api/v1/categories/ 200 4100ms
+2026-02-23 09:16:27,560 INFO [app] POST /api/v1/carts/ 201 2072ms
+2026-02-23 09:16:31,677 INFO [app] GET /api/v1/carts/ 200 4109ms
+2026-02-23 09:16:35,844 INFO [app] PUT /api/v1/carts/22 200 2060ms
+2026-02-23 09:16:36,409 INFO [app] PUT /api/v1/carts/22 200 2025ms
+2026-02-23 09:16:39,949 INFO [app] GET /api/v1/carts/ 200 4096ms
+2026-02-23 09:16:41,982 INFO [app] GET /api/v1/carts/ 200 2028ms
+2026-02-23 09:16:42,431 INFO [app] PUT /api/v1/carts/22 200 2030ms
+2026-02-23 09:16:46,532 INFO [app] GET /api/v1/carts/ 200 4091ms
+2026-02-23 09:16:53,778 INFO [app] DELETE /api/v1/carts/22 200 2064ms
+2026-02-23 09:16:57,894 INFO [app] GET /api/v1/carts/ 200 4108ms
+2026-02-23 09:17:39,428 INFO [app] GET /api/v1/admin/notifications 401 1ms
+2026-02-23 09:17:39,430 INFO [app] GET /api/v1/orders/stats/overview 401 1ms
+2026-02-23 09:17:39,431 INFO [app] GET /api/v1/orders 401 0ms
+2026-02-23 09:17:39,442 INFO [app] GET /api/v1/admin/messages/conversations 401 0ms
+2026-02-23 09:17:41,631 INFO [app] POST /api/v1/auth/refresh 401 2033ms

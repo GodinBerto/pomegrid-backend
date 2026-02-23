@@ -16,7 +16,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from config import Config
 from database import db_connection
 from decorators.rate_limit import rate_limit
-from decorators.roles import normalize_role
+from decorators.roles import get_authenticated_user_id, normalize_role
 from extensions.redis_client import get_redis_client
 from routes.api_envelope import envelope
 from routes import response
@@ -212,6 +212,12 @@ def login():
         date_of_birth,
     ) = user
 
+    try:
+        user_id = int(user_id)
+    except (TypeError, ValueError):
+        logger.error("Login failed because user id is invalid for email %s: %r", email, user_id)
+        return jsonify(envelope(None, "Unable to authenticate user", 500, False)), 500
+
     if not check_password_hash(password_hash, password):
         return jsonify(envelope(None, "Invalid credentials", 401, False)), 401
     if not bool(is_active):
@@ -269,7 +275,45 @@ def logout():
 @rate_limit("auth-refresh", limit=30, window_seconds=60)
 def refresh():
     jwt_data = get_jwt()
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        resp = jsonify(
+            {
+                "message": "Invalid refresh token identity. Please sign in again.",
+                "requires_login": True,
+            }
+        )
+        unset_jwt_cookies(resp)
+        return resp, 401
+
+    conn, cursor = db_connection()
+    cursor.execute("SELECT is_active, status FROM Users WHERE id = ?", (user_id,))
+    user_row = cursor.fetchone()
+    conn.close()
+    if not user_row:
+        resp = jsonify(
+            {
+                "message": "User account no longer exists. Please sign in again.",
+                "requires_login": True,
+            }
+        )
+        unset_jwt_cookies(resp)
+        return resp, 401
+
+    user_status = str(
+        user_row["status"] or ("active" if bool(user_row["is_active"]) else "inactive")
+    ).strip().lower()
+    user_is_active = bool(user_row["is_active"]) and user_status in {"", "active"}
+    if not user_is_active:
+        resp = jsonify(
+            {
+                "message": "User account is inactive. Please sign in again.",
+                "requires_login": True,
+            }
+        )
+        unset_jwt_cookies(resp)
+        return resp, 403
+
     refresh_jti = jwt_data.get("jti")
     expires_in = jwt_data.get("exp", 0) - jwt_data.get("iat", 0)
 
@@ -304,7 +348,9 @@ def refresh():
 @auth.route("/me", methods=["GET"])
 @jwt_required()
 def auth_me():
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
     conn, cursor = db_connection()
     cursor.execute(
         """

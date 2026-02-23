@@ -10,6 +10,7 @@ from routes.api_envelope import envelope
 ROLE_USER = "user"
 ROLE_WORKER = "worker"
 ROLE_ADMIN = "admin"
+INVALID_JWT_IDENTITIES = {"", "none", "null", "undefined"}
 
 
 def normalize_role(user_type, is_admin=False):
@@ -19,6 +20,24 @@ def normalize_role(user_type, is_admin=False):
     if normalized == "worker":
         return ROLE_WORKER
     return ROLE_USER
+
+
+def _normalize_identity(raw_identity):
+    if raw_identity is None:
+        return None
+
+    normalized = str(raw_identity).strip()
+    if normalized.lower() in INVALID_JWT_IDENTITIES:
+        return None
+
+    try:
+        return int(normalized)
+    except (TypeError, ValueError):
+        return None
+
+
+def get_authenticated_user_id():
+    return _normalize_identity(get_jwt_identity())
 
 
 def _get_user(user_id):
@@ -43,7 +62,9 @@ def role_required(*allowed_roles):
         @wraps(func)
         @jwt_required()
         def wrapper(*args, **kwargs):
-            user_id = int(get_jwt_identity())
+            user_id = get_authenticated_user_id()
+            if user_id is None:
+                return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
             user = _get_user(user_id)
             if not user:
                 return jsonify(envelope(None, "User not found", 404, False)), 404

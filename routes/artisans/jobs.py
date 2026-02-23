@@ -1,7 +1,8 @@
 import logging
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import jwt_required
 from database import db_connection
+from decorators.roles import get_authenticated_user_id
 from routes import response
 
 jobs = Blueprint("jobs", __name__)
@@ -21,7 +22,9 @@ def _is_admin(user_id):
 @jobs.route("/hire", methods=["POST"])
 @jwt_required()
 def hire_artisan():
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(response(None, "Invalid token identity", 401)), 401
     data = request.get_json() or {}
 
     worker_id = data.get("worker_id")
@@ -66,7 +69,9 @@ def hire_artisan():
 @jobs.route("/my-jobs", methods=["GET"])
 @jwt_required()
 def get_my_jobs():
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(response(None, "Invalid token identity", 401)), 401
     status = (request.args.get("status") or "").strip()
 
     try:
@@ -98,7 +103,9 @@ def get_my_jobs():
 @jobs.route("/", methods=["GET"])
 @jwt_required()
 def list_jobs_for_admin():
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(response(None, "Invalid token identity", 401)), 401
     if not _is_admin(user_id):
         return jsonify(response(None, "Admin access required", 403)), 403
 
@@ -158,7 +165,9 @@ def list_jobs_for_admin():
 @jobs.route("/<int:job_id>/status", methods=["PUT"])
 @jwt_required()
 def update_job_status(job_id):
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(response(None, "Invalid token identity", 401)), 401
     data = request.get_json() or {}
     status = data.get("status")
     if status not in ALLOWED_JOB_STATUSES:
@@ -216,7 +225,9 @@ def update_job_status(job_id):
 @jobs.route("/<int:job_id>/rating", methods=["POST"])
 @jwt_required()
 def rate_job_artisan(job_id):
-    user_id = int(get_jwt_identity())
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(response(None, "Invalid token identity", 401)), 401
     data = request.get_json() or {}
     rating = data.get("rating")
     feedback = data.get("feedback")
