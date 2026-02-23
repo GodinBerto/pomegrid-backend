@@ -43,7 +43,7 @@ def role_required(*allowed_roles):
         @wraps(func)
         @jwt_required()
         def wrapper(*args, **kwargs):
-            user_id = get_jwt_identity()
+            user_id = int(get_jwt_identity())
             user = _get_user(user_id)
             if not user:
                 return jsonify(envelope(None, "User not found", 404, False)), 404

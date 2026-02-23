@@ -2461,3 +2461,78 @@ TypeError: 'module' object is not callable
 2026-02-22 23:09:31,341 INFO [app] POST /api/v1/auth/refresh 200 4084ms
 2026-02-22 23:09:31,353 INFO [app] POST /api/v1/products/ 404 1ms
 2026-02-22 23:09:31,366 INFO [app] POST /api/v1/products/ 404 3ms
+2026-02-22 23:18:06,751 INFO [app] POST /api/v1/products/ 401 1ms
+2026-02-22 23:18:08,832 ERROR [app] Unhandled exception: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\decorators\rate_limit.py", line 48, in wrapper
+    return func(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\routes\authentication\authentication.py", line 272, in refresh
+    user_id = int(get_jwt_identity())
+TypeError: int() argument must be a string, a bytes-like object or a real number, not 'NoneType'
+2026-02-22 23:18:08,839 INFO [app] POST /api/v1/auth/refresh 500 2065ms
+2026-02-22 23:18:08,877 INFO [app] POST /api/v1/products/ 401 0ms
+2026-02-22 23:20:42,249 INFO [app] POST /api/v1/auth/login 200 2147ms
+2026-02-22 23:20:46,424 INFO [app] GET /api/v1/products/ 200 4094ms
+2026-02-22 23:20:46,440 INFO [app] GET /api/v1/carts/ 200 4112ms
+2026-02-22 23:21:13,666 INFO [app] GET /api/v1/admin/notifications 200 15ms
+2026-02-22 23:21:13,672 INFO [app] GET /api/v1/users 200 14ms
+2026-02-22 23:21:13,681 INFO [app] GET /api/v1/admin/messages/conversations 200 17ms
+2026-02-22 23:21:17,760 INFO [app] GET /api/v1/orders 200 4102ms
+2026-02-22 23:21:17,777 INFO [app] GET /api/v1/orders/stats/overview 200 4113ms
+2026-02-22 23:21:23,847 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-02-22 23:21:23,963 INFO [app] GET /api/v1/admin/notifications 200 14ms
+2026-02-22 23:21:23,973 INFO [app] GET /api/v1/users 200 16ms
+2026-02-22 23:21:23,975 INFO [app] GET /api/v1/admin/messages/conversations 200 15ms
+2026-02-22 23:21:26,014 INFO [app] GET /api/v1/orders 200 2059ms
+2026-02-22 23:21:26,015 INFO [app] GET /api/v1/orders/stats/overview 200 2058ms
+2026-02-22 23:21:26,015 INFO [app] GET /api/v1/products/ 200 2053ms
+2026-02-22 23:21:44,172 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-22 23:21:44,257 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-02-22 23:21:46,291 INFO [app] GET /api/v1/products/ 200 2038ms
+2026-02-22 23:25:30,857 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-22 23:25:30,946 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-02-22 23:25:35,012 INFO [app] GET /api/v1/products/ 200 4070ms
+2026-02-22 23:27:53,317 INFO [app] GET /api/v1/auth/me 401 0ms
+2026-02-22 23:27:57,438 INFO [app] POST /api/v1/auth/refresh 200 4101ms
+2026-02-22 23:27:57,449 ERROR [app] Unhandled exception: invalid literal for int() with base 10: 'None'
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\view_decorators.py", line 170, in decorator
+    return current_app.ensure_sync(fn)(*args, **kwargs)
+  File "E:\Projects\python\pomegrid-backend\routes\authentication\authentication.py", line 307, in auth_me
+    user_id = int(get_jwt_identity())
+ValueError: invalid literal for int() with base 10: 'None'
+2026-02-22 23:27:57,467 INFO [app] GET /api/v1/auth/me 500 18ms
+2026-02-22 23:34:23,945 INFO [app] GET /api/v1/products/ 200 4263ms
+2026-02-22 23:34:26,691 INFO [app] GET /api/v1/categories/ 200 4061ms
+2026-02-22 23:34:29,579 INFO [app] GET /api/v1/categories/ 200 2051ms
+2026-02-22 23:34:29,581 INFO [app] GET /api/v1/products/ 200 2056ms
+2026-02-23 07:32:43,457 INFO [app] GET /api/v1/products/ 200 4092ms
+2026-02-23 07:34:42,528 INFO [app] POST /api/v1/auth/login 200 2121ms
+2026-02-23 07:34:46,727 INFO [app] GET /api/v1/carts/ 200 4105ms
+2026-02-23 07:35:04,707 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-02-23 07:35:05,473 INFO [app] GET /api/v1/categories/ 200 4099ms
+2026-02-23 07:35:06,591 INFO [app] GET /api/v1/categories/ 200 2043ms
+2026-02-23 07:35:06,591 INFO [app] GET /api/v1/carts/ 200 2044ms
+2026-02-23 07:35:08,653 INFO [app] GET /api/v1/products/ 200 4106ms
+2026-02-23 07:35:10,435 INFO [app] GET /api/v1/admin/notifications 200 15ms
+2026-02-23 07:35:10,448 INFO [app] GET /api/v1/users 200 12ms
+2026-02-23 07:35:10,460 INFO [app] GET /api/v1/admin/messages/conversations 200 17ms
+2026-02-23 07:35:14,508 INFO [app] GET /api/v1/orders 200 4070ms
+2026-02-23 07:35:14,508 INFO [app] GET /api/v1/orders/stats/overview 200 4068ms
+2026-02-23 07:35:22,573 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-02-23 07:35:22,722 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-02-23 07:35:22,761 INFO [app] GET /api/v1/admin/messages/conversations 200 20ms
+2026-02-23 07:35:22,767 INFO [app] GET /api/v1/users 200 38ms
+2026-02-23 07:35:24,790 INFO [app] GET /api/v1/products/ 200 2054ms
+2026-02-23 07:35:24,790 INFO [app] GET /api/v1/orders/stats/overview 200 2057ms
+2026-02-23 07:35:24,806 INFO [app] GET /api/v1/orders 200 2076ms

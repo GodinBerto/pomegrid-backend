@@ -269,7 +269,7 @@ def logout():
 @rate_limit("auth-refresh", limit=30, window_seconds=60)
 def refresh():
     jwt_data = get_jwt()
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     refresh_jti = jwt_data.get("jti")
     expires_in = jwt_data.get("exp", 0) - jwt_data.get("iat", 0)
 
@@ -304,7 +304,7 @@ def refresh():
 @auth.route("/me", methods=["GET"])
 @jwt_required()
 def auth_me():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     conn, cursor = db_connection()
     cursor.execute(
         """

@@ -57,7 +57,7 @@ def create_artisan():
     if not all(data.get(field) for field in required_fields):
         return jsonify(response(None, "Missing required fields", 400)), 400
 
-    admin_id = get_jwt_identity()
+    admin_id = int(get_jwt_identity())
     payload = (
         data.get("name"),
         data.get("phone_number"),
@@ -126,7 +126,7 @@ def update_artisan(worker_id):
     if not updates:
         return jsonify(response(None, "No fields provided for update", 400)), 400
 
-    updates["updated_by_admin_id"] = get_jwt_identity()
+    updates["updated_by_admin_id"] = int(get_jwt_identity())
     set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
     values = list(updates.values())
     values.append(worker_id)

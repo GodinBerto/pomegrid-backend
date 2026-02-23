@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 @admin_required
 def create_product():
     data = request.get_json() or {}
-    admin_id = get_jwt_identity()
+    admin_id = int(get_jwt_identity())
 
     title = str(data.get("title") or "").strip()
     description = str(data.get("description") or "").strip()

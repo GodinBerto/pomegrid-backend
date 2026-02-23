@@ -21,7 +21,7 @@ def _is_admin(user_id):
 @jobs.route("/hire", methods=["POST"])
 @jwt_required()
 def hire_artisan():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json() or {}
 
     worker_id = data.get("worker_id")
@@ -66,7 +66,7 @@ def hire_artisan():
 @jobs.route("/my-jobs", methods=["GET"])
 @jwt_required()
 def get_my_jobs():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     status = (request.args.get("status") or "").strip()
 
     try:
@@ -98,7 +98,7 @@ def get_my_jobs():
 @jobs.route("/", methods=["GET"])
 @jwt_required()
 def list_jobs_for_admin():
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     if not _is_admin(user_id):
         return jsonify(response(None, "Admin access required", 403)), 403
 
@@ -158,7 +158,7 @@ def list_jobs_for_admin():
 @jobs.route("/<int:job_id>/status", methods=["PUT"])
 @jwt_required()
 def update_job_status(job_id):
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json() or {}
     status = data.get("status")
     if status not in ALLOWED_JOB_STATUSES:
@@ -216,7 +216,7 @@ def update_job_status(job_id):
 @jobs.route("/<int:job_id>/rating", methods=["POST"])
 @jwt_required()
 def rate_job_artisan(job_id):
-    user_id = get_jwt_identity()
+    user_id = int(get_jwt_identity())
     data = request.get_json() or {}
     rating = data.get("rating")
     feedback = data.get("feedback")

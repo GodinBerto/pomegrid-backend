@@ -44,7 +44,7 @@ def create_worker():
     hourly_rate = data.get("hourly_rate", 0)
     years_experience = data.get("years_experience", 0)
     completed_jobs = data.get("completed_jobs", 0)
-    admin_id = get_jwt_identity()
+    admin_id = int(get_jwt_identity())
 
     try:
         conn, cursor = db_connection()
@@ -139,7 +139,7 @@ def update_worker(worker_id):
 
     set_clause = ", ".join([f"{k} = ?" for k in updates.keys()])
     values = list(updates.values())
-    values.append(get_jwt_identity())
+    values.append(int(get_jwt_identity()))
     values.append(worker_id)
 
     try:

@@ -50,7 +50,7 @@ def _user_cart_cache_key(user_id):
 @user_required
 def add_to_cart():
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json() or {}
 
         if "product_id" not in data or "quantity" not in data:
@@ -120,7 +120,7 @@ def add_to_cart():
 @user_required
 def get_carts():
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         cache_key = _user_cart_cache_key(user_id)
         cached = _cache_get(cache_key)
         if cached is not None:
@@ -164,7 +164,7 @@ def get_carts():
 @user_required
 def update_cart_item(cart_id):
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         data = request.get_json() or {}
 
         if "quantity" not in data:
@@ -222,7 +222,7 @@ def update_cart_item(cart_id):
 @user_required
 def delete_cart_item(cart_id):
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         conn, cursor = db_connection()
 
         cursor.execute("SELECT 1 FROM Cart WHERE id = ? AND user_id = ?", (cart_id, user_id))
@@ -246,7 +246,7 @@ def delete_cart_item(cart_id):
 @user_required
 def clear_cart():
     try:
-        user_id = get_jwt_identity()
+        user_id = int(get_jwt_identity())
         conn, cursor = db_connection()
         cursor.execute("DELETE FROM Cart WHERE user_id = ?", (user_id,))
         conn.commit()
