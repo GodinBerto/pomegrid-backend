@@ -16,7 +16,9 @@ from routes.farms.cart import carts
 from routes.farms.admin.product import products_admin
 from routes.farms.admin.category import categories_admin
 from routes.farms.admin.order import orders_admin
+from routes.farms.admin.messages import farms_admin_messages_api
 from routes.user.user import users
+from routes.user.support_messages import user_support_api
 
 #Routes Artisans
 from routes.artisans.workers import workers
@@ -27,6 +29,7 @@ from routes.artisans.admin.workers import workers_admin
 from routes.artisans.admin.bookings import bookings_admin
 from routes.artisans.admin.dashboard import admin_api
 from routes.artisans.worker.dashboard import worker_api
+from extensions.socketio import register_socket_handlers, socketio
 
 #Cloudinary
 import cloudinary
@@ -43,7 +46,7 @@ app.config.from_object(Config)
 # ================================
 app.config.update({
     "JWT_SECRET_KEY": Config.JWT_SECRET_KEY,
-    "JWT_ACCESS_TOKEN_EXPIRES": timedelta(minutes=5),
+    "JWT_ACCESS_TOKEN_EXPIRES": timedelta(minutes=1000),
     "JWT_REFRESH_TOKEN_EXPIRES": timedelta(days=7),
     "JWT_ACCESS_COOKIE_NAME": "access_token_cookie",
     "JWT_TOKEN_LOCATION": ["headers", "cookies"],
@@ -69,6 +72,12 @@ CORS(
     origins=["http://localhost:3000"]
 )
 
+socketio.init_app(
+    app,
+    cors_allowed_origins=["http://localhost:3000"],
+)
+register_socket_handlers()
+
 setup_logging(app)
 
 
@@ -80,11 +89,13 @@ app.register_blueprint(auth, url_prefix=f'{url}/auth')
 app.register_blueprint(products, url_prefix=f'{url}/products')
 app.register_blueprint(categories, url_prefix=f'{url}/categories')
 app.register_blueprint(users, url_prefix=f'{url}/users')
+app.register_blueprint(user_support_api, url_prefix=f'{url}/user')
 app.register_blueprint(orders, url_prefix=f'{url}/orders')
 app.register_blueprint(carts, url_prefix=f'{url}/carts')
 app.register_blueprint(products_admin, url_prefix=f'{url}/products')
 app.register_blueprint(categories_admin, url_prefix=f'{url}/categories')
 app.register_blueprint(orders_admin, url_prefix=f'{url}/orders')
+app.register_blueprint(farms_admin_messages_api, url_prefix=f'{url}/admin')
 
 # Workers Blueprints
 app.register_blueprint(workers, url_prefix=f"{url}/workers")
@@ -98,4 +109,4 @@ app.register_blueprint(worker_api, url_prefix=f"{url}/worker")
 
 if __name__ == '__main__':
     # Create the app
-    app.run(host='0.0.0.0', port=8000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
