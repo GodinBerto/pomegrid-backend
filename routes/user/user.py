@@ -6,6 +6,7 @@ from flask_jwt_extended import jwt_required
 from database import db_connection
 from decorators.roles import admin_required, get_authenticated_user_id, normalize_role
 from routes.api_envelope import build_meta, envelope, parse_pagination
+from services.user_order_stats import get_user_order_stats_map
 
 
 users = Blueprint("users", __name__)
@@ -174,9 +175,16 @@ def admin_list_users():
             tuple(query_params),
         )
         rows = cursor.fetchall()
+        stats_map = get_user_order_stats_map(cursor, [row["id"] for row in rows])
         conn.close()
 
-        payload = [_serialize_user_row(row) for row in rows]
+        payload = []
+        for row in rows:
+            user = _serialize_user_row(row)
+            stats = stats_map.get(int(row["id"]), {})
+            user["orders"] = int(stats.get("orders", 0) or 0)
+            user["amount_spent"] = round(float(stats.get("amount_spent", 0) or 0), 2)
+            payload.append(user)
         meta = build_meta(page, per_page, total)
         return jsonify(envelope(payload, "Users fetched", 200, True, meta)), 200
     except Exception as e:
