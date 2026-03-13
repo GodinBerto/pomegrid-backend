@@ -6,6 +6,7 @@ from flask_jwt_extended import jwt_required
 from database import db_connection
 from decorators.roles import admin_required, get_authenticated_user_id, normalize_role
 from routes.api_envelope import build_meta, envelope, parse_pagination
+from services.admin_user_details import build_admin_user_details
 from services.user_order_stats import get_user_order_stats_map
 
 
@@ -230,6 +231,35 @@ def admin_get_user(user_id):
     except Exception as e:
         logger.exception("Failed to fetch user %s", user_id)
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
+@users.route("/<int:user_id>/details", methods=["GET"])
+@admin_required
+def admin_get_user_details(user_id):
+    recent_limit = 5
+    try:
+        recent_limit = int(request.args.get("recent_limit", 5))
+    except (TypeError, ValueError):
+        recent_limit = 5
+
+    if recent_limit < 1:
+        recent_limit = 1
+    if recent_limit > 20:
+        recent_limit = 20
+
+    conn = None
+    try:
+        conn, cursor = db_connection()
+        payload = build_admin_user_details(cursor, user_id, recent_limit)
+        if not payload:
+            return jsonify(envelope(None, "User not found", 404, False)), 404
+        return jsonify(envelope(payload, "User details fetched", 200)), 200
+    except Exception as e:
+        logger.exception("Failed to fetch user details for %s", user_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+    finally:
+        if conn is not None:
+            conn.close()
 
 
 @users.route("/<int:user_id>/orders", methods=["GET"])
