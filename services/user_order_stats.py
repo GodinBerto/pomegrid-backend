@@ -19,7 +19,15 @@ def get_user_order_stats_map(cursor, user_ids):
         f"""
         SELECT
             user_id,
-            COUNT(*) AS orders,
+            COALESCE(
+                SUM(
+                    CASE
+                        WHEN LOWER(COALESCE(status, '')) != 'cancelled' THEN 1
+                        ELSE 0
+                    END
+                ),
+                0
+            ) AS orders,
             COALESCE(
                 SUM(
                     CASE
