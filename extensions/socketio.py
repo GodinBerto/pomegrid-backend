@@ -145,6 +145,12 @@ def register_socket_handlers():
     def handle_connect(auth=None):
         user = _authenticate_socket_user(auth)
         if not user:
+            logger.warning(
+                "Socket connection rejected: origin=%s has_token=%s transport=%s",
+                request.headers.get("Origin"),
+                bool(_extract_access_token(auth)),
+                request.args.get("transport"),
+            )
             return False
 
         session["socket_user_id"] = int(user["id"])

@@ -1,3 +1,6 @@
+import os
+from urllib.parse import urlsplit
+
 from flask import Flask
 from flask_cors import CORS
 from config import Config
@@ -41,6 +44,49 @@ app = Flask(__name__)
 # Load configuration from the Config object
 app.config.from_object(Config)
 
+
+def _get_allowed_frontend_origins():
+    default_origins = ",".join(
+        (
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:8080",
+            "http://127.0.0.1:8080",
+        )
+    )
+    raw_origins = os.getenv(
+        "FRONTEND_ALLOWED_ORIGINS",
+        default_origins,
+    )
+    origins = []
+    seen = set()
+
+    def add_origin(value):
+        origin = value.strip().rstrip("/")
+        if origin and origin not in seen:
+            origins.append(origin)
+            seen.add(origin)
+
+    for item in raw_origins.split(","):
+        add_origin(item)
+
+    for origin in list(origins):
+        parsed = urlsplit(origin)
+        host = (parsed.hostname or "").strip().lower()
+        if host not in {"localhost", "127.0.0.1"}:
+            continue
+
+        sibling_host = "127.0.0.1" if host == "localhost" else "localhost"
+        port = f":{parsed.port}" if parsed.port else ""
+        sibling_origin = f"{parsed.scheme}://{sibling_host}{port}"
+        add_origin(sibling_origin)
+    return origins
+
+
+ALLOWED_FRONTEND_ORIGINS = _get_allowed_frontend_origins()
+
 # ================================
 # JWT CONFIGURATION
 # ================================
@@ -69,12 +115,12 @@ cloudinary.config(
 CORS(
     app,
     supports_credentials=True,
-    origins=["http://localhost:3000"]
+    origins=ALLOWED_FRONTEND_ORIGINS
 )
 
 socketio.init_app(
     app,
-    cors_allowed_origins=["http://localhost:3000"],
+    cors_allowed_origins=ALLOWED_FRONTEND_ORIGINS,
 )
 register_socket_handlers()
 
