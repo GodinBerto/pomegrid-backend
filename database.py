@@ -9,6 +9,95 @@ ALLOWED_USER_TYPES = (
 )
 
 
+DEFAULT_FARM_SERVICES = [
+    {
+        "title": "Hatchery Setup and Fry Management",
+        "description": "Structured hatchery support for broodstock handling, incubation flow, and early-stage fry survival planning.",
+        "icon": "settings",
+        "features": [
+            "Broodstock and spawning workflow review",
+            "Incubation tray and tank layout guidance",
+            "Fry grading and stocking density plan",
+            "Feed schedule setup for first growth stages",
+            "Biosecurity checklist for hatchery rooms",
+        ],
+        "pricing": {
+            "basic": {"price": 450, "duration": "One-time visit"},
+            "premium": {"price": 1200, "duration": "3-day support"},
+            "enterprise": {"price": 3200, "duration": "Monthly support"},
+        },
+    },
+    {
+        "title": "Pond and Tank System Setup",
+        "description": "Technical setup support for earthen ponds, lined ponds, tanks, aeration layouts, and flow management before stocking.",
+        "icon": "wrench",
+        "features": [
+            "Site inspection and layout recommendations",
+            "Water inlet and outlet planning",
+            "Aeration and circulation equipment checks",
+            "Stocking capacity estimate by unit size",
+            "Maintenance plan for pumps and plumbing",
+        ],
+        "pricing": {
+            "basic": {"price": 600, "duration": "One-time visit"},
+            "premium": {"price": 1750, "duration": "5-day setup"},
+            "enterprise": {"price": 4200, "duration": "Project support"},
+        },
+    },
+    {
+        "title": "Water Quality Monitoring Program",
+        "description": "Routine monitoring and corrective action planning for dissolved oxygen, pH, temperature, ammonia, and turbidity control.",
+        "icon": "settings",
+        "features": [
+            "On-site water parameter testing",
+            "Threshold alerts and action limits",
+            "Pond or tank treatment recommendations",
+            "Sampling log and reporting template",
+            "Monthly trend review with corrective notes",
+        ],
+        "pricing": {
+            "basic": {"price": 300, "duration": "One-time sampling"},
+            "premium": {"price": 900, "duration": "Monthly checks"},
+            "enterprise": {"price": 2400, "duration": "Quarterly program"},
+        },
+    },
+    {
+        "title": "Farm Staff Training and SOP Coaching",
+        "description": "Hands-on training for farm teams covering daily operations, fish handling, feeding control, record keeping, and loss prevention.",
+        "icon": "graduationCap",
+        "features": [
+            "Daily husbandry procedure training",
+            "Safe fish handling and transfer drills",
+            "Feed management and waste reduction coaching",
+            "Recordkeeping templates for growth and mortality",
+            "Supervisor checklist for shift handover",
+        ],
+        "pricing": {
+            "basic": {"price": 500, "duration": "1-day training"},
+            "premium": {"price": 1400, "duration": "3-day training"},
+            "enterprise": {"price": 3600, "duration": "5-day training"},
+        },
+    },
+    {
+        "title": "On-Site Farm Operations Support",
+        "description": "Practical farm support for production reviews, health observations, feeding efficiency, harvest preparation, and team coordination.",
+        "icon": "users",
+        "features": [
+            "Weekly operations performance review",
+            "Fish health and stress observation rounds",
+            "Feeding response and conversion monitoring",
+            "Harvest readiness and logistics planning",
+            "Management summary with action priorities",
+        ],
+        "pricing": {
+            "basic": {"price": 700, "duration": "One-time visit"},
+            "premium": {"price": 1900, "duration": "Monthly support"},
+            "enterprise": {"price": 4800, "duration": "Quarterly retainer"},
+        },
+    },
+]
+
+
 def db_connection():
     # Connect to SQLite database (or create if it doesn't exist)
     conn = sqlite3.connect("instance/pomegrid.db")
@@ -321,6 +410,54 @@ def ensure_bookings_extended_fields(cursor):
     )
 
 
+def seed_farm_services(cursor):
+    for sort_order, service in enumerate(DEFAULT_FARM_SERVICES, start=1):
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO farm_services (
+                title,
+                description,
+                icon,
+                features_json,
+                pricing_json,
+                sort_order,
+                is_active
+            )
+            VALUES (?, ?, ?, ?, ?, ?, 1)
+            """,
+            (
+                service["title"],
+                service["description"],
+                service["icon"],
+                json.dumps(service["features"]),
+                json.dumps(service["pricing"]),
+                sort_order,
+            ),
+        )
+        cursor.execute(
+            """
+            UPDATE farm_services
+            SET
+                description = ?,
+                icon = ?,
+                features_json = ?,
+                pricing_json = ?,
+                sort_order = ?,
+                is_active = 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE title = ?
+            """,
+            (
+                service["description"],
+                service["icon"],
+                json.dumps(service["features"]),
+                json.dumps(service["pricing"]),
+                sort_order,
+                service["title"],
+            ),
+        )
+
+
 def create_tables():
     conn, cursor = db_connection()
     
@@ -534,6 +671,26 @@ def create_tables():
             )
         '''
     )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS farm_services(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                title TEXT NOT NULL UNIQUE,
+                description TEXT NOT NULL,
+                icon TEXT NOT NULL CHECK(icon IN ('users', 'settings', 'graduationCap', 'wrench')),
+                features_json TEXT NOT NULL,
+                pricing_json TEXT NOT NULL,
+                sort_order INTEGER NOT NULL DEFAULT 0,
+                is_active BOOLEAN NOT NULL DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        '''
+    )
+    ensure_column(cursor, "farm_services", "sort_order", "sort_order INTEGER NOT NULL DEFAULT 0")
+    ensure_column(cursor, "farm_services", "is_active", "is_active BOOLEAN NOT NULL DEFAULT 1")
+    seed_farm_services(cursor)
 
     # Create bookings table
     cursor.execute(
@@ -1014,6 +1171,12 @@ def create_tables():
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_services_is_active ON services(is_active)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_farm_services_sort_order ON farm_services(sort_order)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_farm_services_is_active ON farm_services(is_active)"
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_job_status_history_job_id ON job_status_history(job_id)"

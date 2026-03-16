@@ -3893,3 +3893,711 @@ werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on 
 2026-03-14 02:24:37,845 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 8ms
 2026-03-14 02:26:24,393 INFO [app] GET /api/v1/user/messages/support/conversation 200 4ms
 2026-03-14 02:26:28,454 INFO [app] GET /api/v1/products/ 200 4065ms
+2026-03-14 02:28:35,325 INFO [app] GET /api/v1/orders 200 4178ms
+2026-03-14 02:28:35,416 INFO [app] GET /api/v1/orders/stats/overview 200 4267ms
+2026-03-14 02:37:20,395 INFO [app] POST /api/v1/carts/ 201 2459ms
+2026-03-14 02:37:21,017 INFO [app] GET /api/v1/products/ 200 4149ms
+2026-03-14 02:37:21,018 INFO [app] GET /api/v1/categories/ 200 4146ms
+2026-03-14 02:37:21,686 INFO [app] POST /api/v1/carts/ 201 2207ms
+2026-03-14 02:37:24,493 INFO [app] GET /api/v1/carts/ 200 4091ms
+2026-03-14 02:37:25,771 INFO [app] GET /api/v1/carts/ 200 4076ms
+2026-03-14 02:37:31,519 INFO [app] PUT /api/v1/carts/25 200 2231ms
+2026-03-14 02:37:32,030 INFO [app] PUT /api/v1/carts/25 200 2048ms
+2026-03-14 02:37:32,916 INFO [app] PUT /api/v1/carts/25 200 2054ms
+2026-03-14 02:37:35,616 INFO [app] GET /api/v1/carts/ 200 4090ms
+2026-03-14 02:37:36,148 INFO [app] PUT /api/v1/carts/25 200 2238ms
+2026-03-14 02:37:39,146 INFO [app] PUT /api/v1/carts/25 200 2332ms
+2026-03-14 02:37:39,722 INFO [app] GET /api/v1/carts/ 200 4097ms
+2026-03-14 02:37:41,763 INFO [app] GET /api/v1/carts/ 200 2036ms
+2026-03-14 02:37:43,803 INFO [app] GET /api/v1/carts/ 200 2033ms
+2026-03-14 02:37:45,841 INFO [app] GET /api/v1/carts/ 200 2032ms
+2026-03-14 02:37:54,838 INFO [app] DELETE /api/v1/carts/24 200 2047ms
+2026-03-14 02:37:58,944 INFO [app] GET /api/v1/carts/ 200 4097ms
+2026-03-14 02:44:03,905 INFO [app] POST /api/v1/orders/create-order 201 4114ms
+2026-03-14 02:44:05,975 INFO [app] DELETE /api/v1/carts/25 200 2062ms
+2026-03-14 02:44:10,089 INFO [app] GET /api/v1/carts/ 200 4105ms
+2026-03-14 02:44:20,675 INFO [app] GET /api/v1/categories/ 200 4081ms
+2026-03-14 02:44:20,676 INFO [app] GET /api/v1/products/ 200 4084ms
+2026-03-14 02:44:23,367 INFO [app] POST /api/v1/carts/ 201 2201ms
+2026-03-14 02:44:27,477 INFO [app] GET /api/v1/carts/ 200 4102ms
+2026-03-14 02:44:55,035 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-03-14 02:44:55,169 INFO [app] GET /api/v1/admin/notifications 200 52ms
+2026-03-14 02:44:59,245 INFO [app] GET /api/v1/orders/stats/overview 200 4124ms
+2026-03-14 02:44:59,306 INFO [app] GET /api/v1/orders 200 4185ms
+2026-03-14 02:45:07,853 INFO [app] GET /api/v1/orders/3 200 4092ms
+2026-03-14 02:45:54,597 INFO [app] GET /api/v1/users 200 10ms
+2026-03-14 02:45:59,431 INFO [app] GET /api/v1/users/38/details 200 9ms
+2026-03-14 02:45:59,432 INFO [app] GET /api/v1/users/38 200 7ms
+2026-03-14 02:45:59,434 INFO [app] GET /api/v1/users/38/orders 200 7ms
+2026-03-14 02:46:01,322 INFO [app] GET /api/v1/users 200 13ms
+2026-03-14 02:46:01,342 INFO [app] GET /api/v1/admin/messages/conversations 200 18ms
+2026-03-14 02:46:05,398 INFO [app] GET /api/v1/products/ 200 4092ms
+2026-03-14 02:46:05,399 INFO [app] GET /api/v1/orders 200 4085ms
+2026-03-14 02:46:05,401 INFO [app] GET /api/v1/orders/stats/overview 200 4078ms
+2026-03-14 02:47:39,762 INFO [app] GET /api/v1/orders/stats/overview 200 4083ms
+2026-03-14 02:47:39,777 INFO [app] GET /api/v1/orders 200 4104ms
+2026-03-14 02:47:50,815 INFO [app] GET /api/v1/users 200 7ms
+2026-03-14 02:47:50,817 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-03-14 02:47:54,912 INFO [app] GET /api/v1/orders 200 4107ms
+2026-03-14 02:50:45,590 INFO [app] GET /api/v1/products/ 200 4088ms
+2026-03-14 02:51:03,600 INFO [app] GET /api/v1/categories/ 200 4098ms
+2026-03-15 04:02:09,055 INFO [app] GET /api/v1/carts/ 401 2ms
+2026-03-15 04:02:09,188 INFO [app] POST /api/v1/auth/refresh 401 0ms
+2026-03-15 04:02:09,207 INFO [app] GET /api/v1/auth/me 401 1ms
+2026-03-15 04:02:13,182 INFO [app] GET /api/v1/products/ 200 4131ms
+2026-03-15 04:02:39,194 INFO [app] POST /api/v1/auth/login 200 2129ms
+2026-03-15 04:02:43,358 INFO [app] GET /api/v1/carts/ 200 4119ms
+2026-03-15 04:02:47,430 INFO [app] GET /api/v1/admin/notifications 200 11ms
+2026-03-15 04:02:47,447 INFO [app] GET /api/v1/users 200 19ms
+2026-03-15 04:02:47,474 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-03-15 04:02:51,566 INFO [app] GET /api/v1/orders 200 4131ms
+2026-03-15 04:02:51,567 INFO [app] GET /api/v1/orders/stats/overview 200 4107ms
+2026-03-15 04:02:51,873 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 5ms
+2026-03-15 04:02:51,882 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 10ms
+2026-03-15 04:02:51,933 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 14ms
+2026-03-15 04:02:51,934 INFO [app] GET /api/v1/admin/notifications 200 13ms
+2026-03-15 04:02:51,935 INFO [app] GET /api/v1/admin/messages/conversations 200 19ms
+2026-03-15 04:03:39,415 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-03-15 04:03:39,529 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 04:03:39,559 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-15 04:03:39,665 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 16ms
+2026-03-15 04:03:39,666 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 20ms
+2026-03-15 04:03:39,750 INFO [app] GET /api/v1/admin/notifications 200 7ms
+2026-03-15 04:03:39,770 INFO [app] GET /api/v1/admin/messages/conversations 200 35ms
+2026-03-15 04:04:17,069 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-03-15 04:04:17,194 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:04:17,201 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:04:17,290 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 3ms
+2026-03-15 04:04:17,351 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 13ms
+2026-03-15 04:04:17,468 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 13ms
+2026-03-15 04:04:17,470 INFO [app] GET /api/v1/admin/notifications 200 12ms
+2026-03-15 04:04:17,487 INFO [app] GET /api/v1/admin/messages/conversations 200 33ms
+2026-03-15 04:04:21,295 INFO [app] GET /api/v1/users 200 7ms
+2026-03-15 04:04:24,135 INFO [app] GET /api/v1/products/ 200 4113ms
+2026-03-15 04:04:24,801 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-03-15 04:04:24,936 INFO [app] GET /api/v1/admin/notifications 200 15ms
+2026-03-15 04:04:24,938 INFO [app] GET /api/v1/users 200 12ms
+2026-03-15 04:04:24,941 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-15 04:04:25,370 INFO [app] GET /api/v1/orders 200 4080ms
+2026-03-15 04:04:25,401 INFO [app] GET /api/v1/orders/stats/overview 200 4110ms
+2026-03-15 04:04:26,972 INFO [app] GET /api/v1/orders 200 2047ms
+2026-03-15 04:04:26,972 INFO [app] GET /api/v1/products/ 200 2044ms
+2026-03-15 04:04:26,986 INFO [app] GET /api/v1/orders/stats/overview 200 2059ms
+2026-03-15 04:04:28,394 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 5ms
+2026-03-15 04:04:28,403 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 7ms
+2026-03-15 04:04:28,459 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 8ms
+2026-03-15 04:04:28,460 INFO [app] GET /api/v1/admin/notifications 200 7ms
+2026-03-15 04:04:28,462 INFO [app] GET /api/v1/admin/messages/conversations 200 16ms
+2026-03-15 04:04:50,919 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-03-15 04:04:51,094 INFO [app] GET /api/v1/admin/messages/conversations 200 15ms
+2026-03-15 04:04:51,104 INFO [app] GET /api/v1/admin/notifications 200 26ms
+2026-03-15 04:04:51,204 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 24ms
+2026-03-15 04:04:51,224 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 28ms
+2026-03-15 04:04:51,322 INFO [app] GET /api/v1/admin/messages/conversations 200 27ms
+2026-03-15 04:04:51,336 INFO [app] GET /api/v1/admin/notifications 200 16ms
+2026-03-15 04:06:18,180 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-03-15 04:06:18,285 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:06:18,287 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:06:18,415 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 7ms
+2026-03-15 04:06:18,417 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 8ms
+2026-03-15 04:06:18,445 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 7ms
+2026-03-15 04:06:18,447 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:06:18,447 INFO [app] GET /api/v1/admin/notifications 200 6ms
+2026-03-15 04:07:00,743 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 4ms
+2026-03-15 04:07:00,756 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 6ms
+2026-03-15 04:07:00,776 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:07:00,777 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 04:07:00,780 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 7ms
+2026-03-15 04:07:00,802 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-03-15 04:07:00,802 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 04:07:00,806 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 9ms
+2026-03-15 04:07:00,826 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-15 04:07:00,827 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:07:00,831 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 8ms
+2026-03-15 04:07:12,231 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-03-15 04:07:12,380 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 04:07:12,385 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:07:12,480 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 9ms
+2026-03-15 04:07:12,489 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 19ms
+2026-03-15 04:07:12,506 INFO [app] GET /api/v1/admin/messages/conversations 200 6ms
+2026-03-15 04:07:12,541 INFO [app] GET /api/v1/admin/notifications 200 4ms
+2026-03-15 04:07:12,557 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-15 04:07:12,563 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:07:12,585 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:07:12,585 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:07:25,328 INFO [app] GET /api/v1/users 200 11ms
+2026-03-15 04:07:26,630 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 5ms
+2026-03-15 04:07:26,664 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 9ms
+2026-03-15 04:07:26,664 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:07:26,666 INFO [app] GET /api/v1/admin/messages/conversations 200 14ms
+2026-03-15 04:07:29,421 INFO [app] GET /api/v1/products/ 200 4109ms
+2026-03-15 04:07:29,436 INFO [app] GET /api/v1/orders/stats/overview 200 4114ms
+2026-03-15 04:07:29,436 INFO [app] GET /api/v1/orders 200 4117ms
+2026-03-15 04:07:55,307 INFO [app] GET /api/v1/user/messages/support/conversation 401 1ms
+2026-03-15 04:07:55,309 INFO [app] GET /api/v1/carts/ 401 0ms
+2026-03-15 04:07:55,399 INFO [app] POST /api/v1/auth/refresh 401 0ms
+2026-03-15 04:07:55,426 INFO [app] GET /api/v1/auth/me 401 0ms
+2026-03-15 04:07:57,363 INFO [app] GET /api/v1/products/ 200 2060ms
+2026-03-15 04:07:59,966 INFO [app] POST /api/v1/auth/login 200 2117ms
+2026-03-15 04:08:00,007 INFO [app] GET /api/v1/user/messages/support/conversation 200 7ms
+2026-03-15 04:08:04,104 INFO [app] GET /api/v1/carts/ 200 4102ms
+2026-03-15 04:08:10,475 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:08:10,477 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 14ms
+2026-03-15 04:08:10,503 INFO [app] GET /api/v1/admin/messages/conversations 200 13ms
+2026-03-15 04:08:10,511 INFO [app] GET /api/v1/admin/notifications 200 17ms
+2026-03-15 04:08:10,538 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 21ms
+2026-03-15 04:08:10,541 INFO [app] GET /api/v1/admin/messages/conversations 200 13ms
+2026-03-15 04:08:10,542 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 04:08:10,556 INFO [app] GET /api/v1/admin/messages/conversations 200 5ms
+2026-03-15 04:08:10,557 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:08:15,763 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2063ms
+2026-03-15 04:08:15,780 INFO [app] GET /api/v1/admin/notifications 200 6ms
+2026-03-15 04:08:15,782 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:08:15,785 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:08:15,809 INFO [app] GET /api/v1/admin/notifications 200 13ms
+2026-03-15 04:08:15,812 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:08:15,816 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 5ms
+2026-03-15 04:08:15,828 INFO [app] GET /api/v1/admin/messages/conversations 200 6ms
+2026-03-15 04:08:15,831 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 4ms
+2026-03-15 04:08:22,636 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 5ms
+2026-03-15 04:08:22,680 INFO [app] POST /api/v1/user/messages/support/conversation/read 200 17ms
+2026-03-15 04:08:22,730 INFO [app] GET /api/v1/admin/messages/conversations 200 18ms
+2026-03-15 04:08:22,732 INFO [app] GET /api/v1/admin/notifications 200 15ms
+2026-03-15 04:08:22,766 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 31ms
+2026-03-15 04:08:22,801 INFO [app] GET /api/v1/user/messages/support/conversation 200 22ms
+2026-03-15 04:08:22,802 INFO [app] GET /api/v1/admin/notifications 200 16ms
+2026-03-15 04:08:22,811 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 28ms
+2026-03-15 04:08:22,828 INFO [app] GET /api/v1/admin/messages/conversations 200 52ms
+2026-03-15 04:08:22,831 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 23ms
+2026-03-15 04:08:32,483 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2069ms
+2026-03-15 04:08:32,502 INFO [app] GET /api/v1/user/messages/support/conversation 200 9ms
+2026-03-15 04:08:32,506 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 9ms
+2026-03-15 04:08:32,509 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-03-15 04:08:32,517 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 15ms
+2026-03-15 04:08:32,527 INFO [app] GET /api/v1/admin/messages/conversations 200 32ms
+2026-03-15 04:08:32,528 INFO [app] GET /api/v1/user/messages/support/conversation 200 13ms
+2026-03-15 04:08:32,538 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 15ms
+2026-03-15 04:08:32,543 INFO [app] GET /api/v1/admin/notifications 200 18ms
+2026-03-15 04:08:32,548 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 14ms
+2026-03-15 04:08:32,552 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:08:32,565 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 5ms
+2026-03-15 04:08:32,569 INFO [app] GET /api/v1/admin/messages/conversations 200 5ms
+2026-03-15 04:08:51,757 INFO [app] POST /api/v1/user/messages/support/conversation/read 200 14ms
+2026-03-15 04:08:51,831 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 15ms
+2026-03-15 04:08:51,845 INFO [app] GET /api/v1/admin/messages/conversations 200 21ms
+2026-03-15 04:08:51,858 INFO [app] GET /api/v1/user/messages/support/conversation 200 46ms
+2026-03-15 04:08:51,868 INFO [app] GET /api/v1/admin/notifications 200 15ms
+2026-03-15 04:08:51,872 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 17ms
+2026-03-15 04:08:51,921 INFO [app] GET /api/v1/admin/messages/conversations 200 26ms
+2026-03-15 04:08:51,945 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:08:51,954 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 13ms
+2026-03-15 04:09:00,193 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2066ms
+2026-03-15 04:09:00,214 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-03-15 04:09:00,215 INFO [app] GET /api/v1/admin/notifications 200 11ms
+2026-03-15 04:09:00,217 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 11ms
+2026-03-15 04:09:00,242 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-15 04:09:00,244 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 4ms
+2026-03-15 04:09:00,255 INFO [app] GET /api/v1/admin/notifications 200 22ms
+2026-03-15 04:09:00,258 INFO [app] GET /api/v1/admin/messages/conversations 200 7ms
+2026-03-15 04:09:00,266 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 7ms
+2026-03-15 04:09:10,945 INFO [app] POST /api/v1/user/messages/support/conversation/read 200 17ms
+2026-03-15 04:09:10,998 INFO [app] GET /api/v1/user/messages/support/conversation 200 18ms
+2026-03-15 04:09:11,016 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 26ms
+2026-03-15 04:09:11,021 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 20ms
+2026-03-15 04:09:11,031 INFO [app] GET /api/v1/admin/messages/conversations 200 63ms
+2026-03-15 04:09:11,036 INFO [app] GET /api/v1/admin/notifications 200 40ms
+2026-03-15 04:09:11,127 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:09:11,134 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 59ms
+2026-03-15 04:09:11,148 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:10:44,733 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-03-15 04:10:44,878 INFO [app] GET /api/v1/admin/notifications 200 16ms
+2026-03-15 04:10:44,892 INFO [app] GET /api/v1/admin/messages/conversations 200 22ms
+2026-03-15 04:10:45,004 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 5ms
+2026-03-15 04:10:45,052 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 16ms
+2026-03-15 04:10:45,095 INFO [app] GET /api/v1/admin/messages/conversations 200 13ms
+2026-03-15 04:10:45,096 INFO [app] GET /api/v1/admin/notifications 200 12ms
+2026-03-15 04:10:45,104 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 13ms
+2026-03-15 04:10:45,158 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:10:45,160 INFO [app] GET /api/v1/admin/messages/conversations 200 13ms
+2026-03-15 04:10:45,163 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 10ms
+2026-03-15 04:10:45,181 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:10:45,188 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:10:45,194 INFO [app] GET /api/v1/admin/messages/conversations 200 18ms
+2026-03-15 04:11:17,126 INFO [app] GET /api/v1/user/messages/support/conversation 200 4ms
+2026-03-15 04:11:18,129 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-03-15 04:11:18,412 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-03-15 04:11:18,691 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:11:18,697 INFO [app] GET /api/v1/admin/notifications 200 22ms
+2026-03-15 04:11:18,817 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 8ms
+2026-03-15 04:11:18,820 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 7ms
+2026-03-15 04:11:18,886 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:11:18,888 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-03-15 04:11:21,213 INFO [app] GET /api/v1/products/ 200 4093ms
+2026-03-15 04:11:21,213 INFO [app] GET /api/v1/carts/ 200 4090ms
+2026-03-15 04:11:26,125 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-03-15 04:11:26,238 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:11:26,241 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:11:26,390 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:11:26,397 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 14ms
+2026-03-15 04:11:26,439 INFO [app] GET /api/v1/admin/notifications 200 6ms
+2026-03-15 04:11:26,442 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 6ms
+2026-03-15 04:11:26,452 INFO [app] GET /api/v1/admin/messages/conversations 200 22ms
+2026-03-15 04:11:26,465 INFO [app] GET /api/v1/admin/notifications 200 14ms
+2026-03-15 04:11:26,479 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:11:26,482 INFO [app] GET /api/v1/admin/notifications 200 7ms
+2026-03-15 04:11:26,494 INFO [app] GET /api/v1/admin/messages/conversations 200 6ms
+2026-03-15 04:11:50,731 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2055ms
+2026-03-15 04:11:50,751 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-03-15 04:11:50,753 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:11:50,770 INFO [app] GET /api/v1/admin/notifications 200 27ms
+2026-03-15 04:11:50,776 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:11:50,784 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 13ms
+2026-03-15 04:11:50,795 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:11:50,796 INFO [app] GET /api/v1/admin/notifications 200 13ms
+2026-03-15 04:11:50,805 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 6ms
+2026-03-15 04:16:50,758 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:16:50,761 INFO [app] GET /api/v1/admin/messages/conversations 200 7ms
+2026-03-15 04:25:18,166 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2062ms
+2026-03-15 04:25:18,193 INFO [app] GET /api/v1/admin/notifications 200 14ms
+2026-03-15 04:25:18,196 INFO [app] GET /api/v1/admin/messages/conversations 200 18ms
+2026-03-15 04:25:18,204 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 23ms
+2026-03-15 04:25:18,221 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:25:18,233 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:25:18,236 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 7ms
+2026-03-15 04:25:18,250 INFO [app] GET /api/v1/admin/messages/conversations 200 4ms
+2026-03-15 04:25:18,252 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 5ms
+2026-03-15 04:25:28,255 INFO [app] GET /api/v1/user/messages/support/conversation 200 7ms
+2026-03-15 04:25:28,688 INFO [app] GET /api/v1/auth/me 200 4ms
+2026-03-15 04:25:32,329 INFO [app] GET /api/v1/products/ 200 4083ms
+2026-03-15 04:25:32,346 INFO [app] GET /api/v1/carts/ 200 4097ms
+2026-03-15 04:25:40,200 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2059ms
+2026-03-15 04:25:40,217 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:25:40,220 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 9ms
+2026-03-15 04:25:40,235 INFO [app] GET /api/v1/admin/messages/conversations 200 29ms
+2026-03-15 04:25:40,244 INFO [app] GET /api/v1/admin/notifications 200 7ms
+2026-03-15 04:25:40,249 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 11ms
+2026-03-15 04:25:40,259 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-03-15 04:25:40,290 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 7ms
+2026-03-15 04:25:40,311 INFO [app] GET /api/v1/admin/messages/conversations 200 6ms
+2026-03-15 04:25:53,848 INFO [app] GET /api/v1/user/messages/support/conversation 200 5ms
+2026-03-15 04:25:54,332 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-03-15 04:25:55,897 INFO [app] GET /api/v1/products/ 200 2056ms
+2026-03-15 04:25:55,897 INFO [app] GET /api/v1/carts/ 200 2053ms
+2026-03-15 04:25:57,250 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 4ms
+2026-03-15 04:25:57,292 INFO [app] POST /api/v1/user/messages/support/conversation/read 200 20ms
+2026-03-15 04:25:57,368 INFO [app] GET /api/v1/user/messages/support/conversation 200 14ms
+2026-03-15 04:25:57,387 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 19ms
+2026-03-15 04:25:57,392 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 16ms
+2026-03-15 04:25:57,400 INFO [app] GET /api/v1/admin/notifications 200 24ms
+2026-03-15 04:25:57,409 INFO [app] GET /api/v1/admin/messages/conversations 200 47ms
+2026-03-15 04:25:57,486 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-03-15 04:25:57,500 INFO [app] GET /api/v1/admin/messages/conversations 200 21ms
+2026-03-15 04:25:57,503 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 12ms
+2026-03-15 04:26:05,821 INFO [app] GET /api/v1/products/ 200 2022ms
+2026-03-15 04:26:10,178 INFO [app] POST /api/v1/user/messages/support/conversation/messages 201 2065ms
+2026-03-15 04:26:10,202 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-03-15 04:26:10,203 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-03-15 04:26:10,206 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 14ms
+2026-03-15 04:26:10,206 INFO [app] GET /api/v1/user/messages/support/conversation 200 19ms
+2026-03-15 04:26:10,227 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-03-15 04:26:10,227 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:26:10,238 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 14ms
+2026-03-15 04:26:10,238 INFO [app] GET /api/v1/user/messages/support/conversation 200 13ms
+2026-03-15 04:26:10,249 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 4ms
+2026-03-15 04:26:10,251 INFO [app] GET /api/v1/user/messages/support/conversation 200 4ms
+2026-03-15 04:26:21,980 INFO [app] POST /api/v1/user/messages/support/conversation/messages 201 2077ms
+2026-03-15 04:26:22,002 INFO [app] GET /api/v1/admin/messages/conversations 200 15ms
+2026-03-15 04:26:22,005 INFO [app] GET /api/v1/user/messages/support/conversation 200 11ms
+2026-03-15 04:26:22,006 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:26:22,014 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 17ms
+2026-03-15 04:26:22,029 INFO [app] GET /api/v1/admin/messages/conversations 200 18ms
+2026-03-15 04:26:22,030 INFO [app] GET /api/v1/user/messages/support/conversation 200 8ms
+2026-03-15 04:26:22,033 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 04:26:22,042 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 12ms
+2026-03-15 04:26:22,046 INFO [app] GET /api/v1/user/messages/support/conversation 200 5ms
+2026-03-15 04:26:22,056 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 5ms
+2026-03-15 04:27:26,755 INFO [app] GET /api/v1/user/messages/support/conversation 200 5ms
+2026-03-15 04:28:39,772 INFO [app] GET /api/v1/user/messages/support/conversation 200 5ms
+2026-03-15 04:34:51,722 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 13ms
+2026-03-15 04:34:51,723 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 21ms
+2026-03-15 04:34:51,729 INFO [app] GET /api/v1/admin/messages/conversations 200 24ms
+2026-03-15 04:34:51,778 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 10ms
+2026-03-15 04:34:51,795 INFO [app] GET /api/v1/admin/messages/conversations 200 32ms
+2026-03-15 04:34:51,796 INFO [app] GET /api/v1/admin/notifications 200 26ms
+2026-03-15 04:34:53,116 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 19ms
+2026-03-15 04:34:53,143 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 24ms
+2026-03-15 04:34:53,177 INFO [app] GET /api/v1/user/messages/support/conversation 200 18ms
+2026-03-15 04:34:53,178 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:34:53,179 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-03-15 04:34:53,186 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 15ms
+2026-03-15 04:34:53,206 INFO [app] GET /api/v1/user/messages/support/conversation 200 16ms
+2026-03-15 04:34:53,210 INFO [app] GET /api/v1/admin/messages/conversations 200 14ms
+2026-03-15 04:34:53,213 INFO [app] GET /api/v1/admin/notifications 200 13ms
+2026-03-15 04:34:53,218 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 11ms
+2026-03-15 04:34:53,238 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 04:34:53,242 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 7ms
+2026-03-15 04:34:53,248 INFO [app] GET /api/v1/admin/messages/conversations 200 21ms
+2026-03-15 04:35:01,440 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2044ms
+2026-03-15 04:35:01,459 INFO [app] GET /api/v1/user/messages/support/conversation 200 9ms
+2026-03-15 04:35:01,461 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 04:35:01,464 INFO [app] GET /api/v1/admin/messages/conversations 200 15ms
+2026-03-15 04:35:01,471 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 17ms
+2026-03-15 04:35:01,479 INFO [app] GET /api/v1/user/messages/support/conversation 200 10ms
+2026-03-15 04:35:01,495 INFO [app] GET /api/v1/admin/notifications 200 13ms
+2026-03-15 04:35:01,499 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:35:01,505 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 11ms
+2026-03-15 04:35:01,517 INFO [app] GET /api/v1/admin/messages/conversations 200 7ms
+2026-03-15 04:35:01,519 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 4ms
+2026-03-15 04:35:09,585 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 4ms
+2026-03-15 04:35:09,637 INFO [app] POST /api/v1/user/messages/support/conversation/read 200 19ms
+2026-03-15 04:35:09,702 INFO [app] GET /api/v1/admin/messages/conversations 200 48ms
+2026-03-15 04:35:09,704 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 20ms
+2026-03-15 04:35:09,704 INFO [app] GET /api/v1/user/messages/support/conversation 200 24ms
+2026-03-15 04:35:09,705 INFO [app] GET /api/v1/admin/notifications 200 36ms
+2026-03-15 04:35:09,709 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 22ms
+2026-03-15 04:35:09,775 INFO [app] GET /api/v1/user/messages/support/conversation 200 15ms
+2026-03-15 04:35:09,782 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 16ms
+2026-03-15 04:35:09,786 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 36ms
+2026-03-15 04:35:09,793 INFO [app] GET /api/v1/admin/messages/conversations 200 55ms
+2026-03-15 04:35:09,800 INFO [app] GET /api/v1/admin/notifications 200 22ms
+2026-03-15 04:35:09,829 INFO [app] GET /api/v1/user/messages/support/conversation 200 23ms
+2026-03-15 04:35:09,831 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 11ms
+2026-03-15 04:35:53,889 INFO [app] GET /api/v1/user/messages/support/conversation 200 8ms
+2026-03-15 04:35:57,996 INFO [app] GET /api/v1/carts/ 200 4114ms
+2026-03-15 04:36:38,071 INFO [app] GET /api/v1/products/ 200 4086ms
+2026-03-15 04:36:38,085 INFO [app] GET /api/v1/carts/ 200 4098ms
+2026-03-15 04:36:43,358 INFO [app] POST /api/v1/user/messages/support/conversation/messages 403 1ms
+2026-03-15 04:36:45,421 INFO [app] POST /api/v1/auth/refresh 401 2040ms
+2026-03-15 04:37:16,196 INFO [app] POST /api/v1/auth/login 200 2122ms
+2026-03-15 04:37:25,974 INFO [app] GET /api/v1/admin/notifications 200 6ms
+2026-03-15 04:37:25,983 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-15 04:37:26,002 INFO [app] GET /api/v1/users 200 18ms
+2026-03-15 04:37:30,084 INFO [app] GET /api/v1/orders/stats/overview 200 4092ms
+2026-03-15 04:37:30,100 INFO [app] GET /api/v1/orders 200 4114ms
+2026-03-15 04:37:46,570 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 14ms
+2026-03-15 04:37:46,574 INFO [app] POST /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/read 200 21ms
+2026-03-15 04:37:46,616 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-03-15 04:37:46,617 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:37:46,619 INFO [app] GET /api/v1/admin/messages/conversations/1f96e327-8740-4854-8a10-0f16ba153033/messages 200 8ms
+2026-03-15 04:37:49,357 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 19ms
+2026-03-15 04:37:49,370 INFO [app] GET /api/v1/user/messages/support/conversation 200 5ms
+2026-03-15 04:37:49,381 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 38ms
+2026-03-15 04:37:49,385 INFO [app] GET /api/v1/admin/messages/conversations 200 15ms
+2026-03-15 04:37:49,388 INFO [app] GET /api/v1/admin/notifications 200 16ms
+2026-03-15 04:37:49,401 INFO [app] GET /api/v1/user/messages/support/conversation 200 13ms
+2026-03-15 04:37:49,410 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 11ms
+2026-03-15 04:37:57,250 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2051ms
+2026-03-15 04:37:57,267 INFO [app] GET /api/v1/user/messages/support/conversation 200 9ms
+2026-03-15 04:37:57,270 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-03-15 04:37:57,274 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 10ms
+2026-03-15 04:37:57,284 INFO [app] GET /api/v1/admin/notifications 200 21ms
+2026-03-15 04:37:57,297 INFO [app] GET /api/v1/user/messages/support/conversation 200 15ms
+2026-03-15 04:37:57,307 INFO [app] GET /api/v1/admin/notifications 200 7ms
+2026-03-15 04:37:57,310 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 15ms
+2026-03-15 04:37:57,314 INFO [app] GET /api/v1/admin/messages/conversations 200 20ms
+2026-03-15 04:37:57,329 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 5ms
+2026-03-15 04:37:57,333 INFO [app] GET /api/v1/admin/messages/conversations 200 5ms
+2026-03-15 04:38:11,260 INFO [app] DELETE /api/v1/carts/26 200 2059ms
+2026-03-15 04:38:15,332 INFO [app] GET /api/v1/carts/ 200 4064ms
+2026-03-15 04:38:23,307 INFO [app] GET /api/v1/user/messages/support/conversation 200 6ms
+2026-03-15 04:38:23,741 INFO [app] GET /api/v1/auth/me 200 3ms
+2026-03-15 04:38:24,046 INFO [app] GET /api/v1/products/ 200 4113ms
+2026-03-15 04:38:25,349 INFO [app] GET /api/v1/carts/ 200 2043ms
+2026-03-15 04:38:25,351 INFO [app] GET /api/v1/products/ 200 2055ms
+2026-03-15 04:38:25,382 INFO [app] GET /api/v1/user/messages/support/conversation 200 6ms
+2026-03-15 04:38:25,861 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-03-15 04:38:27,422 INFO [app] GET /api/v1/products/ 200 2044ms
+2026-03-15 04:38:27,439 INFO [app] GET /api/v1/carts/ 200 2060ms
+2026-03-15 04:39:44,737 INFO [app] GET /api/v1/user/messages/support/conversation 200 7ms
+2026-03-15 04:39:44,794 INFO [app] GET /api/v1/auth/me 200 1ms
+2026-03-15 04:39:45,034 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-03-15 04:39:45,161 INFO [app] GET /api/v1/admin/notifications 200 5ms
+2026-03-15 04:39:45,183 INFO [app] GET /api/v1/admin/messages/conversations 200 5ms
+2026-03-15 04:39:45,294 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 11ms
+2026-03-15 04:39:45,308 INFO [app] GET /api/v1/user/messages/support/conversation 200 5ms
+2026-03-15 04:39:45,315 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 31ms
+2026-03-15 04:39:45,323 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-03-15 04:39:45,327 INFO [app] GET /api/v1/admin/messages/conversations 200 15ms
+2026-03-15 04:39:45,328 INFO [app] GET /api/v1/user/messages/support/conversation 200 10ms
+2026-03-15 04:39:47,792 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 8ms
+2026-03-15 04:39:47,803 INFO [app] GET /api/v1/user/messages/support/conversation 200 3ms
+2026-03-15 04:39:47,836 INFO [app] GET /api/v1/admin/messages/conversations 200 6ms
+2026-03-15 04:39:47,840 INFO [app] GET /api/v1/user/messages/support/conversation 200 13ms
+2026-03-15 04:39:47,875 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 10ms
+2026-03-15 04:39:47,883 INFO [app] GET /api/v1/admin/notifications 200 11ms
+2026-03-15 04:39:48,800 INFO [app] GET /api/v1/products/ 200 4072ms
+2026-03-15 04:39:48,817 INFO [app] GET /api/v1/carts/ 200 4084ms
+2026-03-15 04:40:02,841 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-03-15 04:40:02,951 INFO [app] GET /api/v1/admin/messages/conversations 200 7ms
+2026-03-15 04:40:02,964 INFO [app] GET /api/v1/admin/notifications 200 21ms
+2026-03-15 04:40:03,084 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 12ms
+2026-03-15 04:40:03,089 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 9ms
+2026-03-15 04:40:03,138 INFO [app] GET /api/v1/user/messages/support/conversation 200 9ms
+2026-03-15 04:40:03,214 INFO [app] GET /api/v1/admin/messages/conversations 200 37ms
+2026-03-15 04:40:03,217 INFO [app] GET /api/v1/user/messages/support/conversation 200 11ms
+2026-03-15 04:40:03,219 INFO [app] GET /api/v1/admin/notifications 200 23ms
+2026-03-15 04:40:12,322 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2071ms
+2026-03-15 04:40:12,339 INFO [app] GET /api/v1/user/messages/support/conversation 200 9ms
+2026-03-15 04:40:12,341 INFO [app] GET /api/v1/admin/notifications 200 7ms
+2026-03-15 04:40:12,344 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-15 04:40:12,350 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 14ms
+2026-03-15 04:40:12,364 INFO [app] GET /api/v1/user/messages/support/conversation 200 11ms
+2026-03-15 04:40:12,375 INFO [app] GET /api/v1/admin/notifications 200 13ms
+2026-03-15 04:40:12,379 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:40:12,386 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 11ms
+2026-03-15 04:40:12,391 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:40:12,403 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:40:12,407 INFO [app] GET /api/v1/admin/messages/conversations 200 14ms
+2026-03-15 04:40:12,409 INFO [app] GET /api/v1/admin/notifications 200 7ms
+2026-03-15 04:40:12,422 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:40:12,423 INFO [app] GET /api/v1/admin/messages/conversations 200 7ms
+2026-03-15 04:40:12,434 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 5ms
+2026-03-15 04:40:12,437 INFO [app] GET /api/v1/admin/messages/conversations 200 6ms
+2026-03-15 04:40:24,817 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 3ms
+2026-03-15 04:40:24,861 INFO [app] POST /api/v1/user/messages/support/conversation/read 200 22ms
+2026-03-15 04:40:24,892 INFO [app] GET /api/v1/user/messages/support/conversation 200 11ms
+2026-03-15 04:40:24,926 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 35ms
+2026-03-15 04:40:24,974 INFO [app] GET /api/v1/admin/messages/conversations 200 75ms
+2026-03-15 04:40:24,978 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 27ms
+2026-03-15 04:40:24,979 INFO [app] GET /api/v1/admin/notifications 200 39ms
+2026-03-15 04:40:24,996 INFO [app] GET /api/v1/user/messages/support/conversation 200 33ms
+2026-03-15 04:40:25,007 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 38ms
+2026-03-15 04:40:25,058 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 26ms
+2026-03-15 04:40:25,063 INFO [app] GET /api/v1/admin/messages/conversations 200 39ms
+2026-03-15 04:40:25,073 INFO [app] GET /api/v1/user/messages/support/conversation 200 29ms
+2026-03-15 04:40:25,075 INFO [app] GET /api/v1/admin/notifications 200 19ms
+2026-03-15 04:40:25,090 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 30ms
+2026-03-15 04:40:25,095 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 15ms
+2026-03-15 04:40:25,103 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-03-15 04:40:25,127 INFO [app] GET /api/v1/admin/notifications 200 18ms
+2026-03-15 04:40:25,136 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:40:25,142 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 19ms
+2026-03-15 04:40:25,149 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:40:33,178 INFO [app] POST /api/v1/user/messages/support/conversation/messages 201 2049ms
+2026-03-15 04:40:33,194 INFO [app] GET /api/v1/user/messages/support/conversation 200 8ms
+2026-03-15 04:40:33,208 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 16ms
+2026-03-15 04:40:33,210 INFO [app] GET /api/v1/admin/notifications 200 16ms
+2026-03-15 04:40:33,217 INFO [app] GET /api/v1/admin/messages/conversations 200 28ms
+2026-03-15 04:40:33,220 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 21ms
+2026-03-15 04:40:33,226 INFO [app] GET /api/v1/user/messages/support/conversation 200 15ms
+2026-03-15 04:40:33,241 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 19ms
+2026-03-15 04:40:33,242 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-03-15 04:40:33,244 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 9ms
+2026-03-15 04:40:33,246 INFO [app] GET /api/v1/user/messages/support/conversation 200 7ms
+2026-03-15 04:40:33,256 INFO [app] GET /api/v1/admin/notifications 200 33ms
+2026-03-15 04:40:33,270 INFO [app] GET /api/v1/admin/messages/conversations 200 15ms
+2026-03-15 04:40:33,271 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 20ms
+2026-03-15 04:40:33,274 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 12ms
+2026-03-15 04:40:33,282 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-03-15 04:40:33,294 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:40:33,297 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:40:33,301 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:40:48,875 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 201 2066ms
+2026-03-15 04:40:48,894 INFO [app] GET /api/v1/user/messages/support/conversation 200 10ms
+2026-03-15 04:40:48,902 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-15 04:40:48,903 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-03-15 04:40:48,910 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 19ms
+2026-03-15 04:40:48,916 INFO [app] GET /api/v1/user/messages/support/conversation 200 11ms
+2026-03-15 04:40:48,933 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 37ms
+2026-03-15 04:40:48,935 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:40:48,938 INFO [app] GET /api/v1/admin/messages/conversations 200 14ms
+2026-03-15 04:40:48,950 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 9ms
+2026-03-15 04:40:48,955 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 24ms
+2026-03-15 04:40:48,963 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
+2026-03-15 04:40:48,968 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 7ms
+2026-03-15 04:40:48,976 INFO [app] GET /api/v1/admin/notifications 200 25ms
+2026-03-15 04:40:48,980 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:40:48,986 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 8ms
+2026-03-15 04:40:48,995 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 04:40:48,999 INFO [app] GET /api/v1/admin/messages/conversations 200 8ms
+2026-03-15 04:40:49,003 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 5ms
+2026-03-15 04:40:59,582 INFO [app] GET /api/v1/admin/messages/conversations/acf198fe-6ce2-4a85-8abd-f9bf3af6ade1/messages 200 10ms
+2026-03-15 04:40:59,594 INFO [app] POST /api/v1/admin/messages/conversations/acf198fe-6ce2-4a85-8abd-f9bf3af6ade1/read 200 24ms
+2026-03-15 04:40:59,641 INFO [app] GET /api/v1/admin/messages/conversations 200 16ms
+2026-03-15 04:40:59,652 INFO [app] GET /api/v1/admin/notifications 200 10ms
+2026-03-15 04:40:59,653 INFO [app] GET /api/v1/admin/messages/conversations/acf198fe-6ce2-4a85-8abd-f9bf3af6ade1/messages 200 16ms
+2026-03-15 04:41:00,869 INFO [app] POST /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/read 200 19ms
+2026-03-15 04:41:00,904 INFO [app] GET /api/v1/user/messages/support/conversation 200 24ms
+2026-03-15 04:41:00,906 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 20ms
+2026-03-15 04:41:00,912 INFO [app] GET /api/v1/admin/notifications 200 11ms
+2026-03-15 04:41:00,914 INFO [app] GET /api/v1/admin/messages/conversations 200 22ms
+2026-03-15 04:41:00,927 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 29ms
+2026-03-15 04:41:00,938 INFO [app] GET /api/v1/user/messages/support/conversation 200 18ms
+2026-03-15 04:41:00,940 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 8ms
+2026-03-15 04:41:28,587 INFO [app] GET /api/v1/orders 200 4089ms
+2026-03-15 04:41:28,604 INFO [app] GET /api/v1/orders/stats/overview 200 4104ms
+2026-03-15 04:41:30,794 INFO [app] GET /api/v1/products/ 200 4095ms
+2026-03-15 05:25:52,794 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 25ms
+2026-03-15 05:25:52,795 INFO [app] GET /api/v1/user/messages/support/conversation 200 28ms
+2026-03-15 05:25:52,815 INFO [app] POST /api/v1/user/messages/support/conversation/read 200 24ms
+2026-03-15 05:25:52,841 INFO [app] GET /api/v1/user/messages/support/conversation 200 6ms
+2026-03-15 05:25:52,847 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 10ms
+2026-03-15 05:25:56,753 INFO [app] POST /api/v1/user/messages/support/conversation/read 200 5ms
+2026-03-15 05:25:56,786 INFO [app] GET /api/v1/user/messages/support/conversation/messages 200 8ms
+2026-03-15 05:25:56,786 INFO [app] GET /api/v1/user/messages/support/conversation 200 12ms
+2026-03-15 05:25:56,863 INFO [app] GET /api/v1/carts/ 200 4092ms
+2026-03-15 05:26:55,878 INFO [app] GET /api/v1/users 200 22ms
+2026-03-15 05:26:55,881 INFO [app] GET /api/v1/admin/messages/conversations 200 16ms
+2026-03-15 05:26:59,950 INFO [app] GET /api/v1/products/ 200 4097ms
+2026-03-15 05:26:59,965 INFO [app] GET /api/v1/orders/stats/overview 200 4103ms
+2026-03-15 05:26:59,982 INFO [app] GET /api/v1/orders 200 4122ms
+2026-03-15 05:27:16,589 INFO [app] GET /api/v1/orders 200 4103ms
+2026-03-15 18:17:40,933 INFO [app] POST /api/v1/auth/login 200 2144ms
+2026-03-15 18:17:45,097 INFO [app] GET /api/v1/products/ 200 4102ms
+2026-03-15 18:17:45,097 INFO [app] GET /api/v1/carts/ 200 4100ms
+2026-03-15 18:18:35,190 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-03-15 18:18:36,139 INFO [app] GET /api/v1/categories/ 200 4078ms
+2026-03-15 18:18:37,165 INFO [app] GET /api/v1/categories/ 200 2046ms
+2026-03-15 18:18:37,165 INFO [app] GET /api/v1/carts/ 200 2047ms
+2026-03-15 18:18:37,166 INFO [app] GET /api/v1/products/ 200 2046ms
+2026-03-15 18:23:36,510 INFO [app] GET /api/v1/products/ 200 4109ms
+2026-03-15 18:23:36,510 INFO [app] GET /api/v1/categories/ 200 4108ms
+2026-03-15 19:24:33,652 INFO [app] POST /api/v1/auth/login 200 2146ms
+2026-03-15 19:24:37,192 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-15 19:24:37,204 INFO [app] GET /api/v1/admin/messages/conversations 200 13ms
+2026-03-15 19:24:37,291 INFO [app] GET /api/v1/users 200 36ms
+2026-03-15 19:24:37,802 INFO [app] GET /api/v1/products/ 200 4078ms
+2026-03-15 19:24:37,814 INFO [app] GET /api/v1/carts/ 200 4086ms
+2026-03-15 19:24:41,348 INFO [app] GET /api/v1/orders 200 4078ms
+2026-03-15 19:24:41,396 INFO [app] GET /api/v1/orders/stats/overview 200 4102ms
+2026-03-15 20:05:24,564 INFO [app] GET /api/v1/admin/notifications 200 9ms
+2026-03-15 20:05:24,566 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-03-15 20:21:14,042 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-03-15 20:21:14,045 INFO [app] GET /api/v1/admin/notifications 200 14ms
+2026-03-15 20:21:14,047 INFO [app] GET /api/v1/admin/messages/conversations 200 13ms
+2026-03-15 20:21:14,156 INFO [app] GET /api/v1/farm-services/ 500 115ms
+2026-03-16 11:09:39,802 INFO [app] POST /api/v1/auth/login 200 2145ms
+2026-03-16 11:09:43,962 INFO [app] GET /api/v1/carts/ 200 4089ms
+2026-03-16 11:09:43,983 INFO [app] GET /api/v1/products/ 200 4115ms
+2026-03-16 11:10:23,110 INFO [app] GET /api/v1/admin/notifications 200 14ms
+2026-03-16 11:10:23,119 INFO [app] GET /api/v1/admin/messages/conversations 200 22ms
+2026-03-16 11:10:23,142 INFO [app] GET /api/v1/users 200 35ms
+2026-03-16 11:10:27,200 INFO [app] GET /api/v1/orders 200 4090ms
+2026-03-16 11:10:27,200 INFO [app] GET /api/v1/orders/stats/overview 200 4088ms
+2026-03-16 11:10:48,890 INFO [app] GET /api/v1/orders 200 4072ms
+2026-03-16 11:11:41,113 INFO [app] GET /api/v1/users 200 16ms
+2026-03-16 11:11:41,116 INFO [app] GET /api/v1/admin/messages/conversations 200 15ms
+2026-03-16 11:11:42,552 INFO [app] GET /api/v1/users 200 5ms
+2026-03-16 11:11:43,298 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-03-16 11:11:43,373 INFO [app] GET /api/v1/farm-services/ 500 75ms
+2026-03-16 11:11:44,391 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-03-16 11:11:44,392 INFO [app] GET /api/v1/farm-services/ 500 0ms
+2026-03-16 11:11:45,184 INFO [app] GET /api/v1/orders/stats/overview 200 4091ms
+2026-03-16 11:11:45,185 INFO [app] GET /api/v1/orders 200 4088ms
+2026-03-16 11:11:46,415 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-03-16 11:11:46,416 INFO [app] GET /api/v1/farm-services/ 500 1ms
+2026-03-16 11:11:50,426 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-03-16 11:11:50,427 INFO [app] GET /api/v1/farm-services/ 500 0ms
+2026-03-16 11:14:17,180 ERROR [app] Unhandled exception: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 891, in dispatch_request
+    self.raise_routing_exception(req)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 500, in raise_routing_exception
+    raise request.routing_exception  # type: ignore[misc]
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\ctx.py", line 362, in match_request
+    result = self.url_adapter.match(return_rule=True)  # type: ignore
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\werkzeug\routing\map.py", line 629, in match
+    raise NotFound() from None
+werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
+2026-03-16 11:14:17,181 INFO [app] GET /api/v1/farm-services/ 500 1ms
+2026-03-16 11:14:23,920 INFO [app] GET /api/v1/services/ 200 4097ms
+2026-03-16 11:14:46,599 INFO [app] GET /api/v1/services/ 200 2043ms
+2026-03-16 11:15:02,599 INFO [app] GET /api/v1/services/ 200 2028ms
+2026-03-16 11:15:03,955 INFO [app] GET /api/v1/products/ 200 4077ms
+2026-03-16 11:15:03,955 INFO [app] GET /api/v1/categories/ 200 4075ms
+2026-03-16 11:15:12,522 INFO [app] GET /api/v1/services/ 200 2041ms
+2026-03-16 11:33:49,551 INFO [app] GET /api/v1/auth/me 200 5ms
+2026-03-16 11:33:53,503 INFO [app] GET /api/v1/products/ 200 4083ms
+2026-03-16 11:33:53,566 INFO [app] GET /api/v1/services/ 200 4120ms
+2026-03-16 11:33:53,566 INFO [app] GET /api/v1/carts/ 200 4130ms
+2026-03-16 11:34:20,592 INFO [app] GET /api/v1/admin/notifications 200 8ms
+2026-03-16 11:34:20,627 INFO [app] GET /api/v1/admin/messages/conversations 200 35ms
+2026-03-16 11:34:20,632 INFO [app] GET /api/v1/users 200 34ms
+2026-03-16 11:34:24,728 INFO [app] GET /api/v1/orders 200 4107ms
+2026-03-16 11:34:24,777 INFO [app] GET /api/v1/orders/stats/overview 200 4123ms
+2026-03-16 11:42:11,095 INFO [app] GET /api/v1/services/ 200 4086ms
+2026-03-16 11:53:07,180 INFO [app] GET /api/v1/auth/me 200 2ms
+2026-03-16 11:53:07,289 INFO [app] GET /api/v1/admin/notifications 200 7ms
+2026-03-16 11:53:07,296 INFO [app] GET /api/v1/admin/messages/conversations 200 13ms
+2026-03-16 11:53:11,383 INFO [app] GET /api/v1/services/ 200 4092ms
+2026-03-16 12:01:46,599 INFO [app] GET /api/v1/services/ 200 4085ms
+2026-03-16 12:11:49,317 INFO [app] GET /api/v1/services/ 200 4075ms
+2026-03-16 12:14:16,321 INFO [app] GET /api/v1/auth/me 200 5ms
+2026-03-16 12:14:16,518 INFO [app] GET /api/v1/admin/notifications 200 11ms
+2026-03-16 12:14:16,522 INFO [app] GET /api/v1/admin/messages/conversations 200 12ms
+2026-03-16 12:14:20,587 INFO [app] GET /api/v1/services/ 200 4073ms
+2026-03-16 12:17:59,550 INFO [app] GET /api/v1/users 200 5ms
+2026-03-16 12:18:01,607 INFO [app] GET /api/v1/users/38 200 7ms
+2026-03-16 12:18:01,632 INFO [app] GET /api/v1/users/38/details 200 24ms
+2026-03-16 12:18:01,650 INFO [app] GET /api/v1/users/38/orders 200 38ms
+2026-03-16 12:18:03,948 INFO [app] GET /api/v1/users 200 16ms
+2026-03-16 12:18:03,953 INFO [app] GET /api/v1/admin/messages/conversations 200 11ms
+2026-03-16 12:18:08,051 INFO [app] GET /api/v1/products/ 200 4122ms
+2026-03-16 12:18:08,051 INFO [app] GET /api/v1/orders 200 4116ms
+2026-03-16 12:18:08,067 INFO [app] GET /api/v1/orders/stats/overview 200 4130ms
+2026-03-16 12:18:10,645 INFO [app] GET /api/v1/users 200 9ms
+2026-03-16 12:18:10,826 INFO [app] GET /api/v1/orders 200 4096ms
+2026-03-16 12:18:14,752 INFO [app] GET /api/v1/orders 200 4114ms
+2026-03-16 12:19:29,906 INFO [app] GET /api/v1/services/ 200 4081ms

@@ -16,6 +16,7 @@ from routes.farms.products import products
 from routes.farms.categories import categories
 from routes.farms.orders import orders
 from routes.farms.cart import carts
+from routes.farms.services import farm_services
 from routes.farms.admin.product import products_admin
 from routes.farms.admin.category import categories_admin
 from routes.farms.admin.order import orders_admin
@@ -138,6 +139,7 @@ app.register_blueprint(users, url_prefix=f'{url}/users')
 app.register_blueprint(user_support_api, url_prefix=f'{url}/user')
 app.register_blueprint(orders, url_prefix=f'{url}/orders')
 app.register_blueprint(carts, url_prefix=f'{url}/carts')
+app.register_blueprint(farm_services, url_prefix=f'{url}/services')
 app.register_blueprint(products_admin, url_prefix=f'{url}/products')
 app.register_blueprint(categories_admin, url_prefix=f'{url}/categories')
 app.register_blueprint(orders_admin, url_prefix=f'{url}/orders')
