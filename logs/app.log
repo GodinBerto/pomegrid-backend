@@ -4679,3 +4679,4 @@ Traceback (most recent call last):
     raise NotFound() from None
 werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.
 2026-03-16 12:34:16,466 INFO [app] HEAD /api/v1/ 500 2ms
+2026-03-16 12:34:18,596 INFO [app] POST /api/v1/auth/login 401 2123ms
