@@ -1,7 +1,7 @@
 import os
 from urllib.parse import urlsplit
 
-from flask import Flask
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
 from datetime import timedelta
@@ -130,6 +130,20 @@ setup_logging(app)
 
 # Load Base URL from config.py
 url = app.config['BASE_URL']
+API_ROOT_ETAG = "pomegrid-api-root-v1"
+
+
+@app.route(url, methods=["GET"])
+@app.route(f"{url}/", methods=["GET"])
+def api_root():
+    response = jsonify({
+        "message": "Pomegrid API is running",
+        "base_url": url,
+    })
+    response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=60"
+    response.set_etag(API_ROOT_ETAG)
+    response.make_conditional(request)
+    return response
 
 # Register blueprints
 app.register_blueprint(auth, url_prefix=f'{url}/auth')

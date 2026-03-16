@@ -3,6 +3,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from flask import g, request
 from time import time
+from werkzeug.exceptions import HTTPException
 
 
 def setup_logging(app):
@@ -35,6 +36,11 @@ def setup_logging(app):
 
     @app.after_request
     def log_response(response):
+        base_url = str(app.config.get("BASE_URL") or "").rstrip("/")
+        request_path = request.path.rstrip("/")
+        if request.method == "HEAD" and base_url and request_path == base_url:
+            return response
+
         elapsed_ms = 0
         if hasattr(g, "request_start_time"):
             elapsed_ms = int((time() - g.request_start_time) * 1000)
@@ -49,5 +55,8 @@ def setup_logging(app):
 
     @app.errorhandler(Exception)
     def handle_exception(error):
+        if isinstance(error, HTTPException):
+            return {"message": error.description}, error.code
+
         app.logger.exception("Unhandled exception: %s", error)
         return {"message": "Internal server error"}, 500
