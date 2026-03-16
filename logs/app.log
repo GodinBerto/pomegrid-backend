@@ -4739,3 +4739,5 @@ werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on 
 2026-03-16 12:51:55,037 INFO [app] GET /api/v1/admin/messages/conversations/1cba59aa-222c-44fd-b964-43d447e05180/messages 200 65ms
 2026-03-16 12:51:55,061 INFO [app] GET /api/v1/admin/messages/conversations 200 10ms
 2026-03-16 12:51:55,092 INFO [app] GET /api/v1/admin/notifications 200 18ms
+2026-03-16 12:53:33,239 INFO [app] GET /api/v1/orders 200 4099ms
+2026-03-16 12:53:33,239 INFO [app] GET /api/v1/orders/stats/overview 200 4092ms
