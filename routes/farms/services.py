@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 ALLOWED_ICONS = {"users", "settings", "graduationCap", "wrench"}
 PRICE_TIERS = ("basic", "premium", "enterprise")
-FARM_SERVICES_LIST_CACHE_KEY = "farms:services:list"
+FARM_SERVICES_LIST_CACHE_KEY = "farms:services:list:v2"
+FARM_SERVICE_CACHE_KEY_PREFIX = "farms:services:item"
 
 
 def _cache_get(key):
@@ -52,6 +53,10 @@ def _default_pricing():
     }
 
 
+def _service_cache_key(service_id):
+    return f"{FARM_SERVICE_CACHE_KEY_PREFIX}:{service_id}"
+
+
 def _serialize_farm_service(row):
     features = []
     pricing = _default_pricing()
@@ -80,6 +85,7 @@ def _serialize_farm_service(row):
             pricing = _default_pricing()
 
     return {
+        "id": int(row["id"]),
         "title": str(row["title"] or "").strip(),
         "description": str(row["description"] or "").strip(),
         "icon": str(row["icon"] or "").strip(),
@@ -136,6 +142,18 @@ def _validate_service_payload(data):
     }, None
 
 
+def _fetch_farm_service(cursor, service_id, include_inactive=False):
+    query = """
+        SELECT id, title, description, icon, features_json, pricing_json, is_active
+        FROM farm_services
+        WHERE id = ?
+    """
+    if not include_inactive:
+        query += " AND COALESCE(is_active, 1) = 1"
+    cursor.execute(query, (service_id,))
+    return cursor.fetchone()
+
+
 @farm_services.route("", methods=["GET"])
 @farm_services.route("/", methods=["GET"])
 def list_farm_services():
@@ -147,7 +165,7 @@ def list_farm_services():
         conn, cursor = db_connection()
         cursor.execute(
             """
-            SELECT title, description, icon, features_json, pricing_json
+            SELECT id, title, description, icon, features_json, pricing_json
             FROM farm_services
             WHERE COALESCE(is_active, 1) = 1
             ORDER BY sort_order ASC, id ASC
@@ -161,6 +179,28 @@ def list_farm_services():
     except Exception:
         logger.exception("Failed to list farm services")
         return jsonify([]), 500
+
+
+@farm_services.route("/<int:service_id>", methods=["GET"])
+def get_farm_service(service_id):
+    cache_key = _service_cache_key(service_id)
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return jsonify(cached), 200
+
+    try:
+        conn, cursor = db_connection()
+        row = _fetch_farm_service(cursor, service_id)
+        conn.close()
+        if not row:
+            return jsonify({"message": "service not found"}), 404
+
+        payload = _serialize_farm_service(row)
+        _cache_set(cache_key, payload)
+        return jsonify(payload), 200
+    except Exception:
+        logger.exception("Failed to fetch farm service %s", service_id)
+        return jsonify({"message": "failed to fetch service"}), 500
 
 
 @farm_services.route("", methods=["POST"])
@@ -197,11 +237,95 @@ def create_farm_service():
                 sort_order,
             ),
         )
+        service_id = int(cursor.lastrowid)
         conn.commit()
+        created_row = _fetch_farm_service(cursor, service_id, include_inactive=True)
         conn.close()
         _cache_delete(FARM_SERVICES_LIST_CACHE_KEY)
-        return jsonify(payload), 201
+        return jsonify(_serialize_farm_service(created_row)), 201
     except Exception as exc:
         logger.exception("Failed to create farm service")
-        message = "title already exists" if "unique" in str(exc).lower() else "failed to create service"
-        return jsonify({"message": message}), 400
+        is_unique_error = "unique" in str(exc).lower()
+        message = "title already exists" if is_unique_error else "failed to create service"
+        return jsonify({"message": message}), 400 if is_unique_error else 500
+
+
+@farm_services.route("/<int:service_id>", methods=["PUT"])
+@admin_required
+def update_farm_service(service_id):
+    data = request.get_json() or {}
+
+    try:
+        conn, cursor = db_connection()
+        existing_row = _fetch_farm_service(cursor, service_id, include_inactive=True)
+        if not existing_row:
+            conn.close()
+            return jsonify({"message": "service not found"}), 404
+
+        existing_payload = _serialize_farm_service(existing_row)
+        merged_payload = {
+            "title": data.get("title", existing_payload["title"]),
+            "description": data.get("description", existing_payload["description"]),
+            "icon": data.get("icon", existing_payload["icon"]),
+            "features": data.get("features", existing_payload["features"]),
+            "pricing": data.get("pricing", existing_payload["pricing"]),
+        }
+        payload, error = _validate_service_payload(merged_payload)
+        if error:
+            conn.close()
+            return jsonify({"message": error}), 400
+
+        cursor.execute(
+            """
+            UPDATE farm_services
+            SET
+                title = ?,
+                description = ?,
+                icon = ?,
+                features_json = ?,
+                pricing_json = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                payload["title"],
+                payload["description"],
+                payload["icon"],
+                json.dumps(payload["features"]),
+                json.dumps(payload["pricing"]),
+                service_id,
+            ),
+        )
+        conn.commit()
+
+        updated_row = _fetch_farm_service(cursor, service_id, include_inactive=True)
+        conn.close()
+
+        response_payload = _serialize_farm_service(updated_row)
+        _cache_delete(FARM_SERVICES_LIST_CACHE_KEY, _service_cache_key(service_id))
+        return jsonify(response_payload), 200
+    except Exception as exc:
+        logger.exception("Failed to update farm service %s", service_id)
+        is_unique_error = "unique" in str(exc).lower()
+        message = "title already exists" if is_unique_error else "failed to update service"
+        return jsonify({"message": message}), 400 if is_unique_error else 500
+
+
+@farm_services.route("/<int:service_id>", methods=["DELETE"])
+@admin_required
+def delete_farm_service(service_id):
+    try:
+        conn, cursor = db_connection()
+        cursor.execute("DELETE FROM farm_services WHERE id = ?", (service_id,))
+        conn.commit()
+        deleted = int(cursor.rowcount or 0)
+        conn.close()
+
+        if deleted == 0:
+            return jsonify({"message": "service not found"}), 404
+
+        _cache_delete(FARM_SERVICES_LIST_CACHE_KEY, _service_cache_key(service_id))
+        return jsonify({"id": service_id}), 200
+    except Exception:
+        logger.exception("Failed to delete farm service %s", service_id)
+        return jsonify({"message": "failed to delete service"}), 500
