@@ -11,6 +11,7 @@ from services.paystack import (
     amount_to_subunit,
     generate_reference,
     initialize_transaction,
+    parse_subunit_amount,
     subunit_to_amount,
     verify_transaction,
     verify_webhook_signature,
@@ -64,6 +65,18 @@ def _safe_json_dumps(value):
     return json.dumps(value)
 
 
+def _normalize_bool(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes"}:
+            return True
+        if normalized in {"false", "0", "no"}:
+            return False
+    return None
+
+
 def _serialize_payment_row(row, include_gateway_payload=False):
     payment = dict(row)
     payment["amount"] = float(payment.get("amount") or 0)
@@ -110,6 +123,23 @@ def _build_reference(cursor, provided_reference=None):
         reference = generate_reference("pmgpay")
 
 
+def _resolve_initialize_amount(data, order_row):
+    if order_row is not None:
+        amount_subunit = amount_to_subunit(order_row["total_price"])
+        return amount_subunit, subunit_to_amount(amount_subunit)
+
+    if data.get("amount_subunit") not in (None, ""):
+        amount_subunit = parse_subunit_amount(data.get("amount_subunit"))
+        return amount_subunit, subunit_to_amount(amount_subunit)
+
+    amount_mode = _normalize_bool(data.get("amount_in_subunit"))
+    if amount_mode is False:
+        amount_subunit = amount_to_subunit(data.get("amount"))
+    else:
+        amount_subunit = parse_subunit_amount(data.get("amount"))
+    return amount_subunit, subunit_to_amount(amount_subunit)
+
+
 def _merge_metadata(existing_metadata_json, incoming_metadata):
     merged = _safe_json_loads(existing_metadata_json, {})
     if isinstance(incoming_metadata, dict):
@@ -121,7 +151,7 @@ def _update_payment_from_gateway(cursor, payment_row, transaction_data):
     gateway_status = str(transaction_data.get("status") or payment_row["status"] or "pending").strip().lower()
     raw_amount = transaction_data.get("amount")
     amount = subunit_to_amount(raw_amount) if raw_amount is not None else float(payment_row["amount"] or 0)
-    currency = str(transaction_data.get("currency") or payment_row["currency"] or "NGN").strip().upper()
+    currency = str(transaction_data.get("currency") or payment_row["currency"] or "").strip().upper()
     gateway_response = str(transaction_data.get("gateway_response") or payment_row["gateway_response"] or "").strip() or None
     channel = str(transaction_data.get("channel") or payment_row["channel"] or "").strip() or None
     paid_at = transaction_data.get("paid_at") or payment_row["paid_at"]
@@ -217,7 +247,7 @@ def _create_gateway_payment_if_missing(cursor, reference, transaction_data):
             order_id,
             reference,
             subunit_to_amount(transaction_data.get("amount")),
-            str(transaction_data.get("currency") or "NGN").strip().upper(),
+            str(transaction_data.get("currency") or "").strip().upper(),
             str(transaction_data.get("status") or "pending").strip().lower(),
             str(transaction_data.get("gateway_response") or "").strip() or None,
             _safe_json_dumps(transaction_data),
@@ -303,7 +333,7 @@ def initialize_payment():
 
     data = request.get_json(silent=True) or {}
     callback_url = str(data.get("callback_url") or current_app.config.get("PAYSTACK_CALLBACK_URL") or "").strip() or None
-    currency = str(data.get("currency") or "NGN").strip().upper() or "NGN"
+    currency = str(data.get("currency") or "").strip().upper() or None
     provided_reference = str(data.get("reference") or "").strip() or None
     metadata = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
 
@@ -320,7 +350,6 @@ def initialize_payment():
             return jsonify(envelope(None, "User not found", 404, False)), 404
 
         order_id = data.get("order_id")
-        amount_value = data.get("amount")
         order_row = None
 
         if order_id not in (None, ""):
@@ -350,16 +379,12 @@ def initialize_payment():
             if str(order_row["payment_status"] or "").strip().lower() == "success":
                 conn.close()
                 return jsonify(envelope(None, "Order has already been paid", 409, False)), 409
-
-            amount_value = order_row["total_price"]
-
         email = str(data.get("email") or user_row["email"] or "").strip().lower()
         if not email:
             conn.close()
             return jsonify(envelope(None, "A customer email is required", 400, False)), 400
 
-        amount_subunit = amount_to_subunit(amount_value)
-        amount = subunit_to_amount(amount_subunit)
+        amount_subunit, amount = _resolve_initialize_amount(data, order_row)
         reference = _build_reference(cursor, provided_reference)
 
         metadata_payload = dict(metadata)
@@ -388,6 +413,7 @@ def initialize_payment():
             metadata=metadata_payload,
             base_url=current_app.config.get("PAYSTACK_BASE_URL"),
         )
+        gateway_reference = str(paystack_data.get("reference") or reference).strip() or reference
 
         cursor.execute(
             """
@@ -411,12 +437,12 @@ def initialize_payment():
             (
                 user_id,
                 int(order_row["id"]) if order_row is not None else None,
-                reference,
+                gateway_reference,
                 paystack_data.get("access_code"),
                 paystack_data.get("authorization_url"),
                 amount,
-                currency,
-                "Payment initialized",
+                currency or "",
+                "Authorization URL created",
                 _safe_json_dumps(paystack_data),
                 email,
                 metadata_json,
@@ -434,15 +460,21 @@ def initialize_payment():
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """,
-                (reference, int(order_row["id"])),
+                (gateway_reference, int(order_row["id"])),
             )
 
         payment_id = cursor.lastrowid
         conn.commit()
         cursor.execute(f"{PAYMENT_SELECT} WHERE p.id = ?", (payment_id,))
-        payload = _serialize_payment_row(cursor.fetchone(), include_gateway_payload=True)
+        payment_payload = _serialize_payment_row(cursor.fetchone(), include_gateway_payload=True)
+        payload = {
+            "authorization_url": paystack_data.get("authorization_url"),
+            "access_code": paystack_data.get("access_code"),
+            "reference": gateway_reference,
+            "payment": payment_payload,
+        }
         conn.close()
-        return jsonify(envelope(payload, "Payment initialized", 201)), 201
+        return jsonify(envelope(payload, "Authorization URL created", 200)), 200
     except ValueError as exc:
         if conn is not None:
             conn.close()

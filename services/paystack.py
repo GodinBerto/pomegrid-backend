@@ -34,6 +34,18 @@ def amount_to_subunit(amount):
     return int(normalized * 100)
 
 
+def parse_subunit_amount(amount):
+    try:
+        normalized = int(str(amount).strip())
+    except (TypeError, ValueError) as exc:
+        raise ValueError("amount must be a valid integer in the smallest currency unit") from exc
+
+    if normalized <= 0:
+        raise ValueError("amount must be greater than 0")
+
+    return normalized
+
+
 def subunit_to_amount(amount):
     try:
         normalized = Decimal(str(amount)) / Decimal("100")
@@ -49,13 +61,14 @@ def verify_webhook_signature(secret_key, payload, signature):
     return hmac.compare_digest(expected, signature)
 
 
-def initialize_transaction(secret_key, email, amount, reference, callback_url=None, currency="GHS", metadata=None, base_url=None):
+def initialize_transaction(secret_key, email, amount, reference, callback_url=None, currency=None, metadata=None, base_url=None):
     payload = {
         "email": email,
         "amount": amount,
         "reference": reference,
-        "currency": currency,
     }
+    if currency:
+        payload["currency"] = str(currency).strip().upper()
     if callback_url:
         payload["callback_url"] = callback_url
     if metadata:
@@ -85,6 +98,7 @@ def _request(secret_key, method, path, payload=None, base_url=None):
             "Authorization": f"Bearer {secret_key}",
             "Content-Type": "application/json",
             "Accept": "application/json",
+            "User-Agent": "PomegridBackend/1.0",
         },
     )
 
