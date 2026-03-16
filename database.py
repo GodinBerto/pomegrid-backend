@@ -785,6 +785,33 @@ def create_tables():
 
     cursor.execute(
         '''
+            CREATE TABLE IF NOT EXISTS payments(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                order_id INTEGER,
+                provider TEXT NOT NULL DEFAULT 'paystack',
+                reference TEXT NOT NULL UNIQUE,
+                access_code TEXT,
+                authorization_url TEXT,
+                amount REAL NOT NULL,
+                currency TEXT NOT NULL DEFAULT 'NGN',
+                status TEXT NOT NULL DEFAULT 'initialized',
+                gateway_response TEXT,
+                gateway_payload_json TEXT,
+                channel TEXT,
+                customer_email TEXT,
+                metadata_json TEXT,
+                paid_at TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE,
+                FOREIGN KEY (order_id) REFERENCES Orders(id) ON DELETE SET NULL
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
             CREATE TABLE IF NOT EXISTS withdrawal_requests(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 worker_id INTEGER NOT NULL,
@@ -1036,6 +1063,9 @@ def create_tables():
     ensure_column(cursor, "Products", "image_urls", "image_urls TEXT")
     ensure_column(cursor, "Products", "video_urls", "video_urls TEXT")
     ensure_column(cursor, "Orders", "payment_method", "payment_method TEXT")
+    ensure_column(cursor, "Orders", "payment_reference", "payment_reference TEXT")
+    ensure_column(cursor, "Orders", "payment_status", "payment_status TEXT")
+    ensure_column(cursor, "Orders", "paid_at", "paid_at TIMESTAMP")
     ensure_column(cursor, "Orders", "shipping_address", "shipping_address TEXT")
     ensure_column(cursor, "Orders", "notes", "notes TEXT")
     ensure_column(cursor, "Jobs", "status", "status TEXT NOT NULL DEFAULT 'pending'")
@@ -1192,6 +1222,15 @@ def create_tables():
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_wallet_transactions_status ON wallet_transactions(status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status)"
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_withdrawal_requests_worker_id ON withdrawal_requests(worker_id)"

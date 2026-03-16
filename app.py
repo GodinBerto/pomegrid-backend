@@ -21,6 +21,7 @@ from routes.farms.admin.product import products_admin
 from routes.farms.admin.category import categories_admin
 from routes.farms.admin.order import orders_admin
 from routes.farms.admin.messages import farms_admin_messages_api
+from routes.payments_api import payments
 from routes.user.user import users
 from routes.user.support_messages import user_support_api
 
@@ -149,6 +150,7 @@ def api_root():
 app.register_blueprint(auth, url_prefix=f'{url}/auth')
 app.register_blueprint(products, url_prefix=f'{url}/products')
 app.register_blueprint(categories, url_prefix=f'{url}/categories')
+app.register_blueprint(payments, url_prefix=f'{url}/payments')
 app.register_blueprint(users, url_prefix=f'{url}/users')
 app.register_blueprint(user_support_api, url_prefix=f'{url}/user')
 app.register_blueprint(orders, url_prefix=f'{url}/orders')
