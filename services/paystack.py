@@ -49,7 +49,7 @@ def verify_webhook_signature(secret_key, payload, signature):
     return hmac.compare_digest(expected, signature)
 
 
-def initialize_transaction(secret_key, email, amount, reference, callback_url=None, currency="NGN", metadata=None, base_url=None):
+def initialize_transaction(secret_key, email, amount, reference, callback_url=None, currency="GHS", metadata=None, base_url=None):
     payload = {
         "email": email,
         "amount": amount,
