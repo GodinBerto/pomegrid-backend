@@ -47,17 +47,19 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 
+DEFAULT_FRONTEND_ORIGINS = (
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+    "https://pomegrid.pythonanywhere.com",
+)
+
+
 def _get_allowed_frontend_origins():
-    default_origins = ",".join(
-        (
-            "http://localhost:3000",
-            "http://127.0.0.1:3000",
-            "http://localhost:5173",
-            "http://127.0.0.1:5173",
-            "http://localhost:8080",
-            "http://127.0.0.1:8080",
-        )
-    )
+    default_origins = ",".join(DEFAULT_FRONTEND_ORIGINS)
     raw_origins = os.getenv(
         "FRONTEND_ALLOWED_ORIGINS",
         default_origins,
@@ -134,17 +136,27 @@ url = app.config['BASE_URL']
 API_ROOT_ETAG = "pomegrid-api-root-v1"
 
 
-@app.route(url, methods=["GET"])
-@app.route(f"{url}/", methods=["GET"])
-def api_root():
+def _build_api_root_response():
     response = jsonify({
         "message": "Pomegrid API is running",
         "base_url": url,
+        "api_root": url,
     })
     response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=60"
     response.set_etag(API_ROOT_ETAG)
     response.make_conditional(request)
     return response
+
+
+@app.route("/", methods=["GET"])
+def service_root():
+    return _build_api_root_response()
+
+
+@app.route(url, methods=["GET"])
+@app.route(f"{url}/", methods=["GET"])
+def api_root():
+    return _build_api_root_response()
 
 # Register blueprints
 app.register_blueprint(auth, url_prefix=f'{url}/auth')
