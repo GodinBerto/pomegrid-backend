@@ -54,25 +54,43 @@ DEFAULT_FRONTEND_ORIGINS = (
     "http://127.0.0.1:5173",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
+    "http://pomegrid.pythonanywhere.com",
     "https://pomegrid.pythonanywhere.com",
 )
 
 
+def _normalize_origin(value):
+    origin = str(value or "").strip().rstrip("/")
+    if not origin:
+        return None
+
+    if "://" not in origin:
+        origin = f"https://{origin}"
+
+    parsed = urlsplit(origin)
+    scheme = (parsed.scheme or "").strip().lower()
+    host = (parsed.hostname or "").strip().lower()
+    if scheme not in {"http", "https"} or not host:
+        return None
+
+    port = f":{parsed.port}" if parsed.port else ""
+    return f"{scheme}://{host}{port}"
+
+
 def _get_allowed_frontend_origins():
-    default_origins = ",".join(DEFAULT_FRONTEND_ORIGINS)
-    raw_origins = os.getenv(
-        "FRONTEND_ALLOWED_ORIGINS",
-        default_origins,
-    )
     origins = []
     seen = set()
 
     def add_origin(value):
-        origin = value.strip().rstrip("/")
+        origin = _normalize_origin(value)
         if origin and origin not in seen:
             origins.append(origin)
             seen.add(origin)
 
+    for item in DEFAULT_FRONTEND_ORIGINS:
+        add_origin(item)
+
+    raw_origins = os.getenv("FRONTEND_ALLOWED_ORIGINS", "")
     for item in raw_origins.split(","):
         add_origin(item)
 
