@@ -56,6 +56,15 @@ DEFAULT_FRONTEND_ORIGINS = (
     "http://127.0.0.1:8080",
     "http://pomegrid.pythonanywhere.com",
     "https://pomegrid.pythonanywhere.com",
+    "https://aqua-farm-chat-shop.vercel.app",
+)
+
+FRONTEND_ORIGIN_ENV_KEYS = (
+    "FRONTEND_ALLOWED_ORIGINS",
+    "FRONTEND_URL",
+    "FRONTEND_ORIGIN",
+    "CORS_ALLOWED_ORIGINS",
+    "CORS_ORIGINS",
 )
 
 
@@ -90,9 +99,10 @@ def _get_allowed_frontend_origins():
     for item in DEFAULT_FRONTEND_ORIGINS:
         add_origin(item)
 
-    raw_origins = os.getenv("FRONTEND_ALLOWED_ORIGINS", "")
-    for item in raw_origins.split(","):
-        add_origin(item)
+    for env_key in FRONTEND_ORIGIN_ENV_KEYS:
+        raw_origins = os.getenv(env_key, "")
+        for item in raw_origins.split(","):
+            add_origin(item)
 
     for origin in list(origins):
         parsed = urlsplit(origin)
