@@ -1,4 +1,6 @@
+import importlib.util
 import logging
+import os
 
 from flask import request, session
 from flask_jwt_extended import decode_token
@@ -13,7 +15,21 @@ logger = logging.getLogger(__name__)
 ROOM_ADMINS = "admins"
 ROOM_CONVERSATION_PREFIX = "conversation:"
 
-socketio = SocketIO(cors_allowed_origins="*", async_mode="threading", manage_session=True)
+
+def _resolve_async_mode():
+    configured_mode = str(os.getenv("SOCKETIO_ASYNC_MODE") or "").strip().lower()
+    if configured_mode:
+        return configured_mode
+    if importlib.util.find_spec("gevent") is not None:
+        return "gevent"
+    return "threading"
+
+
+socketio = SocketIO(
+    cors_allowed_origins="*",
+    async_mode=_resolve_async_mode(),
+    manage_session=True,
+)
 
 
 def conversation_room(conversation_id):

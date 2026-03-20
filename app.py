@@ -202,5 +202,13 @@ app.register_blueprint(admin_api, url_prefix=f"{url}/admin")
 app.register_blueprint(worker_api, url_prefix=f"{url}/worker")
 
 if __name__ == '__main__':
-    # Create the app
-    socketio.run(app, host='0.0.0.0', port=8000, debug=True)
+    host = os.getenv("APP_HOST", "0.0.0.0")
+    port = int(os.getenv("APP_PORT", "8000"))
+    debug = str(os.getenv("FLASK_DEBUG", "true")).strip().lower() in {"1", "true", "yes", "on"}
+
+    app.logger.info("Server starting on http://localhost:%s", port)
+    app.logger.info("Server starting on http://127.0.0.1:%s", port)
+    if host not in {"127.0.0.1", "localhost"}:
+        app.logger.info("Server bind address: %s:%s", host, port)
+
+    socketio.run(app, host=host, port=port, debug=debug)
