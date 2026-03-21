@@ -1,22 +1,104 @@
-from flask import request, jsonify, g
-import jwt
-import os
+from flask import g, jsonify
+from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
 
-SECRET_KEY = os.getenv("JWT_SECRET", "super-secret")
+from database import db_connection
+from routes.api_envelope import envelope
 
-def auth_middleware():
-    auth_header = request.headers.get("Authorization")
 
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"message": "Unauthorized"}), 401
+ROLE_USER = "user"
+ROLE_WORKER = "worker"
+ROLE_ADMIN = "admin"
+INVALID_JWT_IDENTITIES = {"", "none", "null", "undefined"}
 
-    token = auth_header.split(" ")[1]
+
+def normalize_role(user_type, is_admin=False):
+    normalized = str(user_type or "").strip().lower()
+    if normalized in {"admin", "super admin"} or bool(is_admin):
+        return ROLE_ADMIN
+    if normalized == "worker":
+        return ROLE_WORKER
+    return ROLE_USER
+
+
+def _normalize_identity(raw_identity):
+    if raw_identity is None:
+        return None
+
+    normalized = str(raw_identity).strip()
+    if normalized.lower() in INVALID_JWT_IDENTITIES:
+        return None
 
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        g.user_id = payload["user_id"]
-        g.jti = payload["jti"]
-    except jwt.ExpiredSignatureError:
-        return jsonify({"message": "Access token expired"}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"message": "Invalid token"}), 401
+        return int(normalized)
+    except (TypeError, ValueError):
+        return None
+
+
+def get_authenticated_user_id():
+    return _normalize_identity(get_jwt_identity())
+
+
+def _get_user(user_id):
+    conn, cursor = db_connection()
+    try:
+        cursor.execute(
+            """
+            SELECT id, email, full_name, user_type, role, is_admin, is_active, status
+            FROM Users
+            WHERE id = ?
+            """,
+            (user_id,),
+        )
+        return cursor.fetchone()
+    finally:
+        conn.close()
+
+
+def _is_active_user(user):
+    user_status = str(user["status"] or "").strip().lower()
+    return bool(user["is_active"]) and user_status in {"", "active"}
+
+
+def _build_current_user(user):
+    user_role = normalize_role(user["role"] or user["user_type"], user["is_admin"])
+    return {
+        "id": int(user["id"]),
+        "email": user["email"],
+        "full_name": user["full_name"],
+        "user_type": user_role,
+        "role": user_role,
+        "is_admin": int(bool(user["is_admin"]) or user_role == ROLE_ADMIN),
+        "is_active": bool(user["is_active"]),
+        "status": str(user["status"] or "").strip().lower() or "active",
+    }
+
+
+def load_authenticated_user(*allowed_roles, require_active=True):
+    verify_jwt_in_request()
+
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
+
+    user = _get_user(user_id)
+    if not user:
+        return jsonify(envelope(None, "User not found", 404, False)), 404
+
+    if require_active and not _is_active_user(user):
+        return jsonify(envelope(None, "User account is inactive", 403, False)), 403
+
+    current_user = _build_current_user(user)
+    allowed = {normalize_role(role) for role in allowed_roles if role is not None}
+    if allowed and current_user["role"] not in allowed:
+        return jsonify(envelope(None, "Forbidden", 403, False)), 403
+
+    jwt_payload = get_jwt() or {}
+    g.current_user = current_user
+    g.user_id = current_user["id"]
+    g.jti = jwt_payload.get("jti")
+    g.jwt_payload = jwt_payload
+    return None
+
+
+def auth_middleware(*allowed_roles, require_active=True):
+    return load_authenticated_user(*allowed_roles, require_active=require_active)

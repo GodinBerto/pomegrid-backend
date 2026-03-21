@@ -14814,3 +14814,9 @@ werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on 
 2026-03-20 21:47:05,595 INFO [app] GET /api/v1/admin/notifications 200 30ms
 2026-03-20 21:47:09,744 INFO [app] GET /api/v1/products/ 200 4134ms
 2026-03-20 21:47:09,764 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
+2026-03-21 17:53:44,368 INFO [app] Server starting on http://localhost:8000
+2026-03-21 17:53:44,369 INFO [app] Server starting on http://127.0.0.1:8000
+2026-03-21 17:53:44,370 INFO [app] Server bind address: 0.0.0.0:8000
+2026-03-21 17:53:46,143 INFO [app] Server starting on http://localhost:8000
+2026-03-21 17:53:46,144 INFO [app] Server starting on http://127.0.0.1:8000
+2026-03-21 17:53:46,145 INFO [app] Server bind address: 0.0.0.0:8000

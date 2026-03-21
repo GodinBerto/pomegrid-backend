@@ -4,7 +4,8 @@ import logging
 from flask import Blueprint, current_app, g, jsonify, request
 
 from database import db_connection
-from decorators.roles import get_authenticated_user_id, user_required
+from decorators.roles import ROLE_ADMIN, ROLE_USER, ROLE_WORKER, get_authenticated_user_id
+from routes.middleware import protect_blueprint
 from routes.api_envelope import build_meta, envelope, parse_pagination
 from services.paystack import (
     PaystackError,
@@ -19,6 +20,13 @@ from services.paystack import (
 
 
 payments = Blueprint("payments", __name__)
+protect_blueprint(
+    payments,
+    ROLE_USER,
+    ROLE_WORKER,
+    ROLE_ADMIN,
+    exempt_endpoints={"paystack_webhook"},
+)
 logger = logging.getLogger(__name__)
 
 PAYMENT_SELECT = """
@@ -267,7 +275,6 @@ def _create_gateway_payment_if_missing(cursor, reference, transaction_data):
 
 @payments.route("", methods=["GET"])
 @payments.route("/", methods=["GET"])
-@user_required
 def list_payments():
     user_id = get_authenticated_user_id()
     if user_id is None:
@@ -325,7 +332,6 @@ def list_payments():
 
 
 @payments.route("/initialize", methods=["POST"])
-@user_required
 def initialize_payment():
     user_id = get_authenticated_user_id()
     if user_id is None:
@@ -491,7 +497,6 @@ def initialize_payment():
 
 
 @payments.route("/verify/<reference>", methods=["GET"])
-@user_required
 def verify_payment(reference):
     user_id = get_authenticated_user_id()
     if user_id is None:
@@ -570,7 +575,6 @@ def paystack_webhook():
 
 
 @payments.route("/<reference>", methods=["GET"])
-@user_required
 def get_payment(reference):
     user_id = get_authenticated_user_id()
     if user_id is None:

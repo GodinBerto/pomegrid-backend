@@ -2,7 +2,7 @@ from flask import Blueprint, g, jsonify, request
 
 from database import db_connection
 from decorators.rate_limit import rate_limit
-from decorators.roles import ROLE_USER, ROLE_WORKER, role_required
+from decorators.roles import ROLE_USER, ROLE_WORKER
 from extensions.socketio import (
     emit_conversation_new,
     emit_conversation_read,
@@ -26,9 +26,11 @@ from routes.support_chat import (
     touch_conversation,
     validate_message_content,
 )
+from routes.middleware import protect_blueprint
 
 
 user_support_api = Blueprint("user_support_api", __name__)
+protect_blueprint(user_support_api, ROLE_USER, ROLE_WORKER)
 
 
 def _current_user_id():
@@ -36,7 +38,6 @@ def _current_user_id():
 
 
 @user_support_api.route("/messages/support/conversation", methods=["GET"])
-@role_required(ROLE_USER, ROLE_WORKER)
 def user_support_conversation_get():
     user_id = _current_user_id()
     conn, cursor = db_connection()
@@ -46,7 +47,6 @@ def user_support_conversation_get():
 
 
 @user_support_api.route("/messages/support/conversation/messages", methods=["GET"])
-@role_required(ROLE_USER, ROLE_WORKER)
 def user_support_messages_get():
     page, per_page, offset = parse_pagination(request.args)
     user_id = _current_user_id()
@@ -65,7 +65,6 @@ def user_support_messages_get():
 
 
 @user_support_api.route("/messages/support/conversation/messages", methods=["POST"])
-@role_required(ROLE_USER, ROLE_WORKER)
 @rate_limit("user-support-message-send", limit=30, window_seconds=60)
 def user_support_messages_send():
     data = request.get_json() or {}
@@ -105,7 +104,6 @@ def user_support_messages_send():
 
 
 @user_support_api.route("/messages/support/conversation/read", methods=["POST"])
-@role_required(ROLE_USER, ROLE_WORKER)
 def user_support_mark_read():
     user_id = _current_user_id()
     conn, cursor = db_connection()

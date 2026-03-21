@@ -1,13 +1,14 @@
 from functools import wraps
-from decorators import token_active, token_present, token_valid
+
+from middleware.authMiddleware import auth_middleware
 
 def auth_required(check_active=True):
     def decorator(f):
         @wraps(f)
-        @token_present
-        @token_valid
-        @token_active if check_active else f
         def wrapped(*args, **kwargs):
+            response = auth_middleware(require_active=check_active)
+            if response is not None:
+                return response
             return f(*args, **kwargs)
         return wrapped
     return decorator

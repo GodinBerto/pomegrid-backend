@@ -2,7 +2,7 @@ from flask import Blueprint, g, jsonify, request
 
 from database import db_connection
 from decorators.rate_limit import rate_limit
-from decorators.roles import admin_required
+from decorators.roles import ROLE_ADMIN
 from extensions.socketio import (
     emit_conversation_new,
     emit_conversation_read,
@@ -26,9 +26,11 @@ from routes.support_chat import (
     touch_conversation,
     validate_message_content,
 )
+from routes.middleware import protect_blueprint
 
 
 farms_admin_messages_api = Blueprint("farms_admin_messages_api", __name__)
+protect_blueprint(farms_admin_messages_api, ROLE_ADMIN)
 
 
 def _admin_id():
@@ -36,7 +38,6 @@ def _admin_id():
 
 
 @farms_admin_messages_api.route("/messages/conversations", methods=["GET"])
-@admin_required
 def admin_messages_conversations():
     page, per_page, offset = parse_pagination(request.args)
     admin_id = _admin_id()
@@ -54,7 +55,6 @@ def admin_messages_conversations():
 
 
 @farms_admin_messages_api.route("/messages/conversations", methods=["POST"])
-@admin_required
 def admin_messages_create_conversation():
     data = request.get_json() or {}
     raw_user_id = data.get("user_id")
@@ -102,7 +102,6 @@ def admin_messages_create_conversation():
 
 
 @farms_admin_messages_api.route("/messages/conversations/<conv_id>", methods=["GET"])
-@admin_required
 def admin_messages_conversation_detail(conv_id):
     admin_id = _admin_id()
     conn, cursor = db_connection()
@@ -120,7 +119,6 @@ def admin_messages_conversation_detail(conv_id):
 
 
 @farms_admin_messages_api.route("/messages/conversations/<conv_id>/messages", methods=["GET"])
-@admin_required
 def admin_messages_list(conv_id):
     page, per_page, offset = parse_pagination(request.args)
     admin_id = _admin_id()
@@ -136,7 +134,6 @@ def admin_messages_list(conv_id):
 
 
 @farms_admin_messages_api.route("/messages/conversations/<conv_id>/messages", methods=["POST"])
-@admin_required
 @rate_limit("admin-messages-send", limit=30, window_seconds=60)
 def admin_messages_send(conv_id):
     data = request.get_json() or {}
@@ -172,7 +169,6 @@ def admin_messages_send(conv_id):
 
 
 @farms_admin_messages_api.route("/messages/conversations/<conv_id>/read", methods=["POST"])
-@admin_required
 def admin_messages_mark_read(conv_id):
     admin_id = _admin_id()
     conn, cursor = db_connection()
