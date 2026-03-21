@@ -14810,3 +14810,7 @@ werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on 
 2026-03-20 17:52:51,224 INFO [app] GET /api/v1/auth/me 200 2ms
 2026-03-20 19:37:52,850 INFO [app] GET /api/v1/user/messages/support/conversation 200 5ms
 2026-03-20 19:37:56,926 INFO [app] GET /api/v1/carts/ 200 4073ms
+2026-03-20 19:38:01,094 INFO [app] GET /api/v1/products/ 200 4164ms
+2026-03-20 21:47:05,595 INFO [app] GET /api/v1/admin/notifications 200 30ms
+2026-03-20 21:47:09,744 INFO [app] GET /api/v1/products/ 200 4134ms
+2026-03-20 21:47:09,764 INFO [app] GET /api/v1/admin/messages/conversations 200 9ms
