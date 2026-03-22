@@ -14820,3 +14820,99 @@ werkzeug.exceptions.NotFound: 404 Not Found: The requested URL was not found on 
 2026-03-21 17:53:46,143 INFO [app] Server starting on http://localhost:8000
 2026-03-21 17:53:46,144 INFO [app] Server starting on http://127.0.0.1:8000
 2026-03-21 17:53:46,145 INFO [app] Server bind address: 0.0.0.0:8000
+2026-03-22 20:15:27,210 INFO [app] Server starting on http://localhost:8000
+2026-03-22 20:15:27,219 INFO [app] Server starting on http://127.0.0.1:8000
+2026-03-22 20:15:27,219 INFO [app] Server bind address: 0.0.0.0:8000
+2026-03-22 20:15:29,024 INFO [app] Server starting on http://localhost:8000
+2026-03-22 20:15:29,024 INFO [app] Server starting on http://127.0.0.1:8000
+2026-03-22 20:15:29,026 INFO [app] Server bind address: 0.0.0.0:8000
+2026-03-22 20:16:36,724 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-03-22 20:16:38,957 INFO [app] POST /api/v1/auth/login 200 2209ms
+2026-03-22 20:16:39,026 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-03-22 20:16:39,028 ERROR [app] Unhandled exception: You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "E:\Projects\python\pomegrid-backend\routes\middleware.py", line 15, in _before_blueprint_request
+    return auth_middleware(*allowed_roles, require_active=require_active)
+  File "E:\Projects\python\pomegrid-backend\middleware\authMiddleware.py", line 104, in auth_middleware
+    return load_authenticated_user(*allowed_roles, require_active=require_active)
+  File "E:\Projects\python\pomegrid-backend\middleware\authMiddleware.py", line 79, in load_authenticated_user
+    user_id = get_authenticated_user_id()
+  File "E:\Projects\python\pomegrid-backend\middleware\authMiddleware.py", line 38, in get_authenticated_user_id
+    return _normalize_identity(get_jwt_identity())
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\utils.py", line 63, in get_jwt_identity
+    return get_jwt().get(config.identity_claim_key, None)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\utils.py", line 29, in get_jwt
+    raise RuntimeError(
+RuntimeError: You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+2026-03-22 20:16:39,057 INFO [app] OPTIONS /api/v1/connect/profile 500 28ms
+2026-03-22 20:16:41,119 INFO [app] GET /api/v1/users/me 200 2056ms
+2026-03-22 20:17:03,499 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-03-22 20:17:05,630 INFO [app] POST /api/v1/auth/login 200 2126ms
+2026-03-22 20:17:05,687 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-03-22 20:17:05,690 ERROR [app] Unhandled exception: You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+Traceback (most recent call last):
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 915, in full_dispatch_request
+    rv = self.preprocess_request()
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask\app.py", line 1291, in preprocess_request
+    rv = self.ensure_sync(before_func)()
+  File "E:\Projects\python\pomegrid-backend\routes\middleware.py", line 15, in _before_blueprint_request
+    return auth_middleware(*allowed_roles, require_active=require_active)
+  File "E:\Projects\python\pomegrid-backend\middleware\authMiddleware.py", line 104, in auth_middleware
+    return load_authenticated_user(*allowed_roles, require_active=require_active)
+  File "E:\Projects\python\pomegrid-backend\middleware\authMiddleware.py", line 79, in load_authenticated_user
+    user_id = get_authenticated_user_id()
+  File "E:\Projects\python\pomegrid-backend\middleware\authMiddleware.py", line 38, in get_authenticated_user_id
+    return _normalize_identity(get_jwt_identity())
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\utils.py", line 63, in get_jwt_identity
+    return get_jwt().get(config.identity_claim_key, None)
+  File "E:\Projects\python\pomegrid-backend\venv\lib\site-packages\flask_jwt_extended\utils.py", line 29, in get_jwt
+    raise RuntimeError(
+RuntimeError: You must call `@jwt_required()` or `verify_jwt_in_request()` before using this method
+2026-03-22 20:17:05,692 INFO [app] OPTIONS /api/v1/connect/profile 500 2ms
+2026-03-22 20:17:07,744 INFO [app] GET /api/v1/users/me 200 2050ms
+2026-03-22 20:18:21,068 INFO [app] Server starting on http://localhost:8000
+2026-03-22 20:18:21,068 INFO [app] Server starting on http://127.0.0.1:8000
+2026-03-22 20:18:21,069 INFO [app] Server bind address: 0.0.0.0:8000
+2026-03-22 20:18:33,156 INFO [app] OPTIONS /api/v1/connect/profile 200 0ms
+2026-03-22 20:18:33,159 INFO [app] GET /api/v1/connect/profile 401 0ms
+2026-03-22 20:18:50,232 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-03-22 20:18:52,372 INFO [app] POST /api/v1/auth/login 200 2125ms
+2026-03-22 20:18:52,443 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-03-22 20:18:52,467 INFO [app] OPTIONS /api/v1/connect/profile 200 0ms
+2026-03-22 20:18:54,548 INFO [app] GET /api/v1/users/me 200 2042ms
+2026-03-22 20:18:56,587 INFO [app] GET /api/v1/connect/profile 404 2037ms
+2026-03-22 20:18:57,196 INFO [app] OPTIONS /api/v1/connect/dashboard/overview 200 1ms
+2026-03-22 20:18:59,300 INFO [app] GET /api/v1/connect/dashboard/overview 404 2071ms
+2026-03-22 20:19:00,310 INFO [app] OPTIONS /api/v1/connect/dashboard/overview 200 0ms
+2026-03-22 20:19:02,364 INFO [app] GET /api/v1/connect/dashboard/overview 404 2048ms
+2026-03-22 20:19:04,374 INFO [app] OPTIONS /api/v1/connect/dashboard/overview 200 1ms
+2026-03-22 20:19:06,415 INFO [app] GET /api/v1/connect/dashboard/overview 404 2038ms
+2026-03-22 20:19:42,761 INFO [app] OPTIONS /api/v1/connect/dashboard/overview 200 0ms
+2026-03-22 20:19:44,825 INFO [app] GET /api/v1/connect/dashboard/overview 404 2056ms
+2026-03-22 20:20:31,385 INFO [app] OPTIONS /api/v1/connect/dashboard/overview 200 0ms
+2026-03-22 20:20:33,451 INFO [app] GET /api/v1/connect/dashboard/overview 404 2061ms
+2026-03-22 20:20:47,468 INFO [app] Server starting on http://localhost:8000
+2026-03-22 20:20:47,469 INFO [app] Server starting on http://127.0.0.1:8000
+2026-03-22 20:20:47,470 INFO [app] Server bind address: 0.0.0.0:8000
+2026-03-22 20:20:49,851 INFO [app] OPTIONS /api/v1/connect/dashboard/overview 200 0ms
+2026-03-22 20:20:51,910 INFO [app] GET /api/v1/connect/dashboard/overview 404 2052ms
+2026-03-22 20:20:53,112 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-03-22 20:20:53,115 INFO [app] OPTIONS /api/v1/connect/profile 404 0ms
+2026-03-22 20:20:55,173 INFO [app] GET /api/v1/users/me 200 2052ms
+2026-03-22 20:20:55,775 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-03-22 20:20:58,057 INFO [app] POST /api/v1/auth/login 200 2154ms
+2026-03-22 20:20:58,117 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-03-22 20:20:58,118 INFO [app] OPTIONS /api/v1/connect/profile 404 0ms
+2026-03-22 20:21:00,160 INFO [app] GET /api/v1/users/me 200 2039ms
+2026-03-22 20:21:06,827 INFO [app] OPTIONS /api/v1/auth/login 200 0ms
+2026-03-22 20:21:08,964 INFO [app] POST /api/v1/auth/login 200 2132ms
+2026-03-22 20:21:09,027 INFO [app] OPTIONS /api/v1/users/me 200 0ms
+2026-03-22 20:21:09,031 INFO [app] OPTIONS /api/v1/connect/profile 404 0ms
+2026-03-22 20:21:11,072 INFO [app] GET /api/v1/users/me 200 2039ms
+2026-03-22 20:21:56,986 INFO [app] Server starting on http://localhost:8000
+2026-03-22 20:21:56,987 INFO [app] Server starting on http://127.0.0.1:8000
+2026-03-22 20:21:56,987 INFO [app] Server bind address: 0.0.0.0:8000

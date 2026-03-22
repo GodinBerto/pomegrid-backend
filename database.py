@@ -487,6 +487,23 @@ def create_tables():
     ''')
     ensure_users_user_type_constraint(conn, cursor)
 
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS ConnectProfiles (
+            user_id INTEGER PRIMARY KEY,
+            account_type TEXT NOT NULL CHECK(account_type IN ('farmer', 'importer')),
+            company TEXT,
+            country TEXT,
+            bio TEXT,
+            min_order_qty TEXT,
+            response_time TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+        )
+        '''
+    )
+
     # Create categories table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Categories (
@@ -1059,6 +1076,11 @@ def create_tables():
     ensure_column(cursor, "Users", "role", "role TEXT NOT NULL DEFAULT 'user'")
     ensure_column(cursor, "Users", "status", "status TEXT NOT NULL DEFAULT 'active'")
     ensure_column(cursor, "Users", "avatar", "avatar TEXT")
+    ensure_column(cursor, "ConnectProfiles", "company", "company TEXT")
+    ensure_column(cursor, "ConnectProfiles", "country", "country TEXT")
+    ensure_column(cursor, "ConnectProfiles", "bio", "bio TEXT")
+    ensure_column(cursor, "ConnectProfiles", "min_order_qty", "min_order_qty TEXT")
+    ensure_column(cursor, "ConnectProfiles", "response_time", "response_time TEXT")
     ensure_column(cursor, "Products", "category_id", "category_id INTEGER")
     ensure_column(cursor, "Products", "image_urls", "image_urls TEXT")
     ensure_column(cursor, "Products", "video_urls", "video_urls TEXT")
@@ -1258,6 +1280,12 @@ def create_tables():
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_users_status ON Users(status)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_connect_profiles_account_type ON ConnectProfiles(account_type)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_connect_profiles_country ON ConnectProfiles(country)"
     )
     cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_products_category_id ON Products(category_id)"
