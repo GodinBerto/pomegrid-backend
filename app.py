@@ -54,7 +54,7 @@ DEFAULT_FRONTEND_ORIGINS = (
     "http://127.0.0.1:5173",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
-    "https://pomegrid-backend.onrender.com",
+    "http://pomegrid-backend.onrender.com",
     "https://pomegrid-backend.onrender.com",
     "https://aqua-farm-chat-shop.vercel.app",
 )
