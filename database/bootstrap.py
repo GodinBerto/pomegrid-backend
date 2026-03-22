@@ -1,5 +1,6 @@
 import json
-import sqlite3
+
+from .connection import db_connection
 
 
 ALLOWED_USER_TYPES = (
@@ -96,14 +97,6 @@ DEFAULT_FARM_SERVICES = [
         },
     },
 ]
-
-
-def db_connection():
-    # Connect to SQLite database (or create if it doesn't exist)
-    conn = sqlite3.connect("instance/pomegrid.db")
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn, conn.cursor()
 
 
 def ensure_column(cursor, table_name, column_name, column_definition):
@@ -551,6 +544,22 @@ def create_tables():
             FOREIGN KEY (animal_type) REFERENCES ProductTypes(id)
         )
     ''')
+
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS ProductFeedback (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+            feedback TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (product_id) REFERENCES Products(id),
+            FOREIGN KEY (user_id) REFERENCES Users(id)
+        )
+        '''
+    )
     
     
     #Create cart table
@@ -1285,6 +1294,29 @@ def create_tables():
         "CREATE INDEX IF NOT EXISTS idx_connect_profiles_account_type ON ConnectProfiles(account_type)"
     )
     cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_product_feedback_product_id ON ProductFeedback(product_id)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_product_feedback_user_id ON ProductFeedback(user_id)"
+    )
+    cursor.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_product_feedback_product_user_unique ON ProductFeedback(product_id, user_id)"
+    )
+
+    cursor.execute(
+        """
+        UPDATE Products
+        SET rating = COALESCE(
+            (
+                SELECT ROUND(AVG(pf.rating), 2)
+                FROM ProductFeedback pf
+                WHERE pf.product_id = Products.id
+            ),
+            rating
+        )
+        """
+    )
+    cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_connect_profiles_country ON ConnectProfiles(country)"
     )
     cursor.execute(
@@ -1348,5 +1380,3 @@ def create_tables():
     conn.commit()
     conn.close()
 
-# Execute table creation
-create_tables()

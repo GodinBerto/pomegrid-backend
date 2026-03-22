@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from config import Config
 from datetime import timedelta
+from database import initialize_database
 from services.jwt import jwt 
 from services.logging_service import setup_logging
 
@@ -158,6 +159,7 @@ socketio.init_app(
 register_socket_handlers()
 
 setup_logging(app)
+initialize_database()
 
 
 # Load Base URL from config.py

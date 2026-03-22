@@ -2,9 +2,11 @@ import json
 import logging
 from urllib.parse import urlparse
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 
 from database import db_connection
+from decorators.rate_limit import rate_limit
+from decorators.roles import ROLE_USER, ROLE_WORKER, role_required
 from extensions.redis_client import get_redis_client
 from routes.api_envelope import build_meta, envelope, parse_pagination
 
@@ -205,6 +207,73 @@ def _invalidate_products_cache(product_id=None):
     _cache_delete_patterns(f"{PRODUCT_LIST_CACHE_KEY_PREFIX}:*")
 
 
+def _fetch_product_feedback_summary(cursor, product_id):
+    cursor.execute(
+        """
+        SELECT
+            COUNT(*) AS total_feedback,
+            ROUND(AVG(rating), 2) AS average_rating
+        FROM ProductFeedback
+        WHERE product_id = ?
+        """,
+        (product_id,),
+    )
+    row = cursor.fetchone()
+    total_feedback = int((row["total_feedback"] if row else 0) or 0)
+    average_rating = float((row["average_rating"] if row else 0) or 0)
+    return {
+        "total_feedback": total_feedback,
+        "average_rating": average_rating,
+    }
+
+
+def _refresh_product_rating(cursor, product_id):
+    summary = _fetch_product_feedback_summary(cursor, product_id)
+    next_rating = summary["average_rating"] if summary["total_feedback"] > 0 else 0
+    cursor.execute(
+        """
+        UPDATE Products
+        SET rating = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+        """,
+        (next_rating, product_id),
+    )
+    return summary
+
+
+def _serialize_product_feedback_row(row):
+    feedback = dict(row)
+    feedback["id"] = int(feedback.get("id") or 0)
+    feedback["product_id"] = int(feedback.get("product_id") or 0)
+    feedback["user_id"] = int(feedback.get("user_id") or 0)
+    feedback["rating"] = int(feedback.get("rating") or 0)
+    feedback["feedback"] = str(feedback.get("feedback") or "").strip()
+    feedback["user_name"] = str(feedback.get("user_name") or "Customer").strip() or "Customer"
+    return feedback
+
+
+def _fetch_product_feedback_row(cursor, feedback_id):
+    cursor.execute(
+        """
+        SELECT
+            pf.id,
+            pf.product_id,
+            pf.user_id,
+            pf.rating,
+            pf.feedback,
+            pf.created_at,
+            pf.updated_at,
+            COALESCE(NULLIF(TRIM(u.full_name), ''), NULLIF(TRIM(u.email), ''), 'Customer') AS user_name
+        FROM ProductFeedback pf
+        LEFT JOIN Users u ON u.id = pf.user_id
+        WHERE pf.id = ?
+        """,
+        (feedback_id,),
+    )
+    row = cursor.fetchone()
+    return _serialize_product_feedback_row(row) if row else None
+
+
 @products.route("", methods=["GET"])
 @products.route("/", methods=["GET"])
 def list_products():
@@ -356,4 +425,133 @@ def get_product(product_id):
         return jsonify(envelope(payload, "Product fetched", 200)), 200
     except Exception as e:
         logger.exception("Failed to get product %s", product_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
+@products.route("/<int:product_id>/feedback", methods=["GET"])
+def list_product_feedback(product_id):
+    page, per_page, offset = parse_pagination(request.args)
+
+    try:
+        conn, cursor = db_connection()
+        cursor.execute("SELECT id FROM Products WHERE id = ?", (product_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify(envelope(None, "Product not found", 404, False)), 404
+
+        summary = _fetch_product_feedback_summary(cursor, product_id)
+        cursor.execute(
+            """
+            SELECT
+                pf.id,
+                pf.product_id,
+                pf.user_id,
+                pf.rating,
+                pf.feedback,
+                pf.created_at,
+                pf.updated_at,
+                COALESCE(NULLIF(TRIM(u.full_name), ''), NULLIF(TRIM(u.email), ''), 'Customer') AS user_name
+            FROM ProductFeedback pf
+            LEFT JOIN Users u ON u.id = pf.user_id
+            WHERE pf.product_id = ?
+            ORDER BY COALESCE(pf.updated_at, pf.created_at) DESC, pf.id DESC
+            LIMIT ? OFFSET ?
+            """,
+            (product_id, per_page, offset),
+        )
+        feedback_rows = cursor.fetchall()
+        conn.close()
+
+        items = [_serialize_product_feedback_row(row) for row in feedback_rows]
+        meta = build_meta(page, per_page, summary["total_feedback"])
+        payload = envelope(items, "Product feedback fetched", 200, True, meta)
+        payload["summary"] = summary
+        return jsonify(payload), 200
+    except Exception as e:
+        logger.exception("Failed to list product feedback for %s", product_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
+@products.route("/<int:product_id>/feedback", methods=["POST"])
+@role_required(ROLE_USER, ROLE_WORKER)
+@rate_limit("product-feedback-submit", limit=10, window_seconds=60)
+def upsert_product_feedback(product_id):
+    data = request.get_json(silent=True) or {}
+
+    try:
+        rating = int(data.get("rating"))
+    except (TypeError, ValueError):
+        return jsonify(envelope(None, "Rating must be a whole number between 1 and 5", 400, False)), 400
+
+    if rating < 1 or rating > 5:
+        return jsonify(envelope(None, "Rating must be between 1 and 5", 400, False)), 400
+
+    feedback_text = str(data.get("feedback") or data.get("comment") or "").strip()
+    if len(feedback_text) < 3:
+        return jsonify(envelope(None, "Feedback must be at least 3 characters long", 400, False)), 400
+    if len(feedback_text) > 1000:
+        return jsonify(envelope(None, "Feedback must be 1000 characters or fewer", 400, False)), 400
+
+    user_id = int(g.current_user["id"])
+
+    try:
+        conn, cursor = db_connection()
+        cursor.execute("SELECT id FROM Products WHERE id = ?", (product_id,))
+        if not cursor.fetchone():
+            conn.close()
+            return jsonify(envelope(None, "Product not found", 404, False)), 404
+
+        cursor.execute(
+            """
+            SELECT id
+            FROM ProductFeedback
+            WHERE product_id = ? AND user_id = ?
+            """,
+            (product_id, user_id),
+        )
+        existing_row = cursor.fetchone()
+        is_update = existing_row is not None
+
+        cursor.execute(
+            """
+            INSERT INTO ProductFeedback (product_id, user_id, rating, feedback)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(product_id, user_id)
+            DO UPDATE SET
+                rating = excluded.rating,
+                feedback = excluded.feedback,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (product_id, user_id, rating, feedback_text),
+        )
+
+        cursor.execute(
+            """
+            SELECT id
+            FROM ProductFeedback
+            WHERE product_id = ? AND user_id = ?
+            """,
+            (product_id, user_id),
+        )
+        saved_row = cursor.fetchone()
+        feedback_id = int(saved_row["id"])
+
+        summary = _refresh_product_rating(cursor, product_id)
+        conn.commit()
+
+        feedback_item = _fetch_product_feedback_row(cursor, feedback_id)
+        conn.close()
+
+        _invalidate_products_cache(product_id)
+
+        payload = envelope(
+            feedback_item,
+            "Feedback updated successfully" if is_update else "Feedback submitted successfully",
+            200 if is_update else 201,
+            True,
+        )
+        payload["summary"] = summary
+        return jsonify(payload), (200 if is_update else 201)
+    except Exception as e:
+        logger.exception("Failed to save product feedback for %s", product_id)
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
