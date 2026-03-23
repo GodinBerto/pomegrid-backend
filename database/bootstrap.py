@@ -154,6 +154,12 @@ def ensure_users_user_type_constraint(conn, cursor):
                 date_of_birth DATE,
                 is_verified BOOLEAN NOT NULL DEFAULT 0,
                 verification_code TEXT,
+                verification_channel TEXT CHECK(verification_channel IN ('email', 'phone')),
+                verification_target TEXT,
+                verification_code_expires_at TIMESTAMP,
+                verified_at TIMESTAMP,
+                accepted_policy BOOLEAN NOT NULL DEFAULT 0,
+                policy_accepted_at TIMESTAMP,
                 address TEXT,
                 profile_image_url TEXT,
                 avatar TEXT,
@@ -169,7 +175,9 @@ def ensure_users_user_type_constraint(conn, cursor):
             """
             INSERT INTO Users_new (
                 id, username, email, password_hash, full_name, phone, user_type,
-                role, status, date_of_birth, is_verified, verification_code, address,
+                role, status, date_of_birth, is_verified, verification_code,
+                verification_channel, verification_target, verification_code_expires_at,
+                verified_at, accepted_policy, policy_accepted_at, address,
                 profile_image_url, avatar, is_active, is_admin, created_at, updated_at
             )
             SELECT
@@ -198,8 +206,22 @@ def ensure_users_user_type_constraint(conn, cursor):
                     ELSE 'inactive'
                 END AS status,
                 date_of_birth,
-                is_verified,
+                CASE
+                    WHEN COALESCE(is_verified, 0) = 1 THEN 1
+                    WHEN verification_code IS NULL OR TRIM(verification_code) = '' THEN 1
+                    ELSE 0
+                END AS is_verified,
                 verification_code,
+                NULL AS verification_channel,
+                NULL AS verification_target,
+                NULL AS verification_code_expires_at,
+                CASE
+                    WHEN COALESCE(is_verified, 0) = 1 OR verification_code IS NULL OR TRIM(verification_code) = ''
+                        THEN COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)
+                    ELSE NULL
+                END AS verified_at,
+                1 AS accepted_policy,
+                COALESCE(created_at, CURRENT_TIMESTAMP) AS policy_accepted_at,
                 address,
                 profile_image_url,
                 profile_image_url AS avatar,
@@ -479,6 +501,12 @@ def create_tables_legacy():
             date_of_birth DATE,
             is_verified BOOLEAN NOT NULL DEFAULT 0,
             verification_code TEXT,
+            verification_channel TEXT CHECK(verification_channel IN ('email', 'phone')),
+            verification_target TEXT,
+            verification_code_expires_at TIMESTAMP,
+            verified_at TIMESTAMP,
+            accepted_policy BOOLEAN NOT NULL DEFAULT 0,
+            policy_accepted_at TIMESTAMP,
             address TEXT,
             profile_image_url TEXT,
             avatar TEXT,
@@ -1100,6 +1128,12 @@ def create_tables_legacy():
     ensure_column(cursor, "Users", "role", "role TEXT NOT NULL DEFAULT 'user'")
     ensure_column(cursor, "Users", "status", "status TEXT NOT NULL DEFAULT 'active'")
     ensure_column(cursor, "Users", "avatar", "avatar TEXT")
+    ensure_column(cursor, "Users", "verification_channel", "verification_channel TEXT")
+    ensure_column(cursor, "Users", "verification_target", "verification_target TEXT")
+    ensure_column(cursor, "Users", "verification_code_expires_at", "verification_code_expires_at TIMESTAMP")
+    ensure_column(cursor, "Users", "verified_at", "verified_at TIMESTAMP")
+    ensure_column(cursor, "Users", "accepted_policy", "accepted_policy BOOLEAN NOT NULL DEFAULT 0")
+    ensure_column(cursor, "Users", "policy_accepted_at", "policy_accepted_at TIMESTAMP")
     ensure_column(cursor, "ConnectProfiles", "company", "company TEXT")
     ensure_column(cursor, "ConnectProfiles", "country", "country TEXT")
     ensure_column(cursor, "ConnectProfiles", "bio", "bio TEXT")
@@ -1412,6 +1446,12 @@ def apply_schema_migrations(conn, cursor):
     ensure_column(cursor, "Users", "role", "role TEXT NOT NULL DEFAULT 'user'")
     ensure_column(cursor, "Users", "status", "status TEXT NOT NULL DEFAULT 'active'")
     ensure_column(cursor, "Users", "avatar", "avatar TEXT")
+    ensure_column(cursor, "Users", "verification_channel", "verification_channel TEXT")
+    ensure_column(cursor, "Users", "verification_target", "verification_target TEXT")
+    ensure_column(cursor, "Users", "verification_code_expires_at", "verification_code_expires_at TIMESTAMP")
+    ensure_column(cursor, "Users", "verified_at", "verified_at TIMESTAMP")
+    ensure_column(cursor, "Users", "accepted_policy", "accepted_policy BOOLEAN NOT NULL DEFAULT 0")
+    ensure_column(cursor, "Users", "policy_accepted_at", "policy_accepted_at TIMESTAMP")
     ensure_column(cursor, "ConnectProfiles", "company", "company TEXT")
     ensure_column(cursor, "ConnectProfiles", "country", "country TEXT")
     ensure_column(cursor, "ConnectProfiles", "bio", "bio TEXT")
@@ -1434,6 +1474,24 @@ def apply_schema_migrations(conn, cursor):
 
 
 def backfill_user_fields(cursor):
+    cursor.execute(
+        """
+        UPDATE Users
+        SET accepted_policy = 1,
+            policy_accepted_at = COALESCE(policy_accepted_at, created_at, CURRENT_TIMESTAMP)
+        WHERE COALESCE(accepted_policy, 0) = 0
+          AND (verification_code IS NULL OR TRIM(verification_code) = '')
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE Users
+        SET is_verified = 1,
+            verified_at = COALESCE(verified_at, updated_at, created_at, CURRENT_TIMESTAMP)
+        WHERE COALESCE(is_verified, 0) = 0
+          AND (verification_code IS NULL OR TRIM(verification_code) = '')
+        """
+    )
     cursor.execute(
         """
         UPDATE Users

@@ -43,7 +43,8 @@ def _get_user(user_id):
     try:
         cursor.execute(
             """
-            SELECT id, email, full_name, user_type, role, is_admin, is_active, status
+            SELECT id, email, full_name, user_type, role, is_admin, is_active, status,
+                   is_verified, accepted_policy
             FROM Users
             WHERE id = ?
             """,
@@ -70,6 +71,8 @@ def _build_current_user(user):
         "is_admin": int(bool(user["is_admin"]) or user_role == ROLE_ADMIN),
         "is_active": bool(user["is_active"]),
         "status": str(user["status"] or "").strip().lower() or "active",
+        "is_verified": bool(user["is_verified"]),
+        "accepted_policy": bool(user["accepted_policy"]),
     }
 
 
@@ -86,6 +89,10 @@ def load_authenticated_user(*allowed_roles, require_active=True):
 
     if require_active and not _is_active_user(user):
         return jsonify(envelope(None, "User account is inactive", 403, False)), 403
+    if require_active and not bool(user["accepted_policy"]):
+        return jsonify(envelope(None, "Policy acceptance is required", 403, False)), 403
+    if require_active and not bool(user["is_verified"]):
+        return jsonify(envelope(None, "Account verification is required", 403, False)), 403
 
     current_user = _build_current_user(user)
     allowed = {normalize_role(role) for role in allowed_roles if role is not None}

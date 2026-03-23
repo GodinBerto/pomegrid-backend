@@ -22,6 +22,7 @@ def _serialize_user_row(row):
     user["is_admin"] = int(bool(user.get("is_admin")) or normalized_role == "admin")
     user["is_active"] = bool(user.get("is_active"))
     user["is_verified"] = bool(user.get("is_verified"))
+    user["accepted_policy"] = bool(user.get("accepted_policy"))
     return user
 
 
@@ -47,10 +48,12 @@ def get_current_user():
                 is_admin,
                 is_active,
                 is_verified,
+                accepted_policy,
                 address,
                 profile_image_url,
                 avatar,
                 date_of_birth,
+                verified_at,
                 created_at,
                 updated_at
             FROM Users
@@ -107,10 +110,12 @@ def update_current_user():
                 is_admin,
                 is_active,
                 is_verified,
+                accepted_policy,
                 address,
                 profile_image_url,
                 avatar,
                 date_of_birth,
+                verified_at,
                 created_at,
                 updated_at
             FROM Users
@@ -212,10 +217,12 @@ def admin_get_user(user_id):
                 is_active,
                 is_admin,
                 is_verified,
+                accepted_policy,
                 address,
                 profile_image_url,
                 avatar,
                 date_of_birth,
+                verified_at,
                 created_at,
                 updated_at
             FROM Users

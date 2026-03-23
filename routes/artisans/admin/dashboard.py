@@ -239,8 +239,9 @@ def admin_create_worker():
         """
         INSERT INTO Users (
             username, email, password_hash, full_name, phone, user_type, is_admin, is_active,
-            address, date_of_birth, avatar, profile_image_url
-        ) VALUES (?, ?, ?, ?, ?, 'worker', 0, 1, ?, ?, ?, ?)
+            address, date_of_birth, avatar, profile_image_url,
+            is_verified, verified_at, accepted_policy, policy_accepted_at
+        ) VALUES (?, ?, ?, ?, ?, 'worker', 0, 1, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
         """,
         (
             username,
