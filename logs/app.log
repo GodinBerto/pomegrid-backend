@@ -15028,3 +15028,4 @@ RuntimeError: You must call `@jwt_required()` or `verify_jwt_in_request()` befor
 2026-03-23 17:23:00,977 INFO [app] GET /api/v1/products/14/feedback 200 2ms
 2026-03-23 17:25:05,050 INFO [app] POST /api/v1/auth/register 409 2028ms
 2026-03-23 17:31:59,679 INFO [app] POST /api/v1/auth/register 409 2043ms
+2026-03-23 17:32:29,319 INFO [app] POST /api/v1/auth/register 201 2123ms
