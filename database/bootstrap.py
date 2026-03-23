@@ -1,6 +1,16 @@
 import json
 
 from .connection import db_connection
+from .schemas import (
+    create_connect_indexes,
+    create_connect_tables,
+    create_farm_indexes,
+    create_farm_tables,
+    create_shared_indexes,
+    create_shared_tables,
+    create_worker_indexes,
+    create_worker_tables,
+)
 
 
 ALLOWED_USER_TYPES = (
@@ -450,8 +460,8 @@ def seed_farm_services(cursor):
             ),
         )
 
-
-def create_tables():
+# Legacy monolith retained as a reference during the schema split.
+def create_tables_legacy():
     conn, cursor = db_connection()
     
     # Create Users table
@@ -585,6 +595,9 @@ def create_tables():
             total_price REAL NOT NULL,
             status TEXT NOT NULL CHECK(status IN ('pending', 'processing', 'completed', 'cancelled')),
             payment_method TEXT,
+            payment_reference TEXT,
+            payment_status TEXT,
+            paid_at TIMESTAMP,
             shipping_address TEXT,
             notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -624,6 +637,8 @@ def create_tables():
                image TEXT,
                location TEXT,
                ratings REAL DEFAULT 0,
+               created_by_admin_id INTEGER,
+               updated_by_admin_id INTEGER,
                reviews_count INTEGER DEFAULT 0,
                is_available BOOLEAN DEFAULT 1,
                is_varified BOOLEAN DEFAULT false,
@@ -1377,6 +1392,159 @@ def create_tables():
         "CREATE INDEX IF NOT EXISTS idx_ratings_worker_id ON Worker_Ratings(worker_id)"
     )
     
+    conn.commit()
+    conn.close()
+
+
+def apply_schema_migrations(conn, cursor):
+    ensure_worker_services_schema(cursor)
+    ensure_column(cursor, "farm_services", "sort_order", "sort_order INTEGER NOT NULL DEFAULT 0")
+    ensure_column(cursor, "farm_services", "is_active", "is_active BOOLEAN NOT NULL DEFAULT 1")
+    seed_farm_services(cursor)
+    ensure_bookings_user_link(conn, cursor)
+    ensure_bookings_extended_fields(cursor)
+    ensure_column(cursor, "Workers", "created_by_admin_id", "created_by_admin_id INTEGER")
+    ensure_column(cursor, "Workers", "updated_by_admin_id", "updated_by_admin_id INTEGER")
+    ensure_column(cursor, "Workers", "reviews_count", "reviews_count INTEGER DEFAULT 0")
+    ensure_column(cursor, "Workers", "hourly_rate", "hourly_rate INTEGER DEFAULT 0")
+    ensure_column(cursor, "Workers", "years_experience", "years_experience INTEGER DEFAULT 0")
+    ensure_column(cursor, "Workers", "completed_jobs", "completed_jobs INTEGER DEFAULT 0")
+    ensure_column(cursor, "Users", "role", "role TEXT NOT NULL DEFAULT 'user'")
+    ensure_column(cursor, "Users", "status", "status TEXT NOT NULL DEFAULT 'active'")
+    ensure_column(cursor, "Users", "avatar", "avatar TEXT")
+    ensure_column(cursor, "ConnectProfiles", "company", "company TEXT")
+    ensure_column(cursor, "ConnectProfiles", "country", "country TEXT")
+    ensure_column(cursor, "ConnectProfiles", "bio", "bio TEXT")
+    ensure_column(cursor, "ConnectProfiles", "min_order_qty", "min_order_qty TEXT")
+    ensure_column(cursor, "ConnectProfiles", "response_time", "response_time TEXT")
+    ensure_column(cursor, "Products", "category_id", "category_id INTEGER")
+    ensure_column(cursor, "Products", "image_urls", "image_urls TEXT")
+    ensure_column(cursor, "Products", "video_urls", "video_urls TEXT")
+    ensure_column(cursor, "Orders", "payment_method", "payment_method TEXT")
+    ensure_column(cursor, "Orders", "payment_reference", "payment_reference TEXT")
+    ensure_column(cursor, "Orders", "payment_status", "payment_status TEXT")
+    ensure_column(cursor, "Orders", "paid_at", "paid_at TIMESTAMP")
+    ensure_column(cursor, "Orders", "shipping_address", "shipping_address TEXT")
+    ensure_column(cursor, "Orders", "notes", "notes TEXT")
+    ensure_column(cursor, "Jobs", "status", "status TEXT NOT NULL DEFAULT 'pending'")
+    ensure_column(cursor, "Jobs", "budget", "budget REAL")
+    ensure_column(cursor, "Jobs", "address", "address TEXT")
+    ensure_column(cursor, "Jobs", "scheduled_at", "scheduled_at TIMESTAMP")
+    ensure_column(cursor, "Jobs", "completed_at", "completed_at TIMESTAMP")
+
+
+def backfill_user_fields(cursor):
+    cursor.execute(
+        """
+        UPDATE Users
+        SET role = CASE
+            WHEN LOWER(COALESCE(user_type, '')) = 'admin' OR COALESCE(is_admin, 0) = 1 THEN 'admin'
+            WHEN LOWER(COALESCE(user_type, '')) = 'worker' THEN 'worker'
+            ELSE 'user'
+        END
+        WHERE role IS NULL OR TRIM(role) = ''
+        """
+    )
+    cursor.execute(
+        """
+        UPDATE Users
+        SET status = CASE WHEN COALESCE(is_active, 1) = 1 THEN 'active' ELSE 'inactive' END
+        WHERE status IS NULL OR TRIM(status) = ''
+        """
+    )
+
+
+def sync_product_reference_data(cursor):
+    cursor.execute("SELECT DISTINCT animal_type FROM Products WHERE animal_type IS NOT NULL AND TRIM(animal_type) != ''")
+    for animal_type_row in cursor.fetchall():
+        animal_type_value = str(animal_type_row["animal_type"]).strip()
+        cursor.execute(
+            """
+            INSERT OR IGNORE INTO ProductTypes (id, name)
+            VALUES (?, ?)
+            """,
+            (animal_type_value, animal_type_value),
+        )
+
+    cursor.execute("SELECT id, image_url, image_urls, video_urls FROM Products")
+    for product in cursor.fetchall():
+        product_id = int(product["id"])
+        stored_image_url = product["image_url"]
+        stored_image_urls = product["image_urls"]
+        stored_video_urls = product["video_urls"]
+
+        parsed_image_urls = []
+        if stored_image_urls:
+            try:
+                parsed = json.loads(stored_image_urls)
+                if isinstance(parsed, list):
+                    parsed_image_urls = [str(item).strip() for item in parsed if str(item).strip()]
+            except Exception:
+                parsed_image_urls = []
+
+        if stored_image_url and stored_image_url not in parsed_image_urls:
+            parsed_image_urls.insert(0, str(stored_image_url).strip())
+
+        first_image_url = parsed_image_urls[0] if parsed_image_urls else None
+
+        parsed_video_urls = []
+        if stored_video_urls:
+            try:
+                parsed_videos = json.loads(stored_video_urls)
+                if isinstance(parsed_videos, list):
+                    parsed_video_urls = [str(item).strip() for item in parsed_videos if str(item).strip()]
+            except Exception:
+                parsed_video_urls = []
+
+        cursor.execute(
+            """
+            UPDATE Products
+            SET image_url = ?, image_urls = ?, video_urls = ?
+            WHERE id = ?
+            """,
+            (
+                first_image_url,
+                json.dumps(parsed_image_urls),
+                json.dumps(parsed_video_urls),
+                product_id,
+            ),
+        )
+
+    cursor.execute(
+        """
+        UPDATE Products
+        SET rating = COALESCE(
+            (
+                SELECT ROUND(AVG(pf.rating), 2)
+                FROM ProductFeedback pf
+                WHERE pf.product_id = Products.id
+            ),
+            rating
+        )
+        """
+    )
+
+
+def create_domain_indexes(cursor):
+    create_shared_indexes(cursor)
+    create_connect_indexes(cursor)
+    create_farm_indexes(cursor)
+    create_worker_indexes(cursor)
+
+
+def create_tables():
+    conn, cursor = db_connection()
+
+    create_shared_tables(cursor)
+    ensure_users_user_type_constraint(conn, cursor)
+    create_connect_tables(cursor)
+    create_farm_tables(cursor)
+    create_worker_tables(cursor)
+    apply_schema_migrations(conn, cursor)
+    backfill_user_fields(cursor)
+    sync_product_reference_data(cursor)
+    create_domain_indexes(cursor)
+
     conn.commit()
     conn.close()
 
