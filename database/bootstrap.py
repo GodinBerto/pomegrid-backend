@@ -127,8 +127,10 @@ def ensure_users_user_type_constraint(conn, cursor):
     users_sql = row["sql"].lower()
     required_role_tokens = tuple(f"'{user_type}'" for user_type in ALLOWED_USER_TYPES)
     constraint_is_current = all(token in users_sql for token in required_role_tokens)
+    username_is_unique = "username text not null unique" in users_sql
     if (
         constraint_is_current
+        and not username_is_unique
         and "'normal consumer user'" not in users_sql
         and "'consumer'" not in users_sql
         and "'farmer'" not in users_sql
@@ -143,7 +145,7 @@ def ensure_users_user_type_constraint(conn, cursor):
             """
             CREATE TABLE IF NOT EXISTS Users_new (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT NOT NULL UNIQUE,
+                username TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
                 full_name TEXT NOT NULL,
@@ -206,20 +208,12 @@ def ensure_users_user_type_constraint(conn, cursor):
                     ELSE 'inactive'
                 END AS status,
                 date_of_birth,
-                CASE
-                    WHEN COALESCE(is_verified, 0) = 1 THEN 1
-                    WHEN verification_code IS NULL OR TRIM(verification_code) = '' THEN 1
-                    ELSE 0
-                END AS is_verified,
+                COALESCE(is_verified, 0) AS is_verified,
                 verification_code,
                 NULL AS verification_channel,
                 NULL AS verification_target,
                 NULL AS verification_code_expires_at,
-                CASE
-                    WHEN COALESCE(is_verified, 0) = 1 OR verification_code IS NULL OR TRIM(verification_code) = ''
-                        THEN COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)
-                    ELSE NULL
-                END AS verified_at,
+                verified_at,
                 1 AS accepted_policy,
                 COALESCE(created_at, CURRENT_TIMESTAMP) AS policy_accepted_at,
                 address,
@@ -490,7 +484,7 @@ def create_tables_legacy():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS Users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT NOT NULL UNIQUE,
+            username TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
             full_name TEXT NOT NULL,
@@ -1480,15 +1474,6 @@ def backfill_user_fields(cursor):
         SET accepted_policy = 1,
             policy_accepted_at = COALESCE(policy_accepted_at, created_at, CURRENT_TIMESTAMP)
         WHERE COALESCE(accepted_policy, 0) = 0
-          AND (verification_code IS NULL OR TRIM(verification_code) = '')
-        """
-    )
-    cursor.execute(
-        """
-        UPDATE Users
-        SET is_verified = 1,
-            verified_at = COALESCE(verified_at, updated_at, created_at, CURRENT_TIMESTAMP)
-        WHERE COALESCE(is_verified, 0) = 0
           AND (verification_code IS NULL OR TRIM(verification_code) = '')
         """
     )

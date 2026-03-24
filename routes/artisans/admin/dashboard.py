@@ -231,10 +231,6 @@ def admin_create_worker():
         conn.close()
         return jsonify(response(None, "Email already exists", 409)), 409
 
-    cursor.execute("SELECT id FROM Users WHERE username = ?", (username,))
-    if cursor.fetchone():
-        username = f"{username}_{uuid.uuid4().hex[:6]}"
-
     cursor.execute(
         """
         INSERT INTO Users (

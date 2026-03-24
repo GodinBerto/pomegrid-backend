@@ -1,4 +1,5 @@
 import logging
+import sqlite3
 from datetime import datetime, timedelta
 
 from flask import Blueprint, jsonify, request
@@ -161,6 +162,15 @@ def _registration_response_payload(user_id, user_type, is_verified, verified_at)
     }
 
 
+def _user_conflict_message(exc=None):
+    error_text = str(exc or "").lower()
+    if "users.username" in error_text:
+        return "Username already exists"
+    if "users.email" in error_text:
+        return "Email already exists"
+    return "Username or email already exists"
+
+
 def _send_and_store_verification(cursor, user_id, email, phone, verification_channel):
     channel, target = validate_verification_target(verification_channel, email=email, phone=phone)
     verification_code = generate_verification_code(VERIFICATION_CODE_LENGTH)
@@ -214,11 +224,13 @@ def _get_user_for_verification(cursor, email=None, username=None, phone=None):
             SELECT *
             FROM Users
             WHERE username = ?
-            LIMIT 1
             """,
             (normalized_username,),
         )
-        return cursor.fetchone()
+        rows = cursor.fetchall()
+        if len(rows) > 1:
+            raise ValueError("Username is not unique. Use email or phone instead.")
+        return rows[0] if rows else None
 
     if normalized_phone:
         cursor.execute(
@@ -262,12 +274,12 @@ def register():
 
     conn, cursor = db_connection()
     try:
-        cursor.execute("SELECT id FROM Users WHERE username = ? OR LOWER(email) = ?", (username, email))
+        cursor.execute("SELECT id FROM Users WHERE LOWER(email) = ? LIMIT 1", (email,))
         existing_user = cursor.fetchone()
     finally:
         conn.close()
     if existing_user:
-        return jsonify(envelope(None, "Username or email already exists", 409, False)), 409
+        return jsonify(envelope(None, "Email already exists", 409, False)), 409
 
     hashed_password = generate_password_hash(password)
     is_verified = False
@@ -305,6 +317,10 @@ def register():
         payload = _registration_response_payload(user_id, user_type, is_verified, verified_at)
         return jsonify(envelope(payload, "User registered. Verification is pending.", 201)), 201
 
+    except sqlite3.IntegrityError as exc:
+        if conn:
+            conn.rollback()
+        return jsonify(envelope(None, _user_conflict_message(exc), 409, False)), 409
     except Exception:
         if conn:
             conn.rollback()
@@ -349,10 +365,10 @@ def register_admin():
     conn = None
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT id FROM Users WHERE username = ? OR LOWER(email) = ?", (username, email))
+        cursor.execute("SELECT id FROM Users WHERE LOWER(email) = ? LIMIT 1", (email,))
         if cursor.fetchone():
             conn.close()
-            return jsonify(envelope(None, "Username or email already exists", 409, False)), 409
+            return jsonify(envelope(None, "Email already exists", 409, False)), 409
         cursor.execute(
             """
             INSERT INTO Users (
@@ -383,6 +399,10 @@ def register_admin():
         conn.commit()
         payload = _registration_response_payload(user_id, user_type, True, verified_at)
         return jsonify(envelope(payload, "Admin registered.", 201)), 201
+    except sqlite3.IntegrityError as exc:
+        if conn:
+            conn.rollback()
+        return jsonify(envelope(None, _user_conflict_message(exc), 409, False)), 409
     except Exception:
         if conn:
             conn.rollback()
@@ -457,6 +477,10 @@ def verify_registration():
             "can_login": True,
         }
         return jsonify(envelope(payload, "Verification successful. You can now log in.", 200)), 200
+    except ValueError as exc:
+        if conn:
+            conn.rollback()
+        return jsonify(envelope(None, str(exc), 400, False)), 400
     except Exception:
         if conn:
             conn.rollback()
