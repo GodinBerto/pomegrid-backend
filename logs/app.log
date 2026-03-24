@@ -15123,3 +15123,4 @@ RuntimeError: You must call `@jwt_required()` or `verify_jwt_in_request()` befor
 2026-03-24 13:11:12,261 INFO [app] POST /api/v1/auth/register 201 2199ms
 2026-03-24 13:15:19,336 INFO [app] POST /api/v1/auth/login 200 2133ms
 2026-03-24 13:15:23,536 INFO [app] GET /api/v1/products/ 200 4104ms
+2026-03-24 13:15:29,840 INFO [app] GET /api/v1/carts/ 200 6119ms
