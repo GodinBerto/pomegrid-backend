@@ -11,6 +11,7 @@ from routes.farms.products import (
     PRODUCT_STATS_CACHE_KEY,
     _cache_get,
     _cache_set,
+    _delete_product_with_dependencies,
     _ensure_product_type,
     _invalidate_products_cache,
     _normalize_animal_type,
@@ -116,6 +117,8 @@ def create_product():
                 p.weight_per_unit,
                 p.rating,
                 p.discount_percentage,
+                p.is_featured,
+                p.is_active,
                 p.animal_type,
                 p.animal_stage,
                 p.is_alive,
@@ -268,6 +271,8 @@ def update_product(product_id):
                 p.weight_per_unit,
                 p.rating,
                 p.discount_percentage,
+                p.is_featured,
+                p.is_active,
                 p.animal_type,
                 p.animal_stage,
                 p.is_alive,
@@ -292,20 +297,95 @@ def update_product(product_id):
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
 
+@products_admin.route("/<int:product_id>/featured", methods=["POST"])
+@admin_required
+def add_product_to_featured(product_id):
+    try:
+        conn, cursor = db_connection()
+        cursor.execute("SELECT id, is_featured, is_active FROM Products WHERE id = ?", (product_id,))
+        existing = cursor.fetchone()
+        if not existing:
+            conn.close()
+            return jsonify(envelope(None, "Product not found", 404, False)), 404
+        if not bool(existing["is_active"]):
+            conn.close()
+            return jsonify(envelope(None, "Archived products cannot be featured", 400, False)), 400
+
+        cursor.execute(
+            """
+            UPDATE Products
+            SET is_featured = 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (product_id,),
+        )
+        conn.commit()
+
+        cursor.execute(
+            """
+            SELECT
+                p.id,
+                p.title,
+                p.description,
+                p.price,
+                p.quantity,
+                p.category_id,
+                COALESCE(c.name, p.category) AS category,
+                p.image_url,
+                p.image_urls,
+                p.video_urls,
+                p.weight_per_unit,
+                p.rating,
+                p.discount_percentage,
+                p.is_featured,
+                p.is_active,
+                p.animal_type,
+                p.animal_stage,
+                p.is_alive,
+                p.is_fresh,
+                p.created_at,
+                p.updated_at
+            FROM Products p
+            LEFT JOIN Categories c ON c.id = p.category_id
+            WHERE p.id = ?
+            """,
+            (product_id,),
+        )
+        row = cursor.fetchone()
+        conn.close()
+
+        _invalidate_products_cache(product_id=product_id)
+        payload = _serialize_product_row(row)
+        message = "Product added to featured products"
+        if bool(existing["is_featured"]):
+            message = "Product is already featured"
+        return jsonify(envelope(payload, message, 200)), 200
+    except Exception as e:
+        logger.exception("Failed to feature product %s", product_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
 @products_admin.route("/<int:product_id>", methods=["DELETE"])
 @admin_required
 def delete_product(product_id):
     try:
         conn, cursor = db_connection()
-        cursor.execute("DELETE FROM Products WHERE id = ?", (product_id,))
-        conn.commit()
-        deleted = cursor.rowcount
-        conn.close()
-        if deleted == 0:
+        cursor.execute("SELECT id FROM Products WHERE id = ?", (product_id,))
+        if not cursor.fetchone():
+            conn.close()
             return jsonify(envelope(None, "Product not found", 404, False)), 404
 
+        delete_result = _delete_product_with_dependencies(cursor, product_id)
+        conn.commit()
+        conn.close()
+
         _invalidate_products_cache(product_id=product_id)
-        return jsonify(envelope({"id": product_id}, "Product deleted", 200)), 200
+        payload = {"id": product_id, "reference_counts": delete_result["reference_counts"]}
+        if delete_result.get("archived"):
+            payload["archived"] = True
+            return jsonify(envelope(payload, "Product archived because it has order history.", 200)), 200
+        return jsonify(envelope(payload, "Product deleted", 200)), 200
     except Exception as e:
         logger.exception("Failed to delete product %s", product_id)
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
@@ -331,20 +411,47 @@ def bulk_delete_products():
                 conn.close()
                 return jsonify(envelope(None, "ids must contain valid product ids", 400, False)), 400
 
-            placeholders = ",".join("?" for _ in valid_ids)
-            cursor.execute(f"DELETE FROM Products WHERE id IN ({placeholders})", tuple(valid_ids))
-            deleted_count = cursor.rowcount
+            deleted_ids = []
+            archived_ids = []
+            for product_id in valid_ids:
+                cursor.execute("SELECT id FROM Products WHERE id = ?", (product_id,))
+                if not cursor.fetchone():
+                    continue
+                delete_result = _delete_product_with_dependencies(cursor, product_id)
+                if delete_result.get("archived"):
+                    archived_ids.append(product_id)
+                    continue
+                if delete_result["deleted"]:
+                    deleted_ids.append(product_id)
+
             conn.commit()
             conn.close()
             _invalidate_products_cache()
-            return jsonify(envelope({"deleted": deleted_count, "ids": valid_ids}, "Products deleted", 200)), 200
+            return jsonify(
+                envelope(
+                    {"deleted": len(deleted_ids), "deleted_ids": deleted_ids, "archived": len(archived_ids), "archived_ids": archived_ids},
+                    "Products deleted or archived",
+                    200,
+                )
+            ), 200
 
-        cursor.execute("DELETE FROM Products")
-        deleted_count = cursor.rowcount
+        cursor.execute("SELECT id FROM Products ORDER BY id")
+        product_rows = cursor.fetchall()
+        deleted_ids = []
+        archived_ids = []
+        for row in product_rows:
+            product_id = int(row["id"])
+            delete_result = _delete_product_with_dependencies(cursor, product_id)
+            if delete_result.get("archived"):
+                archived_ids.append(product_id)
+                continue
+            if delete_result["deleted"]:
+                deleted_ids.append(product_id)
+
         conn.commit()
         conn.close()
         _invalidate_products_cache()
-        return jsonify(envelope({"deleted": deleted_count}, "All products deleted", 200)), 200
+        return jsonify(envelope({"deleted": len(deleted_ids), "archived": len(archived_ids), "archived_ids": archived_ids}, "All products deleted or archived", 200)), 200
     except Exception as e:
         logger.exception("Failed to bulk delete products")
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
@@ -359,19 +466,19 @@ def product_stats_overview():
 
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT COUNT(*) AS c FROM Products")
+        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE COALESCE(is_active, 1) = 1")
         total_products = int(cursor.fetchone()["c"] or 0)
 
-        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE quantity > 10")
+        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE COALESCE(is_active, 1) = 1 AND quantity > 10")
         in_stock = int(cursor.fetchone()["c"] or 0)
 
-        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE quantity BETWEEN 1 AND 10")
+        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE COALESCE(is_active, 1) = 1 AND quantity BETWEEN 1 AND 10")
         low_stock = int(cursor.fetchone()["c"] or 0)
 
-        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE quantity <= 0")
+        cursor.execute("SELECT COUNT(*) AS c FROM Products WHERE COALESCE(is_active, 1) = 1 AND quantity <= 0")
         out_of_stock = int(cursor.fetchone()["c"] or 0)
 
-        cursor.execute("SELECT COALESCE(SUM(price * quantity), 0) AS v FROM Products")
+        cursor.execute("SELECT COALESCE(SUM(price * quantity), 0) AS v FROM Products WHERE COALESCE(is_active, 1) = 1")
         inventory_value = float(cursor.fetchone()["v"] or 0)
         conn.close()
 

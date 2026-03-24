@@ -61,7 +61,7 @@ def add_to_cart():
 
         conn, cursor = db_connection()
 
-        cursor.execute("SELECT * FROM Products WHERE id = ?", (product_id,))
+        cursor.execute("SELECT * FROM Products WHERE id = ? AND COALESCE(is_active, 1) = 1", (product_id,))
         product = cursor.fetchone()
         if not product:
             conn.close()

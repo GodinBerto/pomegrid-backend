@@ -318,7 +318,7 @@ def create_order():
                 return jsonify(envelope(None, "Item quantity must be > 0", 400, False)), 400
 
             cursor.execute(
-                "SELECT id, title, price FROM Products WHERE id = ?",
+                "SELECT id, title, price FROM Products WHERE id = ? AND COALESCE(is_active, 1) = 1",
                 (product_id,),
             )
             product = cursor.fetchone()
@@ -453,7 +453,7 @@ def get_farmer_dashboard_stats():
         previous_month_start_str = previous_month_start.strftime("%Y-%m-%d %H:%M:%S")
 
         conn, cursor = db_connection()
-        cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ?", (farmer_id,))
+        cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ? AND COALESCE(is_active, 1) = 1", (farmer_id,))
         total_products = int(cursor.fetchone()["total"] or 0)
 
         revenue_sql = """

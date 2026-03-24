@@ -4,7 +4,7 @@ from flask import jsonify, request
 
 from database import db_connection
 from routes.api_envelope import build_meta, envelope, parse_pagination
-from routes.farms.products import _invalidate_products_cache
+from routes.farms.products import _delete_product_with_dependencies, _invalidate_products_cache
 
 from .common import (
     _current_user_id,
@@ -50,7 +50,7 @@ def list_connect_listings():
             conn.close()
             return jsonify(envelope(None, "Connect profile not found", 404, False)), 404
 
-        cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ?", (user_id,))
+        cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ? AND COALESCE(is_active, 1) = 1", (user_id,))
         total = int(cursor.fetchone()["total"] or 0)
         cursor.execute(
             """
@@ -68,6 +68,7 @@ def list_connect_listings():
             FROM Products p
             LEFT JOIN ConnectProfiles cp ON cp.user_id = p.user_id
             WHERE p.user_id = ?
+              AND COALESCE(p.is_active, 1) = 1
             ORDER BY p.created_at DESC, p.id DESC
             LIMIT ? OFFSET ?
             """,
@@ -189,7 +190,7 @@ def update_connect_listing(listing_id):
             conn.close()
             return jsonify(envelope(None, "Only farmers can manage listings", 403, False)), 403
 
-        cursor.execute("SELECT id, title, category, description, price, quantity, image_url FROM Products WHERE id = ? AND user_id = ? LIMIT 1", (int(listing_id), user_id))
+        cursor.execute("SELECT id, title, category, description, price, quantity, image_url FROM Products WHERE id = ? AND user_id = ? AND COALESCE(is_active, 1) = 1 LIMIT 1", (int(listing_id), user_id))
         existing = cursor.fetchone()
         if not existing:
             conn.close()
@@ -285,15 +286,21 @@ def delete_connect_listing(listing_id):
             conn.close()
             return jsonify(envelope(None, "Only farmers can manage listings", 403, False)), 403
 
-        cursor.execute("DELETE FROM Products WHERE id = ? AND user_id = ?", (int(listing_id), user_id))
-        conn.commit()
-        deleted = int(cursor.rowcount or 0)
-        conn.close()
-        if deleted == 0:
+        cursor.execute("SELECT id FROM Products WHERE id = ? AND user_id = ? AND COALESCE(is_active, 1) = 1 LIMIT 1", (int(listing_id), user_id))
+        if not cursor.fetchone():
+            conn.close()
             return jsonify(envelope(None, "Listing not found", 404, False)), 404
 
+        delete_result = _delete_product_with_dependencies(cursor, int(listing_id), user_id)
+        conn.commit()
+        conn.close()
+
         _invalidate_products_cache(product_id=listing_id)
-        return jsonify(envelope({"id": int(listing_id)}, "Listing deleted", 200)), 200
+        payload = {"id": int(listing_id), "reference_counts": delete_result["reference_counts"]}
+        if delete_result.get("archived"):
+            payload["archived"] = True
+            return jsonify(envelope(payload, "Listing archived because it has order history.", 200)), 200
+        return jsonify(envelope(payload, "Listing deleted", 200)), 200
     except Exception as e:
         logger.exception("Failed to delete listing %s for %s", listing_id, user_id)
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500

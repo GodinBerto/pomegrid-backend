@@ -13,6 +13,7 @@ def _product_name_list(cursor, user_id):
         SELECT title
         FROM Products
         WHERE user_id = ?
+          AND COALESCE(is_active, 1) = 1
         ORDER BY created_at DESC, id DESC
         LIMIT 8
         """,
@@ -62,6 +63,7 @@ def _partner_average_rating(cursor, user_id, account_type):
         SELECT AVG(COALESCE(rating, 0)) AS average_rating
         FROM Products
         WHERE user_id = ?
+          AND COALESCE(is_active, 1) = 1
         """,
         (int(user_id),),
     )

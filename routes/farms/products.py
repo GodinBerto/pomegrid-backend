@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 PRODUCT_CACHE_KEY_PREFIX = "farms:products:item"
 PRODUCT_LIST_CACHE_KEY_PREFIX = "farms:products:list"
 PRODUCT_STATS_CACHE_KEY = "farms:products:stats:overview"
+FEATURED_PRODUCT_LIST_CACHE_KEY_PREFIX = "farms:products:featured"
 
 
 def _cache_get(key):
@@ -65,6 +66,10 @@ def _product_cache_key(product_id):
 
 def _product_list_cache_key(raw_query):
     return f"{PRODUCT_LIST_CACHE_KEY_PREFIX}:{raw_query or 'default'}"
+
+
+def _featured_product_list_cache_key(raw_query):
+    return f"{FEATURED_PRODUCT_LIST_CACHE_KEY_PREFIX}:{raw_query or 'default'}"
 
 
 def _is_valid_url(value):
@@ -196,6 +201,8 @@ def _serialize_product_row(row):
     product["discount_percentage"] = int(product.get("discount_percentage") or 0) if product.get("discount_percentage") is not None else None
     product["is_alive"] = bool(product.get("is_alive"))
     product["is_fresh"] = bool(product.get("is_fresh"))
+    product["is_featured"] = bool(product.get("is_featured"))
+    product["is_active"] = bool(product.get("is_active", True))
     return product
 
 
@@ -205,6 +212,7 @@ def _invalidate_products_cache(product_id=None):
         keys.append(_product_cache_key(product_id))
     _cache_delete(*keys)
     _cache_delete_patterns(f"{PRODUCT_LIST_CACHE_KEY_PREFIX}:*")
+    _cache_delete_patterns(f"{FEATURED_PRODUCT_LIST_CACHE_KEY_PREFIX}:*")
 
 
 def _fetch_product_feedback_summary(cursor, product_id):
@@ -239,6 +247,68 @@ def _refresh_product_rating(cursor, product_id):
         (next_rating, product_id),
     )
     return summary
+
+
+def _get_product_reference_counts(cursor, product_id):
+    counts = {}
+    for table_name in ("Cart", "ProductFeedback", "OrderItems"):
+        cursor.execute(
+            f"""
+            SELECT COUNT(*) AS total
+            FROM {table_name}
+            WHERE product_id = ?
+            """,
+            (product_id,),
+        )
+        counts[table_name] = int(cursor.fetchone()["total"] or 0)
+    return counts
+
+
+def _delete_product_with_dependencies(cursor, product_id, owner_user_id=None):
+    reference_counts = _get_product_reference_counts(cursor, product_id)
+    cursor.execute("DELETE FROM Cart WHERE product_id = ?", (product_id,))
+    if reference_counts["OrderItems"] > 0:
+        if owner_user_id is None:
+            cursor.execute(
+                """
+                UPDATE Products
+                SET is_active = 0,
+                    is_featured = 0,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (product_id,),
+            )
+        else:
+            cursor.execute(
+                """
+                UPDATE Products
+                SET is_active = 0,
+                    is_featured = 0,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND user_id = ?
+                """,
+                (product_id, owner_user_id),
+            )
+        return {
+            "deleted": False,
+            "archived": int(cursor.rowcount or 0) > 0,
+            "blocked_by_orders": False,
+            "reference_counts": reference_counts,
+        }
+
+    cursor.execute("DELETE FROM ProductFeedback WHERE product_id = ?", (product_id,))
+    if owner_user_id is None:
+        cursor.execute("DELETE FROM Products WHERE id = ?", (product_id,))
+    else:
+        cursor.execute("DELETE FROM Products WHERE id = ? AND user_id = ?", (product_id, owner_user_id))
+
+    return {
+        "deleted": int(cursor.rowcount or 0) > 0,
+        "archived": False,
+        "blocked_by_orders": False,
+        "reference_counts": reference_counts,
+    }
 
 
 def _serialize_product_feedback_row(row):
@@ -302,7 +372,7 @@ def list_products():
     if cached is not None:
         return jsonify(envelope(cached.get("items", []), "Products fetched", 200, True, cached.get("meta"))), 200
 
-    where = ["1=1"]
+    where = ["COALESCE(p.is_active, 1) = 1"]
     params = []
 
     if search:
@@ -353,6 +423,8 @@ def list_products():
                 p.weight_per_unit,
                 p.rating,
                 p.discount_percentage,
+                p.is_featured,
+                p.is_active,
                 p.animal_type,
                 p.animal_stage,
                 p.is_alive,
@@ -376,6 +448,90 @@ def list_products():
         return jsonify(envelope(items, "Products fetched", 200, True, meta)), 200
     except Exception as e:
         logger.exception("Failed to list products")
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
+@products.route("/featured", methods=["GET"])
+def list_featured_products():
+    page, per_page, offset = parse_pagination(request.args)
+
+    search = str(request.args.get("search") or "").strip()
+    category = str(request.args.get("category") or "").strip()
+
+    cache_key = _featured_product_list_cache_key(request.query_string.decode("utf-8"))
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return jsonify(envelope(cached.get("items", []), "Featured products fetched", 200, True, cached.get("meta"))), 200
+
+    where = ["COALESCE(p.is_active, 1) = 1", "p.is_featured = 1"]
+    params = []
+
+    if search:
+        like = f"%{search}%"
+        where.append("(LOWER(p.title) LIKE LOWER(?) OR LOWER(COALESCE(p.description, '')) LIKE LOWER(?))")
+        params.extend([like, like])
+
+    if category:
+        where.append("(LOWER(COALESCE(c.name, p.category, '')) = LOWER(?) OR CAST(p.category_id AS TEXT) = ?)")
+        params.extend([category, category])
+
+    where_sql = " AND ".join(where)
+
+    try:
+        conn, cursor = db_connection()
+        cursor.execute(
+            f"""
+            SELECT COUNT(*) AS total
+            FROM Products p
+            LEFT JOIN Categories c ON c.id = p.category_id
+            WHERE {where_sql}
+            """,
+            tuple(params),
+        )
+        total = int(cursor.fetchone()["total"] or 0)
+
+        query_params = list(params) + [per_page, offset]
+        cursor.execute(
+            f"""
+            SELECT
+                p.id,
+                p.title,
+                p.description,
+                p.price,
+                p.quantity,
+                p.category_id,
+                COALESCE(c.name, p.category) AS category,
+                p.image_url,
+                p.image_urls,
+                p.video_urls,
+                p.weight_per_unit,
+                p.rating,
+                p.discount_percentage,
+                p.is_featured,
+                p.is_active,
+                p.animal_type,
+                p.animal_stage,
+                p.is_alive,
+                p.is_fresh,
+                p.created_at,
+                p.updated_at
+            FROM Products p
+            LEFT JOIN Categories c ON c.id = p.category_id
+            WHERE {where_sql}
+            ORDER BY COALESCE(p.updated_at, p.created_at) DESC, p.id DESC
+            LIMIT ? OFFSET ?
+            """,
+            tuple(query_params),
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        items = [_serialize_product_row(row) for row in rows]
+        meta = build_meta(page, per_page, total)
+        _cache_set(cache_key, {"items": items, "meta": meta})
+        return jsonify(envelope(items, "Featured products fetched", 200, True, meta)), 200
+    except Exception as e:
+        logger.exception("Failed to list featured products")
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
 
@@ -404,6 +560,8 @@ def get_product(product_id):
                 p.weight_per_unit,
                 p.rating,
                 p.discount_percentage,
+                p.is_featured,
+                p.is_active,
                 p.animal_type,
                 p.animal_stage,
                 p.is_alive,
@@ -413,6 +571,7 @@ def get_product(product_id):
             FROM Products p
             LEFT JOIN Categories c ON c.id = p.category_id
             WHERE p.id = ?
+              AND COALESCE(p.is_active, 1) = 1
             """,
             (product_id,),
         )
@@ -434,7 +593,7 @@ def list_product_feedback(product_id):
 
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT id FROM Products WHERE id = ?", (product_id,))
+        cursor.execute("SELECT id FROM Products WHERE id = ? AND COALESCE(is_active, 1) = 1", (product_id,))
         if not cursor.fetchone():
             conn.close()
             return jsonify(envelope(None, "Product not found", 404, False)), 404
@@ -496,7 +655,7 @@ def upsert_product_feedback(product_id):
 
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT id FROM Products WHERE id = ?", (product_id,))
+        cursor.execute("SELECT id FROM Products WHERE id = ? AND COALESCE(is_active, 1) = 1", (product_id,))
         if not cursor.fetchone():
             conn.close()
             return jsonify(envelope(None, "Product not found", 404, False)), 404

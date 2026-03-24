@@ -569,6 +569,8 @@ def create_tables_legacy():
             video_urls TEXT,
             rating REAL DEFAULT 4.5,
             discount_percentage INTEGER DEFAULT NULL,
+            is_featured BOOLEAN NOT NULL DEFAULT 0,
+            is_active BOOLEAN NOT NULL DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES Users(id),
@@ -1136,6 +1138,8 @@ def create_tables_legacy():
     ensure_column(cursor, "Products", "category_id", "category_id INTEGER")
     ensure_column(cursor, "Products", "image_urls", "image_urls TEXT")
     ensure_column(cursor, "Products", "video_urls", "video_urls TEXT")
+    ensure_column(cursor, "Products", "is_featured", "is_featured BOOLEAN NOT NULL DEFAULT 0")
+    ensure_column(cursor, "Products", "is_active", "is_active BOOLEAN NOT NULL DEFAULT 1")
     ensure_column(cursor, "Orders", "payment_method", "payment_method TEXT")
     ensure_column(cursor, "Orders", "payment_reference", "payment_reference TEXT")
     ensure_column(cursor, "Orders", "payment_status", "payment_status TEXT")
@@ -1366,6 +1370,12 @@ def create_tables_legacy():
         "CREATE INDEX IF NOT EXISTS idx_products_category_id ON Products(category_id)"
     )
     cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_products_is_featured ON Products(is_featured)"
+    )
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_products_is_active ON Products(is_active)"
+    )
+    cursor.execute(
         "CREATE INDEX IF NOT EXISTS idx_orders_created_at ON Orders(created_at)"
     )
     cursor.execute(
@@ -1454,6 +1464,8 @@ def apply_schema_migrations(conn, cursor):
     ensure_column(cursor, "Products", "category_id", "category_id INTEGER")
     ensure_column(cursor, "Products", "image_urls", "image_urls TEXT")
     ensure_column(cursor, "Products", "video_urls", "video_urls TEXT")
+    ensure_column(cursor, "Products", "is_featured", "is_featured BOOLEAN NOT NULL DEFAULT 0")
+    ensure_column(cursor, "Products", "is_active", "is_active BOOLEAN NOT NULL DEFAULT 1")
     ensure_column(cursor, "Orders", "payment_method", "payment_method TEXT")
     ensure_column(cursor, "Orders", "payment_reference", "payment_reference TEXT")
     ensure_column(cursor, "Orders", "payment_status", "payment_status TEXT")

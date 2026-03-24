@@ -37,11 +37,11 @@ def get_connect_dashboard_overview():
 
         account_type = _normalize_account_type(profile_row["account_type"])
         if account_type == "farmer":
-            cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ?", (user_id,))
+            cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ? AND COALESCE(is_active, 1) = 1", (user_id,))
             total_listings = int(cursor.fetchone()["total"] or 0)
-            cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ? AND created_at >= ?", (user_id, current_month_start))
+            cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ? AND COALESCE(is_active, 1) = 1 AND created_at >= ?", (user_id, current_month_start))
             current_listings = int(cursor.fetchone()["total"] or 0)
-            cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ? AND created_at >= ? AND created_at < ?", (user_id, previous_month_start, current_month_start))
+            cursor.execute("SELECT COUNT(*) AS total FROM Products WHERE user_id = ? AND COALESCE(is_active, 1) = 1 AND created_at >= ? AND created_at < ?", (user_id, previous_month_start, current_month_start))
             previous_listings = int(cursor.fetchone()["total"] or 0)
 
             cursor.execute(
@@ -168,6 +168,7 @@ def get_connect_dashboard_overview():
                 SELECT COALESCE(NULLIF(TRIM(category), ''), 'Uncategorized') AS category_name, COUNT(*) AS total
                 FROM Products
                 WHERE user_id = ?
+                  AND COALESCE(is_active, 1) = 1
                 GROUP BY COALESCE(NULLIF(TRIM(category), ''), 'Uncategorized')
                 ORDER BY total DESC, category_name ASC
                 LIMIT 6

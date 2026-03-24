@@ -40,6 +40,8 @@ def create_farm_tables(cursor):
             video_urls TEXT,
             rating REAL DEFAULT 4.5,
             discount_percentage INTEGER DEFAULT NULL,
+            is_featured BOOLEAN NOT NULL DEFAULT 0,
+            is_active BOOLEAN NOT NULL DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES Users(id),
@@ -171,6 +173,8 @@ def create_farm_indexes(cursor):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_product_feedback_user_id ON ProductFeedback(user_id)")
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_product_feedback_product_user_unique ON ProductFeedback(product_id, user_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_category_id ON Products(category_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_is_featured ON Products(is_featured)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_products_is_active ON Products(is_active)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_created_at ON Orders(created_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_orders_status ON Orders(status)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON OrderItems(order_id)")
