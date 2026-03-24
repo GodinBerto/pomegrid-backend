@@ -151,6 +151,16 @@ def _verification_response_payload(user_id, channel, target, expires_at, deliver
     return payload
 
 
+def _registration_response_payload(user_id, user_type, is_verified, verified_at):
+    return {
+        "user_id": int(user_id),
+        "user_type": normalize_user_type(user_type),
+        "is_verified": bool(is_verified),
+        "verified_at": verified_at,
+        "can_login": True,
+    }
+
+
 def _send_and_store_verification(cursor, user_id, email, phone, verification_channel):
     channel, target = validate_verification_target(verification_channel, email=email, phone=phone)
     verification_code = generate_verification_code(VERIFICATION_CODE_LENGTH)
@@ -238,7 +248,6 @@ def register():
     address = _normalize_text(data.get("address")) or None
     profile_image_url = _normalize_text(data.get("profile_image_url")) or None
     date_of_birth = _normalize_text(data.get("date_of_birth"))
-    verification_channel = data.get("verification_channel", "email")
     accept_policy = _as_bool(data.get("accept_policy") if "accept_policy" in data else data.get("accepted_policy"))
 
     if not all([username, password, email, full_name, phone, user_type, date_of_birth]):
@@ -251,11 +260,6 @@ def register():
     if user_type not in PUBLIC_REGISTRATION_USER_TYPES:
         return jsonify(envelope(None, "Only user or worker can self-register.", 403, False)), 403
 
-    try:
-        _, _ = validate_verification_target(verification_channel, email=email, phone=phone)
-    except ValueError as exc:
-        return jsonify(envelope(None, str(exc), 400, False)), 400
-
     conn, cursor = db_connection()
     try:
         cursor.execute("SELECT id FROM Users WHERE username = ? OR LOWER(email) = ?", (username, email))
@@ -266,6 +270,8 @@ def register():
         return jsonify(envelope(None, "Username or email already exists", 409, False)), 409
 
     hashed_password = generate_password_hash(password)
+    is_verified = False
+    verified_at = None
     conn = None
 
     try:
@@ -274,9 +280,9 @@ def register():
             """
             INSERT INTO Users (
                 username, email, password_hash, full_name, phone,
-                user_type, address, profile_image_url, date_of_birth, avatar,
-                accepted_policy, policy_accepted_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+                user_type, role, address, profile_image_url, date_of_birth, avatar,
+                is_verified, verified_at, accepted_policy, policy_accepted_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
             """,
             (
                 username,
@@ -285,36 +291,20 @@ def register():
                 full_name,
                 phone,
                 user_type,
+                user_type,
                 address,
                 profile_image_url,
                 date_of_birth,
                 profile_image_url,
+                0,
+                verified_at,
             ),
         )
         user_id = cursor.lastrowid
-        channel, target, expires_at, delivery_result = _send_and_store_verification(
-            cursor,
-            user_id,
-            email,
-            phone,
-            verification_channel,
-        )
-
         conn.commit()
-        payload = _verification_response_payload(
-            user_id,
-            channel,
-            target,
-            expires_at,
-            delivery_result,
-        )
-        return jsonify(envelope(payload, "User registered. Verification code sent.", 201)), 201
+        payload = _registration_response_payload(user_id, user_type, is_verified, verified_at)
+        return jsonify(envelope(payload, "User registered. Verification is pending.", 201)), 201
 
-    except RuntimeError as exc:
-        if conn:
-            conn.rollback()
-        logger.exception("Verification delivery error during registration")
-        return jsonify(envelope(None, f"Unable to send verification code: {exc}", 503, False)), 503
     except Exception:
         if conn:
             conn.rollback()
@@ -342,7 +332,6 @@ def register_admin():
     address = _normalize_text(data.get("address")) or None
     profile_image_url = _normalize_text(data.get("profile_image_url")) or None
     user_type = normalize_user_type(data.get("user_type", "admin"), "admin")
-    verification_channel = data.get("verification_channel", "email")
     accept_policy = _as_bool(
         data.get("accept_policy") if "accept_policy" in data else data.get("accepted_policy"),
         True,
@@ -355,12 +344,8 @@ def register_admin():
     if not accept_policy:
         return jsonify(envelope(None, "You must accept the policy before registering", 400, False)), 400
 
-    try:
-        _, _ = validate_verification_target(verification_channel, email=email, phone=phone)
-    except ValueError as exc:
-        return jsonify(envelope(None, str(exc), 400, False)), 400
-
     hashed_password = generate_password_hash(password)
+    verified_at = _utc_now().strftime("%Y-%m-%d %H:%M:%S")
     conn = None
     try:
         conn, cursor = db_connection()
@@ -372,9 +357,9 @@ def register_admin():
             """
             INSERT INTO Users (
                 username, email, password_hash, full_name, phone,
-                user_type, address, profile_image_url, date_of_birth, is_admin, avatar,
-                accepted_policy, policy_accepted_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+                user_type, role, address, profile_image_url, date_of_birth, is_admin, avatar,
+                is_verified, verified_at, accepted_policy, policy_accepted_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
             """,
             (
                 username,
@@ -383,36 +368,21 @@ def register_admin():
                 full_name,
                 phone,
                 user_type,
+                user_type,
                 address,
                 profile_image_url,
                 date_of_birth,
                 1,
                 profile_image_url,
+                1,
+                verified_at,
             ),
         )
         user_id = cursor.lastrowid
         cursor.execute("INSERT OR IGNORE INTO Admins (user_id) VALUES (?)", (user_id,))
-        channel, target, expires_at, delivery_result = _send_and_store_verification(
-            cursor,
-            user_id,
-            email,
-            phone,
-            verification_channel,
-        )
         conn.commit()
-        payload = _verification_response_payload(
-            user_id,
-            channel,
-            target,
-            expires_at,
-            delivery_result,
-        )
-        return jsonify(envelope(payload, "Admin registered. Verification code sent.", 201)), 201
-    except RuntimeError as exc:
-        if conn:
-            conn.rollback()
-        logger.exception("Admin verification delivery error")
-        return jsonify(envelope(None, f"Unable to send verification code: {exc}", 503, False)), 503
+        payload = _registration_response_payload(user_id, user_type, True, verified_at)
+        return jsonify(envelope(payload, "Admin registered.", 201)), 201
     except Exception:
         if conn:
             conn.rollback()
@@ -603,27 +573,6 @@ def login():
                 False,
             )
         ), 403
-    if not bool(user["is_verified"]):
-        verification_channel = user["verification_channel"] or "email"
-        verification_target = user["verification_target"] or (
-            user["phone"] if verification_channel == "phone" else user["email"]
-        )
-        return jsonify(
-            envelope(
-                {
-                    "requires_verification": True,
-                    "verification_channel": verification_channel,
-                    "verification_target": mask_verification_target(
-                        verification_channel,
-                        verification_target,
-                    ),
-                },
-                "Please verify your account before logging in.",
-                403,
-                False,
-            )
-        ), 403
-
     user_data = _build_auth_user_payload(user)
 
     access_token = create_access_token(identity=str(user_id))
@@ -713,16 +662,6 @@ def refresh():
         )
         unset_jwt_cookies(resp)
         return resp, 403
-    if not bool(user_row["is_verified"]):
-        resp = jsonify(
-            {
-                "message": "Please verify your account before continuing.",
-                "requires_login": True,
-            }
-        )
-        unset_jwt_cookies(resp)
-        return resp, 403
-
     refresh_jti = jwt_data.get("jti")
     expires_in = jwt_data.get("exp", 0) - jwt_data.get("iat", 0)
 

@@ -1,8 +1,10 @@
+import base64
 import json
 import logging
 import smtplib
 from email.message import EmailMessage
 from secrets import randbelow
+from urllib import parse as urllib_parse
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
@@ -35,7 +37,7 @@ def normalize_verification_channel(channel, default="email"):
 def validate_verification_target(channel, email=None, phone=None):
     normalized_channel = normalize_verification_channel(channel)
     if normalized_channel == "phone":
-        target = str(phone or "").strip()
+        target = sanitize_phone_target(phone)
         digits = "".join(ch for ch in target if ch.isdigit())
         if len(digits) < 10:
             raise ValueError("A valid phone number is required for phone verification")
@@ -65,6 +67,17 @@ def mask_verification_target(channel, target):
     else:
         masked_local = f"{local[:2]}{'*' * max(len(local) - 2, 1)}"
     return f"{masked_local}@{domain}"
+
+
+def sanitize_phone_target(target):
+    raw_value = str(target or "").strip()
+    if not raw_value:
+        return ""
+
+    digits = "".join(ch for ch in raw_value if ch.isdigit())
+    if raw_value.startswith("+"):
+        return f"+{digits}"
+    return digits
 
 
 def deliver_verification_code(channel, target, code, expiry_minutes):
@@ -121,9 +134,22 @@ def _send_email_code(target, code, expiry_minutes):
 
 
 def _send_phone_code(target, code, expiry_minutes):
+    twilio_sid = str(Config.TWILIO_ACCOUNT_SID or "").strip()
+    twilio_token = str(Config.TWILIO_AUTH_TOKEN or "").strip()
+    twilio_from_phone = str(Config.TWILIO_FROM_PHONE or "").strip()
+    twilio_messaging_service_sid = str(Config.TWILIO_MESSAGING_SERVICE_SID or "").strip()
+
+    if twilio_sid and twilio_token and (twilio_from_phone or twilio_messaging_service_sid):
+        return _send_phone_code_via_twilio(target, code, expiry_minutes)
+
     webhook_url = str(Config.SMS_WEBHOOK_URL or "").strip()
     if not webhook_url:
-        return _fallback_delivery("phone", target, code, "SMS delivery is not configured")
+        return _fallback_delivery(
+            "phone",
+            target,
+            code,
+            "SMS delivery is not configured. Provide Twilio credentials or SMS_WEBHOOK_URL.",
+        )
 
     payload = {
         "to": target,
@@ -161,6 +187,66 @@ def _send_phone_code(target, code, expiry_minutes):
         "target": target,
         "masked_target": mask_verification_target("phone", target),
         "delivery_method": "sms_webhook",
+        "delivered": True,
+    }
+
+
+def _send_phone_code_via_twilio(target, code, expiry_minutes):
+    sanitized_target = sanitize_phone_target(target)
+    body = f"Your Pomegrid verification code is {code}. It expires in {int(expiry_minutes)} minutes."
+    payload = {
+        "To": sanitized_target,
+        "Body": body,
+    }
+
+    messaging_service_sid = str(Config.TWILIO_MESSAGING_SERVICE_SID or "").strip()
+    from_phone = str(Config.TWILIO_FROM_PHONE or "").strip()
+    if messaging_service_sid:
+        payload["MessagingServiceSid"] = messaging_service_sid
+    elif from_phone:
+        payload["From"] = sanitize_phone_target(from_phone)
+    else:
+        return _fallback_delivery(
+            "phone",
+            target,
+            code,
+            "Twilio is configured but no TWILIO_FROM_PHONE or TWILIO_MESSAGING_SERVICE_SID was provided.",
+        )
+
+    account_sid = str(Config.TWILIO_ACCOUNT_SID or "").strip()
+    auth_token = str(Config.TWILIO_AUTH_TOKEN or "").strip()
+    auth_value = base64.b64encode(f"{account_sid}:{auth_token}".encode("utf-8")).decode("ascii")
+    request = urllib_request.Request(
+        f"https://api.twilio.com/2010-04-01/Accounts/{account_sid}/Messages.json",
+        data=urllib_parse.urlencode(payload).encode("utf-8"),
+        headers={
+            "Authorization": f"Basic {auth_value}",
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        method="POST",
+    )
+
+    try:
+        with urllib_request.urlopen(request, timeout=15) as response:
+            status_code = int(getattr(response, "status", response.getcode()))
+            response_body = response.read().decode("utf-8", errors="ignore")
+    except urllib_error.HTTPError as exc:
+        error_body = exc.read().decode("utf-8", errors="ignore")
+        logger.exception("Twilio SMS returned error while sending to %s: %s", sanitized_target, error_body)
+        return _fallback_delivery("phone", target, code, f"Twilio SMS HTTP {exc.code}")
+    except Exception as exc:
+        logger.exception("Failed to send Twilio verification SMS to %s", sanitized_target)
+        return _fallback_delivery("phone", target, code, str(exc))
+
+    if status_code < 200 or status_code >= 300:
+        logger.warning("Unexpected Twilio SMS response for %s: %s %s", sanitized_target, status_code, response_body)
+        return _fallback_delivery("phone", target, code, f"Twilio SMS HTTP {status_code}")
+
+    return {
+        "channel": "phone",
+        "target": sanitized_target,
+        "masked_target": mask_verification_target("phone", sanitized_target),
+        "delivery_method": "twilio_sms",
         "delivered": True,
     }
 

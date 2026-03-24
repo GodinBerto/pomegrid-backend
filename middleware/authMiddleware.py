@@ -91,8 +91,6 @@ def load_authenticated_user(*allowed_roles, require_active=True):
         return jsonify(envelope(None, "User account is inactive", 403, False)), 403
     if require_active and not bool(user["accepted_policy"]):
         return jsonify(envelope(None, "Policy acceptance is required", 403, False)), 403
-    if require_active and not bool(user["is_verified"]):
-        return jsonify(envelope(None, "Account verification is required", 403, False)), 403
 
     current_user = _build_current_user(user)
     allowed = {normalize_role(role) for role in allowed_roles if role is not None}
