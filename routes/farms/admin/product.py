@@ -19,6 +19,7 @@ from routes.farms.products import (
     _normalize_media_arrays,
     _serialize_product_row,
 )
+from services.notifications import create_admin_notification
 
 
 products_admin = Blueprint("products_admin", __name__)
@@ -99,6 +100,13 @@ def create_product():
             ),
         )
         product_id = cursor.lastrowid
+        create_admin_notification(
+            cursor,
+            "system",
+            "Product created",
+            f'Product "{title}" (#{int(product_id)}) was added.',
+            href=f"/products/{int(product_id)}",
+        )
         conn.commit()
 
         cursor.execute(
@@ -253,6 +261,13 @@ def update_product(product_id):
                 product_id,
             ),
         )
+        create_admin_notification(
+            cursor,
+            "system",
+            "Product updated",
+            f'Product "{title}" (#{int(product_id)}) was updated.',
+            href=f"/products/{int(product_id)}",
+        )
         conn.commit()
 
         cursor.execute(
@@ -371,12 +386,29 @@ def add_product_to_featured(product_id):
 def delete_product(product_id):
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT id FROM Products WHERE id = ?", (product_id,))
-        if not cursor.fetchone():
+        cursor.execute("SELECT id, title FROM Products WHERE id = ?", (product_id,))
+        existing = cursor.fetchone()
+        if not existing:
             conn.close()
             return jsonify(envelope(None, "Product not found", 404, False)), 404
 
         delete_result = _delete_product_with_dependencies(cursor, product_id)
+        if delete_result.get("archived"):
+            create_admin_notification(
+                cursor,
+                "system",
+                "Product archived",
+                f'Product "{existing["title"]}" (#{int(product_id)}) was archived because it has order history.',
+                href=f"/products/{int(product_id)}",
+            )
+        else:
+            create_admin_notification(
+                cursor,
+                "system",
+                "Product deleted",
+                f'Product "{existing["title"]}" (#{int(product_id)}) was deleted.',
+                href="/products",
+            )
         conn.commit()
         conn.close()
 
@@ -424,6 +456,17 @@ def bulk_delete_products():
                 if delete_result["deleted"]:
                     deleted_ids.append(product_id)
 
+            if deleted_ids or archived_ids:
+                create_admin_notification(
+                    cursor,
+                    "system",
+                    "Products deleted",
+                    (
+                        f"Bulk product cleanup removed {len(deleted_ids)} product(s) "
+                        f"and archived {len(archived_ids)} product(s)."
+                    ),
+                    href="/products",
+                )
             conn.commit()
             conn.close()
             _invalidate_products_cache()
@@ -448,6 +491,17 @@ def bulk_delete_products():
             if delete_result["deleted"]:
                 deleted_ids.append(product_id)
 
+        if deleted_ids or archived_ids:
+            create_admin_notification(
+                cursor,
+                "system",
+                "Products deleted",
+                (
+                    f"Bulk product cleanup removed {len(deleted_ids)} product(s) "
+                    f"and archived {len(archived_ids)} product(s)."
+                ),
+                href="/products",
+            )
         conn.commit()
         conn.close()
         _invalidate_products_cache()

@@ -1,3 +1,4 @@
+import json
 import logging
 
 from flask import Blueprint, jsonify, request
@@ -24,6 +25,17 @@ def _serialize_user_row(row):
     user["is_verified"] = bool(user.get("is_verified"))
     user["accepted_policy"] = bool(user.get("accepted_policy"))
     return user
+
+
+def _serialize_notification_row(row):
+    notification = dict(row)
+    payload_json = notification.pop("payload_json", None)
+    try:
+        notification["payload"] = json.loads(payload_json) if payload_json else {}
+    except Exception:
+        notification["payload"] = {}
+    notification["is_read"] = bool(notification.get("is_read"))
+    return notification
 
 
 @users.route("/me", methods=["GET"])
@@ -130,6 +142,79 @@ def update_current_user():
         return jsonify(envelope(_serialize_user_row(row), "Profile updated", 200)), 200
     except Exception as e:
         logger.exception("Failed to update current user")
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
+@users.route("/notifications", methods=["GET"])
+@jwt_required()
+def get_current_user_notifications():
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
+    try:
+        conn, cursor = db_connection()
+        cursor.execute(
+            """
+            SELECT id, user_id, type, title, message, is_read, payload_json, created_at
+            FROM notifications
+            WHERE user_id = ?
+            ORDER BY created_at DESC, id DESC
+            """,
+            (user_id,),
+        )
+        rows = [_serialize_notification_row(row) for row in cursor.fetchall()]
+        conn.close()
+        return jsonify(envelope(rows, "Notifications fetched", 200)), 200
+    except Exception as e:
+        logger.exception("Failed to fetch notifications for user %s", user_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
+@users.route("/notifications/read-all", methods=["PATCH"])
+@jwt_required()
+def mark_current_user_notifications_read():
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
+    try:
+        conn, cursor = db_connection()
+        cursor.execute(
+            "UPDATE notifications SET is_read = 1 WHERE user_id = ? AND COALESCE(is_read, 0) = 0",
+            (user_id,),
+        )
+        updated = int(cursor.rowcount or 0)
+        conn.commit()
+        conn.close()
+        return jsonify(envelope({"updated": updated}, "Notifications marked as read", 200)), 200
+    except Exception as e:
+        logger.exception("Failed to mark notifications as read for user %s", user_id)
+        return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+
+
+@users.route("/notifications/<int:notification_id>/read", methods=["PATCH"])
+@jwt_required()
+def mark_current_user_notification_read(notification_id):
+    user_id = get_authenticated_user_id()
+    if user_id is None:
+        return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
+    try:
+        conn, cursor = db_connection()
+        cursor.execute(
+            """
+            UPDATE notifications
+            SET is_read = 1
+            WHERE id = ? AND user_id = ?
+            """,
+            (notification_id, user_id),
+        )
+        conn.commit()
+        if cursor.rowcount == 0:
+            conn.close()
+            return jsonify(envelope(None, "Notification not found", 404, False)), 404
+        conn.close()
+        return jsonify(envelope({"id": notification_id, "is_read": True}, "Notification marked as read", 200)), 200
+    except Exception as e:
+        logger.exception("Failed to mark notification %s as read for user %s", notification_id, user_id)
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
 
 

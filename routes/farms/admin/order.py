@@ -17,6 +17,7 @@ from routes.farms.orders import (
     _sanitize_order_payload,
     _serialize_order_row,
 )
+from services.notifications import create_admin_notification, create_user_notification
 
 
 orders_admin = Blueprint("orders_admin", __name__)
@@ -161,12 +162,13 @@ def patch_order_status(order_id):
 
     try:
         conn, cursor = db_connection()
-        cursor.execute("SELECT id, user_id FROM Orders WHERE id = ?", (order_id,))
+        cursor.execute("SELECT id, user_id, status FROM Orders WHERE id = ?", (order_id,))
         row = cursor.fetchone()
         if not row:
             conn.close()
             return jsonify(envelope(None, "Order not found", 404, False)), 404
 
+        previous_status = str(row["status"] or "").strip().lower()
         cursor.execute(
             """
             UPDATE Orders
@@ -175,6 +177,26 @@ def patch_order_status(order_id):
             """,
             (status, order_id),
         )
+        if previous_status != status:
+            create_admin_notification(
+                cursor,
+                "order",
+                "Order updated",
+                f"Order #{int(order_id)} status changed from {previous_status} to {status}.",
+                href=f"/orders/{int(order_id)}",
+            )
+            create_user_notification(
+                cursor,
+                row["user_id"],
+                "order_status",
+                "Order updated",
+                f"Your order #{int(order_id)} changed from {previous_status} to {status}.",
+                payload={
+                    "order_id": int(order_id),
+                    "status": str(status),
+                    "previous_status": previous_status,
+                },
+            )
         conn.commit()
         conn.close()
 

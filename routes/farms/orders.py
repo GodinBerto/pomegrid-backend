@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 from flask_jwt_extended import get_jwt_identity
 
 from routes.farms.admin.dashboard import build_dashboard_states, percent_change
@@ -10,6 +10,7 @@ from database import db_connection
 from decorators.roles import user_required
 from extensions.redis_client import get_redis_client
 from routes.api_envelope import build_meta, envelope, parse_pagination
+from services.notifications import create_admin_notification
 
 
 orders = Blueprint("orders", __name__)
@@ -120,6 +121,50 @@ def _sanitize_order_payload(payload):
     for item in payload.get("items", []):
         item.pop("product_owner_id", None)
     return payload
+
+
+def _current_actor_name(default_value="A user"):
+    current_user = getattr(g, "current_user", {}) or {}
+    full_name = str(current_user.get("full_name") or "").strip()
+    email = str(current_user.get("email") or "").strip()
+    return full_name or email or default_value
+
+
+def _order_href(order_id):
+    return f"/orders/{int(order_id)}"
+
+
+def _notify_admin_order_created(cursor, order_id, total_price, line_items_count):
+    actor_name = _current_actor_name()
+    create_admin_notification(
+        cursor,
+        "order",
+        "New order created",
+        (
+            f"{actor_name} created order #{int(order_id)} with "
+            f"{int(line_items_count)} item(s) totaling {float(total_price):.2f}."
+        ),
+        href=_order_href(order_id),
+    )
+
+
+def _notify_admin_order_updated(cursor, order_id, new_status, previous_status=None):
+    actor_name = _current_actor_name()
+    if previous_status and previous_status != new_status:
+        description = (
+            f"{actor_name} updated order #{int(order_id)} "
+            f"from {previous_status} to {new_status}."
+        )
+    else:
+        description = f"{actor_name} updated order #{int(order_id)} to {new_status}."
+
+    create_admin_notification(
+        cursor,
+        "order",
+        "Order updated",
+        description,
+        href=_order_href(order_id),
+    )
 
 
 def _get_order_with_items(cursor, order_id):
@@ -363,6 +408,12 @@ def create_order():
                 ),
             )
 
+        _notify_admin_order_created(
+            cursor,
+            order_id=order_id,
+            total_price=round(total_price, 2),
+            line_items_count=len(normalized_items),
+        )
         conn.commit()
         payload = _get_order_with_items(cursor, order_id)
         conn.close()
@@ -387,17 +438,26 @@ def update_order_for_user(order_id):
     try:
         conn, cursor = db_connection()
         cursor.execute(
-            "SELECT id FROM Orders WHERE id = ? AND user_id = ?",
+            "SELECT id, status FROM Orders WHERE id = ? AND user_id = ?",
             (order_id, user_id),
         )
-        if not cursor.fetchone():
+        row = cursor.fetchone()
+        if not row:
             conn.close()
             return jsonify(envelope(None, "Order not found or unauthorized", 404, False)), 404
 
+        previous_status = str(row["status"] or "").strip().lower()
         cursor.execute(
             "UPDATE Orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
             (status, order_id),
         )
+        if previous_status != status:
+            _notify_admin_order_updated(
+                cursor,
+                order_id=order_id,
+                new_status=status,
+                previous_status=previous_status,
+            )
         conn.commit()
         conn.close()
         _invalidate_orders_cache(order_id=order_id, user_id=user_id)
