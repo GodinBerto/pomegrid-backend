@@ -8,6 +8,16 @@ def _env_bool(name, default=False):
     return str(raw_value).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _env_float(name, default):
+    raw_value = os.getenv(name)
+    if raw_value is None:
+        return float(default)
+    try:
+        return float(str(raw_value).strip())
+    except (TypeError, ValueError):
+        return float(default)
+
+
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "your_secret_key")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your_jwt_secret_key")
@@ -16,8 +26,13 @@ class Config:
     CLOUDINARY_API_KEY = os.getenv("CLOUDINARY_API_KEY", "228894397371284")
     CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "pxSV1WRyZsTOCbHoMtA5ZoOMh1s")
     CLOUDINARY_API_NAME = os.getenv("CLOUDINARY_API_NAME", " dquhjbcvq")
+    REDIS_ENABLED = _env_bool("REDIS_ENABLED", True)
     REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
     REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
+    REDIS_DB = int(os.getenv("REDIS_DB", "0"))
+    REDIS_SOCKET_CONNECT_TIMEOUT = _env_float("REDIS_SOCKET_CONNECT_TIMEOUT", 0.2)
+    REDIS_SOCKET_TIMEOUT = _env_float("REDIS_SOCKET_TIMEOUT", 0.2)
+    REDIS_UNAVAILABLE_RETRY_SECONDS = _env_float("REDIS_UNAVAILABLE_RETRY_SECONDS", 30.0)
     PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY", "pk_test_438f3137c4492b7d7705a17d2b5a303062f066b9")
     PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY", "sk_test_f187d9cea58b912cfc4ac9b71886a82476c3d5e2")
     PAYSTACK_BASE_URL = os.getenv("PAYSTACK_BASE_URL", "https://api.paystack.co")
