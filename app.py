@@ -12,6 +12,14 @@ from services.logging_service import setup_logging
 #Routes Auth
 from routes.authentication.authentication import auth
 
+#Routes User
+from routes.user.user import users
+from routes.user.support_messages import user_support_api
+from routes.user.setting import settings
+
+#Routes Payments
+from routes.payments.payments_api import payments
+
 #Routes Farms
 from routes.farms.products import products
 from routes.farms.categories import categories
@@ -22,10 +30,8 @@ from routes.farms.admin.product import products_admin
 from routes.farms.admin.category import categories_admin
 from routes.farms.admin.order import orders_admin
 from routes.farms.admin.messages import farms_admin_messages_api
-from routes.payments_api import payments
 from routes.connect import connect_api
-from routes.user.user import users
-from routes.user.support_messages import user_support_api
+
 
 #Routes Artisans
 from routes.artisans.workers import workers
@@ -189,14 +195,21 @@ def service_root():
 def api_root():
     return _build_api_root_response()
 
-# Register blueprints
+# Auth Blueprint
 app.register_blueprint(auth, url_prefix=f'{url}/auth')
-app.register_blueprint(products, url_prefix=f'{url}/products')
-app.register_blueprint(categories, url_prefix=f'{url}/categories')
-app.register_blueprint(payments, url_prefix=f'{url}/payments')
-app.register_blueprint(connect_api, url_prefix=f'{url}/connect')
+
+# User Blueprint
 app.register_blueprint(users, url_prefix=f'{url}/users')
 app.register_blueprint(user_support_api, url_prefix=f'{url}/user')
+app.register_blueprint(settings, url_prefix=f'{url}/settings')
+
+# Payments Blueprint
+app.register_blueprint(payments, url_prefix=f'{url}/payments')
+
+# Farm blueprints
+app.register_blueprint(products, url_prefix=f'{url}/products')
+app.register_blueprint(categories, url_prefix=f'{url}/categories')
+app.register_blueprint(connect_api, url_prefix=f'{url}/connect')
 app.register_blueprint(orders, url_prefix=f'{url}/orders')
 app.register_blueprint(carts, url_prefix=f'{url}/carts')
 app.register_blueprint(farm_services, url_prefix=f'{url}/services')
