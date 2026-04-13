@@ -1,5 +1,4 @@
 import importlib
-import io
 import os
 import shutil
 import sqlite3
@@ -233,20 +232,19 @@ class SQLiteEndpointSmokeTests(unittest.TestCase):
         self.assertEqual((profile_payload.get("data") or {}).get("firstName"), "Smoke")
         self.assertEqual((profile_payload.get("data") or {}).get("lastName"), "Tester")
 
-        avatar_bytes = (
-            b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!"
-            b"\xf9\x04\x00\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00"
-            b"\x00\x02\x02D\x01\x00;"
-        )
         avatar_response = self.client.post(
             "/api/v1/settings/profile/avatar",
             headers=headers,
-            data={"avatar": (io.BytesIO(avatar_bytes), "avatar.gif")},
-            content_type="multipart/form-data",
+            json={
+                "avatarUrl": "https://res.cloudinary.com/demo/image/upload/v1/profile/images/avatar-test.png"
+            },
         )
         self.assertEqual(avatar_response.status_code, 200, avatar_response.get_data(as_text=True))
         avatar_payload = avatar_response.get_json() or {}
-        self.assertTrue(((avatar_payload.get("data") or {}).get("avatarUrl") or "").endswith(".gif"))
+        self.assertIn(
+            "profile/images/avatar-test.png",
+            ((avatar_payload.get("data") or {}).get("avatarUrl") or ""),
+        )
 
         notifications_response = self.client.patch(
             "/api/v1/settings/notifications",
