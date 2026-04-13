@@ -163,6 +163,7 @@ def ensure_users_user_type_constraint(conn, cursor):
                 accepted_policy BOOLEAN NOT NULL DEFAULT 0,
                 policy_accepted_at TIMESTAMP,
                 address TEXT,
+                bio TEXT,
                 profile_image_url TEXT,
                 avatar TEXT,
                 is_active BOOLEAN NOT NULL DEFAULT 1,
@@ -502,6 +503,7 @@ def create_tables_legacy():
             accepted_policy BOOLEAN NOT NULL DEFAULT 0,
             policy_accepted_at TIMESTAMP,
             address TEXT,
+            bio TEXT,
             profile_image_url TEXT,
             avatar TEXT,
             is_active BOOLEAN NOT NULL DEFAULT 1,
@@ -1123,6 +1125,7 @@ def create_tables_legacy():
     ensure_column(cursor, "Workers", "completed_jobs", "completed_jobs INTEGER DEFAULT 0")
     ensure_column(cursor, "Users", "role", "role TEXT NOT NULL DEFAULT 'user'")
     ensure_column(cursor, "Users", "status", "status TEXT NOT NULL DEFAULT 'active'")
+    ensure_column(cursor, "Users", "bio", "bio TEXT")
     ensure_column(cursor, "Users", "avatar", "avatar TEXT")
     ensure_column(cursor, "Users", "verification_channel", "verification_channel TEXT")
     ensure_column(cursor, "Users", "verification_target", "verification_target TEXT")
@@ -1449,6 +1452,7 @@ def apply_schema_migrations(conn, cursor):
     ensure_column(cursor, "Workers", "completed_jobs", "completed_jobs INTEGER DEFAULT 0")
     ensure_column(cursor, "Users", "role", "role TEXT NOT NULL DEFAULT 'user'")
     ensure_column(cursor, "Users", "status", "status TEXT NOT NULL DEFAULT 'active'")
+    ensure_column(cursor, "Users", "bio", "bio TEXT")
     ensure_column(cursor, "Users", "avatar", "avatar TEXT")
     ensure_column(cursor, "Users", "verification_channel", "verification_channel TEXT")
     ensure_column(cursor, "Users", "verification_target", "verification_target TEXT")

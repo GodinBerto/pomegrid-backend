@@ -21,6 +21,7 @@ from decorators.rate_limit import rate_limit
 from decorators.roles import get_authenticated_user_id, normalize_role
 from extensions.redis_client import get_redis_client
 from routes.api_envelope import envelope
+from services.passwords import hash_password, verify_password
 from services.verification_service import (
     deliver_verification_code,
     generate_verification_code,
@@ -281,7 +282,7 @@ def register():
     if existing_user:
         return jsonify(envelope(None, "Email already exists", 409, False)), 409
 
-    hashed_password = generate_password_hash(password)
+    hashed_password = hash_password(password)
     is_verified = False
     verified_at = None
     conn = None
@@ -360,7 +361,7 @@ def register_admin():
     if not accept_policy:
         return jsonify(envelope(None, "You must accept the policy before registering", 400, False)), 400
 
-    hashed_password = generate_password_hash(password)
+    hashed_password = hash_password(password)
     verified_at = _utc_now().strftime("%Y-%m-%d %H:%M:%S")
     conn = None
     try:
@@ -582,7 +583,7 @@ def login():
         logger.error("Login failed because user id is invalid for email %s: %r", email, user["id"])
         return jsonify(envelope(None, "Unable to authenticate user", 500, False)), 500
 
-    if not check_password_hash(user["password_hash"], password):
+    if not verify_password(user["password_hash"], password):
         return jsonify(envelope(None, "Invalid credentials", 401, False)), 401
     if not bool(user["is_active"]):
         return jsonify(envelope(None, "User account is inactive", 403, False)), 403
