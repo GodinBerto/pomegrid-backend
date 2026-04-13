@@ -1,4 +1,5 @@
 import importlib
+import io
 import os
 import shutil
 import sqlite3
@@ -203,6 +204,141 @@ class SQLiteEndpointSmokeTests(unittest.TestCase):
             response.status_code,
             {200, 201},
             response.get_data(as_text=True),
+        )
+
+    def test_authenticated_settings_endpoints_support_full_settings_flow(self):
+        headers = self._auth_headers()
+
+        settings_response = self.client.get("/api/v1/settings", headers=headers)
+        self.assertEqual(settings_response.status_code, 200, settings_response.get_data(as_text=True))
+        settings_payload = settings_response.get_json() or {}
+        self.assertIn("profile", settings_payload.get("data") or {})
+        self.assertIn("notifications", settings_payload.get("data") or {})
+        self.assertIn("paymentMethods", settings_payload.get("data") or {})
+        self.assertIn("billing", settings_payload.get("data") or {})
+
+        profile_response = self.client.patch(
+            "/api/v1/settings/profile",
+            headers=headers,
+            json={
+                "firstName": "Smoke",
+                "lastName": "Tester",
+                "email": "smoke-settings@example.com",
+                "phone": "2335551212",
+                "bio": "Updated from settings smoke test",
+            },
+        )
+        self.assertEqual(profile_response.status_code, 200, profile_response.get_data(as_text=True))
+        profile_payload = profile_response.get_json() or {}
+        self.assertEqual((profile_payload.get("data") or {}).get("firstName"), "Smoke")
+        self.assertEqual((profile_payload.get("data") or {}).get("lastName"), "Tester")
+
+        avatar_bytes = (
+            b"GIF89a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xff\xff\xff!"
+            b"\xf9\x04\x00\x00\x00\x00\x00,\x00\x00\x00\x00\x01\x00\x01\x00"
+            b"\x00\x02\x02D\x01\x00;"
+        )
+        avatar_response = self.client.post(
+            "/api/v1/settings/profile/avatar",
+            headers=headers,
+            data={"avatar": (io.BytesIO(avatar_bytes), "avatar.gif")},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(avatar_response.status_code, 200, avatar_response.get_data(as_text=True))
+        avatar_payload = avatar_response.get_json() or {}
+        self.assertTrue(((avatar_payload.get("data") or {}).get("avatarUrl") or "").endswith(".gif"))
+
+        notifications_response = self.client.patch(
+            "/api/v1/settings/notifications",
+            headers=headers,
+            json={"settings": {"marketing_emails": True, "security_alerts": False}},
+        )
+        self.assertEqual(notifications_response.status_code, 200, notifications_response.get_data(as_text=True))
+        notifications_payload = notifications_response.get_json() or {}
+        groups = ((notifications_payload.get("data") or {}).get("groups")) or []
+        flattened_settings = {
+            setting["id"]: setting["enabled"]
+            for group in groups
+            for setting in group.get("settings", [])
+        }
+        self.assertTrue(flattened_settings.get("marketing_emails"))
+        self.assertFalse(flattened_settings.get("security_alerts"))
+
+        reset_notifications_response = self.client.post(
+            "/api/v1/settings/notifications/reset",
+            headers=headers,
+        )
+        self.assertEqual(
+            reset_notifications_response.status_code,
+            200,
+            reset_notifications_response.get_data(as_text=True),
+        )
+
+        add_payment_method_response = self.client.post(
+            "/api/v1/settings/payments/methods",
+            headers=headers,
+            json={
+                "name": "Smoke Tester",
+                "number": "4242 4242 4242 4242",
+                "expiry": "12/99",
+                "cvc": "123",
+            },
+        )
+        self.assertEqual(
+            add_payment_method_response.status_code,
+            201,
+            add_payment_method_response.get_data(as_text=True),
+        )
+        added_method_payload = add_payment_method_response.get_json() or {}
+        added_method = added_method_payload.get("data") or {}
+        method_id = added_method.get("id")
+        self.assertTrue(method_id)
+
+        payment_methods_response = self.client.get(
+            "/api/v1/settings/payments/methods",
+            headers=headers,
+        )
+        self.assertEqual(
+            payment_methods_response.status_code,
+            200,
+            payment_methods_response.get_data(as_text=True),
+        )
+        self.assertGreaterEqual(len((payment_methods_response.get_json() or {}).get("data") or []), 1)
+
+        billing_response = self.client.put(
+            "/api/v1/settings/payments/billing",
+            headers=headers,
+            json={
+                "street": "12 Water Lane",
+                "city": "Accra",
+                "state": "Greater Accra",
+                "zip": "00233",
+                "country": "Ghana",
+            },
+        )
+        self.assertEqual(billing_response.status_code, 200, billing_response.get_data(as_text=True))
+        billing_payload = billing_response.get_json() or {}
+        self.assertEqual((billing_payload.get("data") or {}).get("city"), "Accra")
+
+        password_response = self.client.patch(
+            "/api/v1/settings/profile/password",
+            headers=headers,
+            json={
+                "currentPassword": "SmokePass123!",
+                "newPassword": "SmokePass456!",
+                "confirmPassword": "SmokePass456!",
+            },
+        )
+        self.assertEqual(password_response.status_code, 200, password_response.get_data(as_text=True))
+
+        delete_payment_method_response = self.client.delete(
+            f"/api/v1/settings/payments/methods/{method_id}",
+            headers=headers,
+        )
+        self.assertEqual(
+            delete_payment_method_response.status_code,
+            200,
+            delete_payment_method_response.get_data(as_text=True),
         )
 
 

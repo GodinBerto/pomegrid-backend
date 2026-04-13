@@ -21,6 +21,7 @@ def create_shared_tables(cursor):
             accepted_policy BOOLEAN NOT NULL DEFAULT 0,
             policy_accepted_at TIMESTAMP,
             address TEXT,
+            bio TEXT,
             profile_image_url TEXT,
             avatar TEXT,
             is_active BOOLEAN NOT NULL DEFAULT 1,
@@ -83,6 +84,57 @@ def create_shared_tables(cursor):
                 is_read BOOLEAN DEFAULT 0,
                 payload_json TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS user_notification_preferences(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                setting_id TEXT NOT NULL,
+                enabled BOOLEAN NOT NULL DEFAULT 1,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, setting_id),
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS user_payment_methods(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                name_on_card TEXT NOT NULL,
+                last4 TEXT NOT NULL,
+                card_type TEXT NOT NULL,
+                expiry_month INTEGER NOT NULL,
+                expiry_year INTEGER NOT NULL,
+                token_hash TEXT NOT NULL,
+                is_default BOOLEAN NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(user_id, token_hash),
+                FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
+            )
+        '''
+    )
+
+    cursor.execute(
+        '''
+            CREATE TABLE IF NOT EXISTS user_billing_addresses(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL UNIQUE,
+                street TEXT,
+                city TEXT,
+                state TEXT,
+                zip TEXT,
+                country TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
             )
         '''
@@ -225,6 +277,10 @@ def create_shared_indexes(cursor):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON notifications(is_read)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_notification_preferences_user_id ON user_notification_preferences(user_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_payment_methods_user_id ON user_payment_methods(user_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_payment_methods_is_default ON user_payment_methods(is_default)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_billing_addresses_user_id ON user_billing_addresses(user_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_role ON Users(role)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_status ON Users(status)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_admin_conversations_user_id ON admin_conversations(user_id)")
