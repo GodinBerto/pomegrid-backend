@@ -1,3 +1,5 @@
+# from database.bootstrap import create_admin_user
+
 from .connection import DB_PATH, db_connection
 
 
@@ -9,6 +11,7 @@ def create_tables():
 
 def initialize_database():
     create_tables()
+    # create_admin_user()
 
 
 __all__ = ["DB_PATH", "create_tables", "db_connection", "initialize_database"]

@@ -4,11 +4,9 @@ import json
 import logging
 import sqlite3
 from datetime import datetime
-from pathlib import Path
-from uuid import uuid4
+from urllib.parse import urlparse
 
-from flask import Blueprint, current_app, jsonify, request, url_for
-from werkzeug.utils import secure_filename
+from flask import Blueprint, current_app, jsonify, request
 
 from database import db_connection
 from decorators.rate_limit import rate_limit
@@ -28,7 +26,6 @@ PROFILE_CACHE_SECTION = "profile"
 NOTIFICATIONS_CACHE_SECTION = "notifications"
 PAYMENT_METHODS_CACHE_SECTION = "payments:methods"
 BILLING_CACHE_SECTION = "payments:billing"
-ALLOWED_AVATAR_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 NOTIFICATION_CATEGORY_LABELS = {
     "account": "Account",
     "orders": "Orders",
@@ -171,14 +168,6 @@ def _serialize_profile_row(row):
         "bio": row["bio"],
         "avatarUrl": avatar_url,
     }
-
-
-def _avatar_upload_dir():
-    static_root = Path(current_app.static_folder or (Path(current_app.root_path) / "static"))
-    upload_dir = static_root / "uploads" / "avatars"
-    upload_dir.mkdir(parents=True, exist_ok=True)
-    return upload_dir
-
 
 def _fetch_profile_payload(cursor, user_id):
     cursor.execute(
@@ -366,8 +355,6 @@ def _billing_payload(cursor, user_id):
         "country": row["country"],
     }
 
-
-MAX_AVATAR_SIZE_BYTES = 2 * 1024 * 1024
 SETTINGS_PROFILE_COLUMNS = """
     id, full_name, email, phone, bio, profile_image_url, avatar, password_hash
 """
@@ -404,15 +391,6 @@ def _fetch_user_settings_row(cursor, user_id):
         (user_id,),
     )
     return cursor.fetchone()
-
-
-def _avatar_public_url(filename):
-    return url_for(
-        "static",
-        filename=f"uploads/avatars/{filename}",
-        _external=True,
-    )
-
 
 def _payment_method_row(cursor, method_id, user_id):
     cursor.execute(
@@ -582,35 +560,19 @@ def upload_settings_avatar():
     if user_id is None:
         return jsonify(envelope(None, "Invalid token identity", 401, False)), 401
 
-    avatar_file = request.files.get("avatar")
-    if avatar_file is None or not avatar_file.filename:
-        return jsonify(envelope(None, "avatar file is required", 400, False)), 400
+    data = request.get_json() or {}
+    avatar_url = (
+        _normalize_text(data.get("avatarUrl"))
+        or _normalize_text(data.get("avatar"))
+        or _normalize_text(data.get("image_url"))
+        or _normalize_text(data.get("profile_image_url"))
+    )
+    if not avatar_url:
+        return jsonify(envelope(None, "avatarUrl is required", 400, False)), 400
 
-    original_filename = secure_filename(avatar_file.filename)
-    extension = Path(original_filename).suffix.lower()
-    if extension not in ALLOWED_AVATAR_EXTENSIONS:
-        return (
-            jsonify(
-                envelope(
-                    None,
-                    "avatar must be one of .jpg, .jpeg, .png, .webp, .gif",
-                    400,
-                    False,
-                )
-            ),
-            400,
-        )
-
-    file_bytes = avatar_file.read()
-    if not file_bytes:
-        return jsonify(envelope(None, "avatar file is empty", 400, False)), 400
-    if len(file_bytes) > MAX_AVATAR_SIZE_BYTES:
-        return jsonify(envelope(None, "avatar must be 2MB or smaller", 400, False)), 400
-
-    filename = f"user-{user_id}-{uuid4().hex}{extension}"
-    upload_path = _avatar_upload_dir() / filename
-    upload_path.write_bytes(file_bytes)
-    avatar_url = _avatar_public_url(filename)
+    parsed_avatar_url = urlparse(avatar_url)
+    if parsed_avatar_url.scheme not in {"http", "https"} or not parsed_avatar_url.netloc:
+        return jsonify(envelope(None, "avatarUrl must be a valid http or https URL", 400, False)), 400
 
     conn = None
     try:
