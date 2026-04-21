@@ -1,4 +1,5 @@
 import json
+import os
 
 from .connection import db_connection
 from .schemas import (
@@ -11,6 +12,7 @@ from .schemas import (
     create_worker_indexes,
     create_worker_tables,
 )
+from services.passwords import hash_password
 
 
 ALLOWED_USER_TYPES = (
@@ -1607,3 +1609,77 @@ def create_tables():
     conn.commit()
     conn.close()
 
+
+# def create_admin_user():
+    conn, cursor = db_connection()
+    admin_email = "godfredquarm123@gmail.com"
+    admin_username = "Godfred Quarm"
+    admin_full_name = "Godfred Agyekum Quarm"
+    admin_phone = "0545287775"
+    admin_password = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", "GodinBertoFirstApp@1!")
+    admin_password_hash = hash_password(admin_password)
+
+    try:
+        cursor.execute(
+            "SELECT id, password_hash FROM Users WHERE LOWER(email) = LOWER(?) LIMIT 1",
+            (admin_email,),
+        )
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            user_id = existing_user["id"]
+            password_hash = (existing_user["password_hash"] or "").strip()
+            cursor.execute(
+                """
+                UPDATE Users
+                SET
+                    username = COALESCE(NULLIF(username, ''), ?),
+                    full_name = COALESCE(NULLIF(full_name, ''), ?),
+                    phone = COALESCE(NULLIF(phone, ''), ?),
+                    password_hash = ?,
+                    user_type = 'admin',
+                    role = 'admin',
+                    status = 'active',
+                    is_admin = 1,
+                    is_active = 1,
+                    is_verified = 1,
+                    accepted_policy = 1,
+                    verified_at = COALESCE(verified_at, CURRENT_TIMESTAMP),
+                    policy_accepted_at = COALESCE(policy_accepted_at, CURRENT_TIMESTAMP),
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (
+                    admin_username,
+                    admin_full_name,
+                    admin_phone,
+                    admin_password_hash if password_hash in {"", "hashed_password"} else password_hash,
+                    user_id,
+                ),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO Users (
+                    username, email, password_hash, full_name, phone,
+                    user_type, role, status, is_admin, is_active,
+                    is_verified, verified_at, accepted_policy, policy_accepted_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 1, CURRENT_TIMESTAMP, 1, CURRENT_TIMESTAMP)
+                """,
+                (
+                    admin_username,
+                    admin_email,
+                    admin_password_hash,
+                    admin_full_name,
+                    admin_phone,
+                    "admin",
+                    "admin",
+                    "active",
+                ),
+            )
+            user_id = cursor.lastrowid
+
+        cursor.execute("INSERT OR IGNORE INTO Admins (user_id) VALUES (?)", (user_id,))
+        conn.commit()
+    finally:
+        conn.close()
