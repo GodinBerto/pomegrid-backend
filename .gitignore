@@ -1,17 +1,29 @@
-# Logs
-logs
-*.logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
-node_modules
-dist
-dist-ssr
-*.local
+# Environment
+venv/
 .env
-.env.*.local
-venv
-instance
+.env.*
+
+# Flask instance folder (often contains DB)
+instance/
+
+# Logs
+logs/
+*.log
+*.logs
+
+# Database files (VERY IMPORTANT - adjust extensions you use)
+*.db
+*.sqlite
+*.sqlite3
+
+# Node (if applicable)
+node_modules/
+dist/
+dist-ssr/
+*.local
