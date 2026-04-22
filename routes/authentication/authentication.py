@@ -633,11 +633,12 @@ def logout():
 
 
 @auth.route("/refresh", methods=["POST"])
-@jwt_required(refresh=True)
 @rate_limit("auth-refresh", limit=30, window_seconds=60)
+@jwt_required(refresh=True, locations=["cookies"])
 def refresh():
     jwt_data = get_jwt()
     user_id = get_authenticated_user_id()
+
     if user_id is None:
         resp = jsonify(
             {
@@ -650,11 +651,12 @@ def refresh():
 
     conn, cursor = db_connection()
     cursor.execute(
-        "SELECT is_active, status, is_verified, accepted_policy FROM Users WHERE id = ?",
+        "SELECT is_active, status, accepted_policy FROM Users WHERE id = ?",
         (user_id,),
     )
     user_row = cursor.fetchone()
     conn.close()
+
     if not user_row:
         resp = jsonify(
             {
@@ -668,6 +670,7 @@ def refresh():
     user_status = str(
         user_row["status"] or ("active" if bool(user_row["is_active"]) else "inactive")
     ).strip().lower()
+
     user_is_active = bool(user_row["is_active"]) and user_status in {"", "active"}
     if not user_is_active:
         resp = jsonify(
@@ -678,6 +681,7 @@ def refresh():
         )
         unset_jwt_cookies(resp)
         return resp, 403
+
     if not bool(user_row["accepted_policy"]):
         resp = jsonify(
             {
@@ -687,6 +691,7 @@ def refresh():
         )
         unset_jwt_cookies(resp)
         return resp, 403
+
     refresh_jti = jwt_data.get("jti")
     expires_in = jwt_data.get("exp", 0) - jwt_data.get("iat", 0)
 
@@ -706,11 +711,16 @@ def refresh():
     payload = {
         "access_token": new_access,
     }
+
     new_csrf = _safe_csrf_token(new_refresh)
     if new_csrf:
         payload["csrf_token"] = new_csrf
+
     if refresh_reused:
-        payload["message"] = "Refresh token already used. We rotated your refresh token; please retry with the new CSRF token."
+        payload["message"] = (
+            "Refresh token already used. We rotated your refresh token; "
+            "please retry with the new CSRF token."
+        )
         payload["requires_retry"] = True
 
     resp = jsonify(payload)
