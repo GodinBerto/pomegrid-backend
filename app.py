@@ -127,18 +127,39 @@ def _get_allowed_frontend_origins():
 
 ALLOWED_FRONTEND_ORIGINS = _get_allowed_frontend_origins()
 
+is_debug_mode = str(os.getenv("FLASK_DEBUG", "true")).strip().lower() in {
+    "1",
+    "true",
+    "yes",
+    "on",
+}
+raw_jwt_cookie_secure = os.getenv("JWT_COOKIE_SECURE")
+if raw_jwt_cookie_secure is None:
+    jwt_cookie_secure = not is_debug_mode
+else:
+    jwt_cookie_secure = raw_jwt_cookie_secure.strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+jwt_cookie_samesite = os.getenv(
+    "JWT_COOKIE_SAMESITE",
+    "None" if jwt_cookie_secure else "Lax",
+)
+
 # ================================
 # JWT CONFIGURATION
 # ================================
 app.config.update({
     "JWT_SECRET_KEY": Config.JWT_SECRET_KEY,
-    "JWT_ACCESS_TOKEN_EXPIRES": timedelta(minutes=1000),
+    "JWT_ACCESS_TOKEN_EXPIRES": timedelta(minutes=15),
     "JWT_REFRESH_TOKEN_EXPIRES": timedelta(days=7),
     "JWT_ACCESS_COOKIE_NAME": "access_token_cookie",
     "JWT_TOKEN_LOCATION": ["headers", "cookies"],
     "JWT_REFRESH_COOKIE_NAME": "refresh_token",
-    "JWT_COOKIE_SECURE": True,
-    "JWT_COOKIE_SAMESITE": "None",  # ✅ best balance
+    "JWT_COOKIE_SECURE": jwt_cookie_secure,
+    "JWT_COOKIE_SAMESITE": jwt_cookie_samesite,
     "JWT_COOKIE_CSRF_PROTECT": True,
 })
     
