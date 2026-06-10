@@ -26,6 +26,16 @@ products_admin = Blueprint("products_admin", __name__)
 logger = logging.getLogger(__name__)
 
 
+def safe_json_load(value):
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except Exception:
+            return []
+    return value if isinstance(value, list) else []
+
+
 @products_admin.route("", methods=["POST"])
 @products_admin.route("/", methods=["POST"])
 @admin_required
@@ -148,6 +158,9 @@ def create_product():
     except Exception as e:
         logger.exception("Failed to create product")
         return jsonify(envelope(None, f"Error: {e}", 500, False)), 500
+    
+    
+    
 
 
 @products_admin.route("/<int:product_id>", methods=["PUT"])
@@ -200,10 +213,8 @@ def update_product(product_id):
     merged_media_payload = dict(data)
     if "image_url" not in merged_media_payload:
         merged_media_payload["image_url"] = existing["image_url"]
-    if "image_urls" not in merged_media_payload:
-        merged_media_payload["image_urls"] = existing["image_urls"]
-    if "video_urls" not in merged_media_payload:
-        merged_media_payload["video_urls"] = existing["video_urls"]
+    merged_media_payload["image_urls"] = safe_json_load(merged_media_payload.get("image_urls"))
+    merged_media_payload["video_urls"] = safe_json_load(merged_media_payload.get("video_urls"))
 
     image_url, image_urls, video_urls, media_error = _normalize_media_arrays(merged_media_payload)
     if media_error:

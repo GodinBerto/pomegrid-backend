@@ -381,7 +381,7 @@ def list_products():
         params.extend([like, like])
 
     if category:
-        where.append("(LOWER(COALESCE(c.name, p.category, '')) = LOWER(?) OR CAST(p.category_id AS TEXT) = ?)")
+        where.append("(LOWER(COALESCE(p.category, '')) = LOWER(?) OR CAST(p.category_id AS TEXT) = ?)")
         params.extend([category, category])
 
     if stock_status == "in-stock":
