@@ -2,7 +2,7 @@ import json
 import os
 
 from .connection import db_connection
-from .schemas import (
+from database.schemas import (
     create_connect_indexes,
     create_connect_tables,
     create_farm_indexes,
@@ -1602,6 +1602,7 @@ def create_tables():
     create_connect_tables(cursor)
     create_farm_tables(cursor)
     create_worker_tables(cursor)
+    create_intro_tables(cursor)
     apply_schema_migrations(conn, cursor)
     backfill_user_fields(cursor)
     sync_product_reference_data(cursor)

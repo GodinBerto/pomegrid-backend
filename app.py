@@ -44,6 +44,9 @@ from routes.artisans.admin.dashboard import admin_api
 from routes.artisans.worker.dashboard import worker_api
 from extensions.socketio import register_socket_handlers, socketio
 
+#Routes Intro
+from routes.intro.user import intro_users
+
 #Cloudinary
 import cloudinary
 
@@ -250,6 +253,10 @@ app.register_blueprint(bookings, url_prefix=f"{url}")
 app.register_blueprint(bookings_admin, url_prefix=f"{url}")
 app.register_blueprint(admin_api, url_prefix=f"{url}/admin")
 app.register_blueprint(worker_api, url_prefix=f"{url}/worker")
+
+# Intro Blueprints
+app.register_blueprint(intro_users, url_prefix=f"{url}/intro/users")
+
 
 if __name__ == '__main__':
     host = os.getenv("APP_HOST", "0.0.0.0")
