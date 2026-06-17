@@ -11,6 +11,7 @@ from .schemas import (
     create_shared_tables,
     create_worker_indexes,
     create_worker_tables,
+    create_intro_tables,
 )
 from services.passwords import hash_password
 

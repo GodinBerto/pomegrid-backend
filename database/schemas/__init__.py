@@ -12,4 +12,5 @@ __all__ = [
     "create_shared_tables",
     "create_worker_indexes",
     "create_worker_tables",
+    "create_intro_tables",
 ]
