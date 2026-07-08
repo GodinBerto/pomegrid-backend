@@ -29,10 +29,39 @@ def getIntroUser(user_id):
     row = cursor.fetchone()
     conn.close()
 
-    # Prevent user from accessing the app if they aren't invited/don't have a record
+    # If there is no intro record, create one for any authenticated user so
+    # all roles get access. Use the user's existing `role` from `Users` when
+    # it matches an allowed intro role; otherwise fall back to `feed_seller`.
     if not row:
-        return jsonify(envelope(None, "Access denied: You are not invited to the intro app.", 403, False)), 403
-        
+        try:
+            conn2, cursor2 = db_connection()
+            cursor2.execute("SELECT role FROM Users WHERE id = ?", (user_id,))
+            user_row = cursor2.fetchone()
+            user_role = None 
+            if user_row:
+                try:
+                    user_role = (user_row["role"] or "").strip()
+                except Exception:
+                    # tuple-like fallback
+                    user_role = (user_row[7] if len(user_row) > 7 else None) or ""
+
+            allowed_intro_roles = {"fingerlings_seller", "catfish_seller", "tilapia_seller", "feed_seller"}
+            intro_role = user_role if user_role in allowed_intro_roles else "feed_seller"
+
+            cursor2.execute(
+                "INSERT INTO IntroUsers (user_id, role, created_at, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+                (user_id, intro_role),
+            )
+            conn2.commit()
+            cursor2.execute("SELECT id, role FROM IntroUsers WHERE user_id = ?", (user_id,))
+            row = cursor2.fetchone()
+            return row
+        finally:
+            try:
+                conn2.close()
+            except Exception:
+                pass
+
     return row
 
 
