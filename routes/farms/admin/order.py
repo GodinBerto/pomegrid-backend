@@ -32,6 +32,7 @@ def list_orders_admin():
 
     search = str(request.args.get("search") or "").strip()
     status = str(request.args.get("status") or "").strip().lower()
+    payment_status = str(request.args.get("payment_status") or "").strip().lower()
     date_from = str(request.args.get("date_from") or "").strip()
     date_to = str(request.args.get("date_to") or "").strip()
     sort_by = str(request.args.get("sort_by") or "date").strip().lower()
@@ -75,20 +76,60 @@ def list_orders_admin():
 
     try:
         conn, cursor = db_connection()
-        cursor.execute(
-            f"""
+        
+        # Build the query with optional payment status filter
+        if payment_status:
+            count_query = f"""
+            SELECT COUNT(DISTINCT o.id) AS total
+            FROM Orders o
+            LEFT JOIN Users u ON u.id = o.user_id
+            INNER JOIN payments p ON p.order_id = o.id
+            WHERE {where_sql} AND LOWER(p.status) = ?
+            """
+            count_params = tuple(list(params) + [payment_status])
+        else:
+            count_query = f"""
             SELECT COUNT(*) AS total
             FROM Orders o
             LEFT JOIN Users u ON u.id = o.user_id
             WHERE {where_sql}
-            """,
-            tuple(params),
-        )
+            """
+            count_params = tuple(params)
+        
+        cursor.execute(count_query, count_params)
         total = int(cursor.fetchone()["total"] or 0)
 
-        query_params = list(params) + [per_page, offset]
-        cursor.execute(
-            f"""
+        query_params = list(params)
+        if payment_status:
+            query_params.append(payment_status)
+        query_params.extend([per_page, offset])
+        
+        if payment_status:
+            orders_query = f"""
+            SELECT
+                o.id,
+                o.user_id,
+                u.full_name AS user_full_name,
+                u.email AS user_email,
+                o.status,
+                o.total_price,
+                o.payment_method,
+                o.shipping_address,
+                o.notes,
+                o.created_at,
+                o.updated_at,
+                COUNT(oi.id) AS items_count
+            FROM Orders o
+            LEFT JOIN Users u ON u.id = o.user_id
+            LEFT JOIN OrderItems oi ON oi.order_id = o.id
+            INNER JOIN payments p ON p.order_id = o.id
+            WHERE {where_sql} AND LOWER(p.status) = ?
+            GROUP BY o.id
+            ORDER BY {order_field} {direction}, o.id DESC
+            LIMIT ? OFFSET ?
+            """
+        else:
+            orders_query = f"""
             SELECT
                 o.id,
                 o.user_id,
@@ -109,9 +150,9 @@ def list_orders_admin():
             GROUP BY o.id
             ORDER BY {order_field} {direction}, o.id DESC
             LIMIT ? OFFSET ?
-            """,
-            tuple(query_params),
-        )
+            """
+        
+        cursor.execute(orders_query, tuple(query_params))
         rows = cursor.fetchall()
         conn.close()
 
