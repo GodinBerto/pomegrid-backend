@@ -30,6 +30,7 @@ from routes.farms.admin.product import products_admin
 from routes.farms.admin.category import categories_admin
 from routes.farms.admin.order import orders_admin
 from routes.farms.admin.messages import farms_admin_messages_api
+from routes.farms.admin.users import users_admin
 from routes.connect import connect_api
 
 
@@ -43,6 +44,9 @@ from routes.artisans.admin.bookings import bookings_admin
 from routes.artisans.admin.dashboard import admin_api
 from routes.artisans.worker.dashboard import worker_api
 from extensions.socketio import register_socket_handlers, socketio
+
+#Routes Intro
+from routes.intro.user import intro_users
 
 #Cloudinary
 import cloudinary
@@ -62,6 +66,7 @@ DEFAULT_FRONTEND_ORIGINS = (
     "http://127.0.0.1:5173",
     "http://localhost:8080",
     "http://127.0.0.1:8080",
+    "http://localhost:8081",
     "http://pomegrid-backend.onrender.com",
     "https://pomegrid-backend.onrender.com",
     "https://aqua-farm-chat-shop.vercel.app",
@@ -239,6 +244,7 @@ app.register_blueprint(products_admin, url_prefix=f'{url}/admin/products', name_
 app.register_blueprint(categories_admin, url_prefix=f'{url}/categories')
 app.register_blueprint(orders_admin, url_prefix=f'{url}/orders')
 app.register_blueprint(farms_admin_messages_api, url_prefix=f'{url}/admin')
+app.register_blueprint(users_admin, url_prefix=f'{url}/admin/users')
 
 # Workers Blueprints
 app.register_blueprint(workers, url_prefix=f"{url}/workers")
@@ -249,6 +255,10 @@ app.register_blueprint(bookings, url_prefix=f"{url}")
 app.register_blueprint(bookings_admin, url_prefix=f"{url}")
 app.register_blueprint(admin_api, url_prefix=f"{url}/admin")
 app.register_blueprint(worker_api, url_prefix=f"{url}/worker")
+
+# Intro Blueprints
+app.register_blueprint(intro_users, url_prefix=f"{url}/intro/users")
+
 
 if __name__ == '__main__':
     host = os.getenv("APP_HOST", "0.0.0.0")

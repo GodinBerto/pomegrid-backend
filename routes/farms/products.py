@@ -8,6 +8,7 @@ from database import db_connection
 from decorators.rate_limit import rate_limit
 from decorators.roles import ROLE_USER, ROLE_WORKER, role_required
 from extensions.redis_client import get_redis_client
+from middleware.authMiddleware import ROLE_ADMIN
 from routes.api_envelope import build_meta, envelope, parse_pagination
 
 
@@ -351,6 +352,7 @@ def list_products():
 
     search = str(request.args.get("search") or "").strip()
     category = str(request.args.get("category") or "").strip()
+    categories = request.args.get("categories", "")
     stock_status = str(request.args.get("stock_status") or "").strip().lower()
     sort_by = str(request.args.get("sort_by") or "created_at").strip().lower()
     sort_dir = str(request.args.get("sort_dir") or "desc").strip().lower()
@@ -374,6 +376,12 @@ def list_products():
 
     where = ["COALESCE(p.is_active, 1) = 1"]
     params = []
+    
+    category_list = [
+        c.strip().lower()
+        for c in categories.split(",")
+        if c.strip()
+    ]
 
     if search:
         like = f"%{search}%"
@@ -381,8 +389,19 @@ def list_products():
         params.extend([like, like])
 
     if category:
-        where.append("(LOWER(COALESCE(c.name, p.category, '')) = LOWER(?) OR CAST(p.category_id AS TEXT) = ?)")
+        where.append("(LOWER(COALESCE(p.category, '')) = LOWER(?) OR CAST(p.category_id AS TEXT) = ?)")
         params.extend([category, category])
+        
+    if category_list:
+        placeholders = ",".join(["?"] * len(category_list))
+
+        where.append(f"""
+            (
+                LOWER(COALESCE(c.name, p.category, '')) IN ({placeholders})
+            )
+        """)
+
+    params.extend(category_list)
 
     if stock_status == "in-stock":
         where.append("p.quantity > 10")
@@ -632,7 +651,7 @@ def list_product_feedback(product_id):
 
 
 @products.route("/<int:product_id>/feedback", methods=["POST"])
-@role_required(ROLE_USER, ROLE_WORKER)
+@role_required(ROLE_USER, ROLE_WORKER, ROLE_ADMIN)
 @rate_limit("product-feedback-submit", limit=10, window_seconds=60)
 def upsert_product_feedback(product_id):
     data = request.get_json(silent=True) or {}

@@ -87,6 +87,76 @@ def deliver_verification_code(channel, target, code, expiry_minutes):
     return _send_email_code(target, code, expiry_minutes)
 
 
+def send_email_message(target, subject, body, html_body=None):
+    target = str(target or "").strip().lower()
+    if not target or "@" not in target:
+        return {
+            "channel": "email",
+            "target": target,
+            "masked_target": mask_verification_target("email", target),
+            "delivery_method": "smtp",
+            "delivered": False,
+            "warning": "A valid email address is required",
+        }
+
+    smtp_host = str(Config.SMTP_HOST or "").strip()
+    from_email = str(Config.SMTP_FROM_EMAIL or Config.SMTP_USERNAME or "").strip()
+    if not smtp_host or not from_email:
+        logger.warning("Email delivery skipped for %s because SMTP is not configured.", target)
+        return {
+            "channel": "email",
+            "target": target,
+            "masked_target": mask_verification_target("email", target),
+            "delivery_method": "smtp",
+            "delivered": False,
+            "warning": "SMTP delivery is not configured",
+        }
+
+    message = EmailMessage()
+    sender_name = str(Config.SMTP_FROM_NAME or "").strip()
+    if sender_name:
+        message["From"] = f"{sender_name} <{from_email}>"
+    else:
+        message["From"] = from_email
+    message["To"] = target
+    message["Subject"] = str(subject or "Pomegrid Notification").strip() or "Pomegrid Notification"
+    message.set_content(str(body or "").strip() or "")
+    if html_body:
+        message.add_alternative(str(html_body), subtype="html")
+
+    try:
+        smtp_port = int(Config.SMTP_PORT or 587)
+        if Config.SMTP_USE_SSL:
+            smtp_client = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=15)
+        else:
+            smtp_client = smtplib.SMTP(smtp_host, smtp_port, timeout=15)
+
+        with smtp_client as server:
+            if Config.SMTP_USE_TLS and not Config.SMTP_USE_SSL:
+                server.starttls()
+            if Config.SMTP_USERNAME:
+                server.login(Config.SMTP_USERNAME, Config.SMTP_PASSWORD)
+            server.send_message(message)
+    except Exception as exc:
+        logger.exception("Failed to send email to %s", target)
+        return {
+            "channel": "email",
+            "target": target,
+            "masked_target": mask_verification_target("email", target),
+            "delivery_method": "smtp",
+            "delivered": False,
+            "warning": str(exc),
+        }
+
+    return {
+        "channel": "email",
+        "target": target,
+        "masked_target": mask_verification_target("email", target),
+        "delivery_method": "smtp",
+        "delivered": True,
+    }
+
+
 def _send_email_code(target, code, expiry_minutes):
     smtp_host = str(Config.SMTP_HOST or "").strip()
     from_email = str(Config.SMTP_FROM_EMAIL or Config.SMTP_USERNAME or "").strip()

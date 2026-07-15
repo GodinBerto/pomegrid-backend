@@ -35,10 +35,7 @@ def amount_to_subunit(amount):
 
 
 def parse_subunit_amount(amount):
-    try:
-        normalized = int(str(amount).strip())
-    except (TypeError, ValueError) as exc:
-        raise ValueError("amount must be a valid integer in the smallest currency unit") from exc
+    normalized = int(str(amount).strip())
 
     if normalized <= 0:
         raise ValueError("amount must be greater than 0")

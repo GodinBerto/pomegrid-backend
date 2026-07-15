@@ -26,6 +26,7 @@ from services.verification_service import (
     deliver_verification_code,
     generate_verification_code,
     mask_verification_target,
+    send_email_message,
     validate_verification_target,
 )
 from services.token_service import revoke_token
@@ -172,6 +173,32 @@ def _user_conflict_message(exc=None):
     return "Username or email already exists"
 
 
+def _send_auth_notification_email(email, full_name, event_type):
+    if not email:
+        return
+
+    recipient_name = _normalize_text(full_name).strip() or "there"
+    if event_type == "login":
+        subject = "Pomegrid sign-in notice"
+        body = (
+            f"Hi {recipient_name},\n\n"
+            "We detected a successful sign-in to your Pomegrid account. "
+            "If this was not you, please change your password immediately."
+        )
+    else:
+        subject = "Welcome to Pomegrid"
+        body = (
+            f"Hi {recipient_name},\n\n"
+            "Your Pomegrid account has been created successfully. "
+            "You can now sign in and start using your account."
+        )
+
+    try:
+        send_email_message(email, subject, body)
+    except Exception:
+        logger.exception("Failed to send %s notification email to %s", event_type, email)
+
+
 def _send_and_store_verification(cursor, user_id, email, phone, verification_channel):
     channel, target = validate_verification_target(verification_channel, email=email, phone=phone)
     verification_code = generate_verification_code(VERIFICATION_CODE_LENGTH)
@@ -315,6 +342,7 @@ def register():
         )
         user_id = cursor.lastrowid
         conn.commit()
+        _send_auth_notification_email(email, full_name, "welcome")
         payload = _registration_response_payload(user_id, user_type, is_verified, verified_at)
         return jsonify(envelope(payload, "User registered. Verification is pending.", 201)), 201
 
@@ -398,6 +426,7 @@ def register_admin():
         user_id = cursor.lastrowid
         cursor.execute("INSERT OR IGNORE INTO Admins (user_id) VALUES (?)", (user_id,))
         conn.commit()
+        _send_auth_notification_email(email, full_name, "welcome")
         payload = _registration_response_payload(user_id, user_type, True, verified_at)
         return jsonify(envelope(payload, "Admin registered.", 201)), 201
     except sqlite3.IntegrityError as exc:
@@ -602,6 +631,8 @@ def login():
 
     access_token = create_access_token(identity=str(user_id))
     refresh_token = create_refresh_token(identity=str(user_id))
+
+    _send_auth_notification_email(email, user_data.get("full_name"), "login")
 
     payload = {
         "access_token": access_token,
