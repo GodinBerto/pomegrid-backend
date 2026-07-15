@@ -30,6 +30,7 @@ from routes.farms.admin.product import products_admin
 from routes.farms.admin.category import categories_admin
 from routes.farms.admin.order import orders_admin
 from routes.farms.admin.messages import farms_admin_messages_api
+from routes.farms.admin.users import users_admin
 from routes.connect import connect_api
 
 
@@ -243,6 +244,7 @@ app.register_blueprint(products_admin, url_prefix=f'{url}/admin/products', name_
 app.register_blueprint(categories_admin, url_prefix=f'{url}/categories')
 app.register_blueprint(orders_admin, url_prefix=f'{url}/orders')
 app.register_blueprint(farms_admin_messages_api, url_prefix=f'{url}/admin')
+app.register_blueprint(users_admin, url_prefix=f'{url}/admin/users')
 
 # Workers Blueprints
 app.register_blueprint(workers, url_prefix=f"{url}/workers")
