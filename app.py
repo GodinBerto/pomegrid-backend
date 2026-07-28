@@ -48,6 +48,9 @@ from extensions.socketio import register_socket_handlers, socketio
 #Routes Intro
 from routes.intro.user import intro_users
 
+#Routes Console
+from routes.console import console_bp
+
 #Cloudinary
 import cloudinary
 
@@ -258,6 +261,9 @@ app.register_blueprint(worker_api, url_prefix=f"{url}/worker")
 
 # Intro Blueprints
 app.register_blueprint(intro_users, url_prefix=f"{url}/intro/users")
+
+# Console Blueprints
+app.register_blueprint(console_bp, url_prefix=f"{url}/console")
 
 
 if __name__ == '__main__':

@@ -12,6 +12,8 @@ from database.schemas import (
     create_worker_indexes,
     create_worker_tables,
     create_intro_tables,
+    create_console_indexes,
+    create_console_tables,
 )
 from services.passwords import hash_password
 
@@ -1592,6 +1594,7 @@ def create_domain_indexes(cursor):
     create_connect_indexes(cursor)
     create_farm_indexes(cursor)
     create_worker_indexes(cursor)
+    create_console_indexes(cursor)
 
 
 def create_tables():
@@ -1603,6 +1606,7 @@ def create_tables():
     create_farm_tables(cursor)
     create_worker_tables(cursor)
     create_intro_tables(cursor)
+    create_console_tables(cursor)
     apply_schema_migrations(conn, cursor)
     backfill_user_fields(cursor)
     sync_product_reference_data(cursor)
