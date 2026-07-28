@@ -48,6 +48,9 @@ from extensions.socketio import register_socket_handlers, socketio
 #Routes Intro
 from routes.intro.user import intro_users
 
+#Routes Console
+from routes.console import console_bp
+
 #Cloudinary
 import cloudinary
 
@@ -241,8 +244,8 @@ app.register_blueprint(carts, url_prefix=f'{url}/carts')
 app.register_blueprint(farm_services, url_prefix=f'{url}/services')
 app.register_blueprint(products_admin, url_prefix=f'{url}/products')
 app.register_blueprint(products_admin, url_prefix=f'{url}/admin/products', name_prefix='admin')
-app.register_blueprint(categories_admin, url_prefix=f'{url}/categories')
-app.register_blueprint(orders_admin, url_prefix=f'{url}/orders')
+app.register_blueprint(categories_admin, url_prefix=f'{url}/admin/categories')
+app.register_blueprint(orders_admin, url_prefix=f'{url}/admin/orders')
 app.register_blueprint(farms_admin_messages_api, url_prefix=f'{url}/admin')
 app.register_blueprint(users_admin, url_prefix=f'{url}/admin/users')
 
@@ -258,6 +261,9 @@ app.register_blueprint(worker_api, url_prefix=f"{url}/worker")
 
 # Intro Blueprints
 app.register_blueprint(intro_users, url_prefix=f"{url}/intro/users")
+
+# Console Blueprints
+app.register_blueprint(console_bp, url_prefix=f"{url}/console")
 
 
 if __name__ == '__main__':

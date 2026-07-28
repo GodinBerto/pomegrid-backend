@@ -83,6 +83,7 @@ def create_shared_tables(cursor):
                 message TEXT,
                 is_read BOOLEAN DEFAULT 0,
                 payload_json TEXT,
+                app TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES Users(id) ON DELETE CASCADE
             )
