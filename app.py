@@ -51,6 +51,9 @@ from routes.intro.user import intro_users
 #Routes Console
 from routes.console import console_bp
 
+#Routes Food Trade
+from routes.food_trade import food_trade_api
+
 #Cloudinary
 import cloudinary
 
@@ -264,6 +267,9 @@ app.register_blueprint(intro_users, url_prefix=f"{url}/intro/users")
 
 # Console Blueprints
 app.register_blueprint(console_bp, url_prefix=f"{url}/console")
+
+# Food Trade Blueprints
+app.register_blueprint(food_trade_api, url_prefix=f"{url}/food_trade")
 
 
 if __name__ == '__main__':
