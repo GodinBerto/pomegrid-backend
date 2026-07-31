@@ -4,6 +4,7 @@ from .shared import create_shared_indexes, create_shared_tables
 from .workers import create_worker_indexes, create_worker_tables
 from .intro import create_intro_tables
 from .console import create_console_indexes, create_console_tables
+from .food_trade import create_food_trade_indexes, create_food_trade_tables
 
 __all__ = [
     "create_connect_indexes",
@@ -17,4 +18,6 @@ __all__ = [
     "create_intro_tables",
     "create_console_indexes",
     "create_console_tables",
+    "create_food_trade_indexes",
+    "create_food_trade_tables",
 ]
