@@ -11,7 +11,7 @@ from .utils import check_admin
 @food_trade_api.route("/categories", methods=["GET"])
 def list_categories():
     conn, cursor = db_connection()
-    cursor.execute("SELECT id, name, slug, sort_order FROM food_trade_categories WHERE is_active = 1 ORDER BY sort_order ASC")
+    cursor.execute("SELECT id, name, slug, sort_order, image_url FROM food_trade_categories WHERE is_active = 1 ORDER BY sort_order ASC")
     rows = cursor.fetchall()
     conn.close()
     
@@ -27,7 +27,7 @@ def admin_list_categories():
         return jsonify(envelope(None, "Forbidden: admin only", 403, False)), 403
         
     conn, cursor = db_connection()
-    cursor.execute("SELECT id, name, slug, sort_order FROM food_trade_categories ORDER BY sort_order ASC")
+    cursor.execute("SELECT id, name, slug, sort_order, image_url FROM food_trade_categories ORDER BY sort_order ASC")
     rows = cursor.fetchall()
     conn.close()
     return jsonify(envelope([dict(r) for r in rows], "Admin categories", 200, True)), 200
@@ -43,7 +43,7 @@ def admin_get_category(category_id):
     conn, cursor = db_connection()
     cursor.execute(
         """
-        SELECT id, name, slug, sort_order, is_active
+        SELECT id, name, slug, sort_order, image_url, is_active
         FROM food_trade_categories
         WHERE id = ?
         """,
@@ -70,6 +70,7 @@ def admin_create_category():
     name = data.get("name")
     slug = data.get("slug")
     sort_order = data.get("sort_order", 0)
+    image_url = str(data.get("image_url") or "").strip() or None
     is_active = data.get("is_active", 1)
 
     if not name or not slug:
@@ -89,10 +90,10 @@ def admin_create_category():
     cursor.execute(
         """
         INSERT INTO food_trade_categories
-        (name, slug, sort_order, is_active)
-        VALUES (?, ?, ?, ?)
+        (name, slug, sort_order, image_url, is_active)
+        VALUES (?, ?, ?, ?, ?)
         """,
-        (name, slug, sort_order, is_active),
+        (name, slug, sort_order, image_url, is_active),
     )
 
     conn.commit()
@@ -124,6 +125,9 @@ def admin_update_category(category_id):
     name = data.get("name")
     slug = data.get("slug")
     sort_order = data.get("sort_order")
+    image_url = data.get("image_url")
+    if image_url is not None:
+        image_url = str(image_url).strip() or None
     is_active = data.get("is_active")
 
     conn, cursor = db_connection()
@@ -158,6 +162,7 @@ def admin_update_category(category_id):
             name = COALESCE(?, name),
             slug = COALESCE(?, slug),
             sort_order = COALESCE(?, sort_order),
+            image_url = COALESCE(?, image_url),
             is_active = COALESCE(?, is_active)
         WHERE id = ?
         """,
@@ -165,6 +170,7 @@ def admin_update_category(category_id):
             name,
             slug,
             sort_order,
+            image_url,
             is_active,
             category_id,
         ),

@@ -17,12 +17,18 @@ def create_food_trade_tables(cursor):
             name TEXT NOT NULL,
             slug TEXT NOT NULL UNIQUE,
             sort_order INTEGER DEFAULT 0,
+            image_url TEXT,
             is_active BOOLEAN NOT NULL DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         '''
     )
+
+    cursor.execute("PRAGMA table_info(food_trade_categories)")
+    category_columns = [row[1] for row in cursor.fetchall()]
+    if "image_url" not in category_columns:
+        cursor.execute("ALTER TABLE food_trade_categories ADD COLUMN image_url TEXT")
 
     cursor.execute(
         '''
@@ -55,6 +61,21 @@ def create_food_trade_tables(cursor):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (category_id) REFERENCES food_trade_categories(id)
+        )
+        '''
+    )
+
+    cursor.execute(
+        '''
+        CREATE TABLE IF NOT EXISTS food_trade_product_images (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id INTEGER NOT NULL,
+            image_url TEXT NOT NULL,
+            sort_order INTEGER DEFAULT 0,
+            is_primary BOOLEAN NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (product_id) REFERENCES food_trade_products(id) ON DELETE CASCADE
         )
         '''
     )
@@ -172,6 +193,8 @@ def create_food_trade_indexes(cursor):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_trade_products_category_id ON food_trade_products(category_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_trade_products_slug ON food_trade_products(slug)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_trade_products_is_active ON food_trade_products(is_active)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_trade_product_images_product_id ON food_trade_product_images(product_id)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_trade_product_images_is_primary ON food_trade_product_images(is_primary)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_trade_orders_user_id ON food_trade_orders(user_id)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_trade_orders_status ON food_trade_orders(status)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_food_trade_order_items_order_id ON food_trade_order_items(order_id)")

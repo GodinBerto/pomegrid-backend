@@ -1,6 +1,38 @@
 from flask import jsonify, request
 from flask_jwt_extended import jwt_required
 
+
+def normalize_product_image_payload(payload):
+    if isinstance(payload, dict):
+        raw_images = payload.get("images")
+        if raw_images is None and "image_url" in payload:
+            raw_images = [payload]
+        elif raw_images is None:
+            raw_images = []
+    elif isinstance(payload, list):
+        raw_images = payload
+    else:
+        raw_images = []
+
+    normalized = []
+    for item in raw_images:
+        if not isinstance(item, dict):
+            continue
+
+        image_url = str(item.get("image_url") or "").strip()
+        if not image_url:
+            continue
+
+        normalized.append(
+            {
+                "image_url": image_url,
+                "sort_order": int(item.get("sort_order", 0) or 0),
+                "is_primary": bool(item.get("is_primary", False)),
+            }
+        )
+
+    return normalized
+
 from database.connection import db_connection
 from middleware.authMiddleware import get_authenticated_user_id
 from routes.api_envelope import envelope
@@ -36,7 +68,6 @@ def list_products():
     conn, cursor = db_connection()
     cursor.execute(query, params)
     rows = cursor.fetchall()
-    conn.close()
     
     products = []
     for row in rows:
@@ -46,8 +77,28 @@ def list_products():
                 "name": prod.pop("category_name", None),
                 "slug": prod.pop("category_slug", None)
             }
+
+        cursor.execute(
+            """
+            SELECT image_url, sort_order, is_primary
+            FROM food_trade_product_images
+            WHERE product_id = ?
+            ORDER BY sort_order ASC, is_primary DESC, id ASC
+            """,
+            (prod["id"],),
+        )
+        images = [
+            {
+                "image_url": image["image_url"],
+                "sort_order": image["sort_order"],
+                "is_primary": bool(image["is_primary"]),
+            }
+            for image in cursor.fetchall()
+        ]
+        prod["images"] = images
         products.append(prod)
-        
+
+    conn.close()
     return jsonify(envelope(products, "Products retrieved successfully", 200, True)), 200
 
 
@@ -63,9 +114,9 @@ def get_product_by_slug(slug):
         WHERE p.slug = ? AND p.is_active = 1
     """, (slug,))
     row = cursor.fetchone()
-    conn.close()
     
     if not row:
+        conn.close()
         return jsonify(envelope(None, "Product not found", 404, False)), 404
         
     prod = dict(row)
@@ -74,6 +125,26 @@ def get_product_by_slug(slug):
             "name": prod.pop("category_name", None),
             "slug": prod.pop("category_slug", None)
         }
+
+    cursor.execute(
+        """
+        SELECT image_url, sort_order, is_primary
+        FROM food_trade_product_images
+        WHERE product_id = ?
+        ORDER BY sort_order ASC, is_primary DESC, id ASC
+        """,
+        (prod["id"],),
+    )
+    images = [
+        {
+            "image_url": image["image_url"],
+            "sort_order": image["sort_order"],
+            "is_primary": bool(image["is_primary"]),
+        }
+        for image in cursor.fetchall()
+    ]
+    prod["images"] = images
+    conn.close()
     return jsonify(envelope(prod, "Product retrieved successfully", 200, True)), 200
 
 
@@ -127,6 +198,61 @@ def admin_upsert_product():
     conn.commit()
     conn.close()
     return jsonify(envelope({"ok": True}, "Product upserted", 200, True)), 200
+
+
+@food_trade_api.route("/admin/products/<int:product_id>/images", methods=["POST"])
+@jwt_required()
+def admin_add_product_images(product_id):
+    user_id = get_authenticated_user_id()
+    if not check_admin(user_id):
+        return jsonify(envelope(None, "Forbidden: admin only", 403, False)), 403
+
+    payload = request.get_json(silent=True) or {}
+    normalized_images = normalize_product_image_payload(payload)
+    if not normalized_images:
+        return jsonify(envelope(None, "At least one product image is required", 400, False)), 400
+
+    conn, cursor = db_connection()
+    cursor.execute("SELECT id FROM food_trade_products WHERE id = ?", (product_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return jsonify(envelope(None, "Product not found", 404, False)), 404
+
+    primary_images = [image for image in normalized_images if image["is_primary"]]
+    if primary_images:
+        cursor.execute(
+            "UPDATE food_trade_product_images SET is_primary = 0 WHERE product_id = ?",
+            (product_id,),
+        )
+
+    inserted_images = []
+    for image in normalized_images:
+        cursor.execute(
+            """
+            INSERT INTO food_trade_product_images (product_id, image_url, sort_order, is_primary)
+            VALUES (?, ?, ?, ?)
+            """,
+            (product_id, image["image_url"], image["sort_order"], int(image["is_primary"])),
+        )
+        inserted_images.append(
+            {
+                "id": cursor.lastrowid,
+                "image_url": image["image_url"],
+                "sort_order": image["sort_order"],
+                "is_primary": image["is_primary"],
+            }
+        )
+
+    if inserted_images:
+        primary_image = next((image for image in inserted_images if image["is_primary"]), inserted_images[0])
+        cursor.execute(
+            "UPDATE food_trade_products SET image_url = ? WHERE id = ?",
+            (primary_image["image_url"], product_id),
+        )
+
+    conn.commit()
+    conn.close()
+    return jsonify(envelope({"images": inserted_images}, "Product images added successfully", 201, True)), 201
 
 
 @food_trade_api.route("/admin/products/<int:pid>", methods=["DELETE"])
