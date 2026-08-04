@@ -1,4 +1,5 @@
 import os
+import socket
 from urllib.parse import urlsplit
 
 from flask import Flask, jsonify, request
@@ -217,6 +218,25 @@ def _build_api_root_response():
     return response
 
 
+def resolve_bind_port(requested_port, host="0.0.0.0", max_attempts=10):
+    try:
+        requested_port_value = int(requested_port)
+    except (TypeError, ValueError):
+        requested_port_value = 8000
+
+    for offset in range(max_attempts):
+        candidate_port = requested_port_value + offset
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+            try:
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                probe.bind((host, candidate_port))
+                return candidate_port
+            except OSError:
+                continue
+
+    return requested_port_value
+
+
 @app.route("/", methods=["GET"])
 def service_root():
     return _build_api_root_response()
@@ -274,8 +294,9 @@ app.register_blueprint(food_trade_api, url_prefix=f"{url}/food_trade")
 
 if __name__ == '__main__':
     host = os.getenv("APP_HOST", "0.0.0.0")
-    port = int(os.getenv("APP_PORT", "8000"))
+    requested_port = os.getenv("APP_PORT", "8000")
     debug = str(os.getenv("FLASK_DEBUG", "true")).strip().lower() in {"1", "true", "yes", "on"}
+    port = resolve_bind_port(requested_port, host=host)
 
     app.logger.info("Server starting on http://localhost:%s", port)
     app.logger.info("Server starting on http://127.0.0.1:%s", port)

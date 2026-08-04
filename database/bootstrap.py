@@ -1473,6 +1473,8 @@ def apply_schema_migrations(conn, cursor):
     ensure_column(cursor, "ConnectProfiles", "min_order_qty", "min_order_qty TEXT")
     ensure_column(cursor, "ConnectProfiles", "response_time", "response_time TEXT")
     ensure_column(cursor, "Products", "category_id", "category_id INTEGER")
+    ensure_column(cursor, "food_trade_weekly_products", "slug", "slug TEXT")
+    ensure_column(cursor, "food_trade_weekly_products", "category_id", "category_id INTEGER")
     ensure_column(cursor, "Products", "image_urls", "image_urls TEXT")
     ensure_column(cursor, "Products", "video_urls", "video_urls TEXT")
     ensure_column(cursor, "Products", "is_featured", "is_featured BOOLEAN NOT NULL DEFAULT 0")
