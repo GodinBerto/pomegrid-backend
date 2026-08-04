@@ -151,9 +151,11 @@ def create_food_trade_tables(cursor):
         CREATE TABLE IF NOT EXISTS food_trade_weekly_products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
+            slug TEXT,
             description TEXT,
             price REAL NOT NULL,
             image_url TEXT,
+            category_id INTEGER,
             status TEXT NOT NULL DEFAULT 'inactive' CHECK(status IN ('active', 'inactive')),
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

@@ -157,13 +157,46 @@ def admin_list_products():
         
     conn, cursor = db_connection()
     cursor.execute("""
-        SELECT id, name, slug, description, price_ghs, unit, 
-               min_order_qty, stock_qty, is_active, category_id, image_url
-        FROM food_trade_products ORDER BY name ASC
+        SELECT p.id, p.name, p.slug, p.description, p.price_ghs, p.unit,
+               p.min_order_qty, p.stock_qty, p.is_active, p.category_id, p.image_url,
+               c.name as category_name, c.slug as category_slug
+        FROM food_trade_products p
+        LEFT JOIN food_trade_categories c ON p.category_id = c.id
+        ORDER BY p.name ASC
     """)
     rows = cursor.fetchall()
+
+    products = []
+    for row in rows:
+        prod = dict(row)
+        if prod.get("category_id"):
+            prod["categories"] = {
+                "name": prod.pop("category_name", None),
+                "slug": prod.pop("category_slug", None),
+            }
+
+        cursor.execute(
+            """
+            SELECT image_url, sort_order, is_primary
+            FROM food_trade_product_images
+            WHERE product_id = ?
+            ORDER BY sort_order ASC, is_primary DESC, id ASC
+            """,
+            (prod["id"],),
+        )
+        images = [
+            {
+                "image_url": image["image_url"],
+                "sort_order": image["sort_order"],
+                "is_primary": bool(image["is_primary"]),
+            }
+            for image in cursor.fetchall()
+        ]
+        prod["images"] = images
+        products.append(prod)
+
     conn.close()
-    return jsonify(envelope([dict(r) for r in rows], "Admin products", 200, True)), 200
+    return jsonify(envelope(products, "Admin products", 200, True)), 200
 
 
 @food_trade_api.route("/admin/products", methods=["POST"])
@@ -190,7 +223,7 @@ def admin_upsert_product():
         # Insert
         cursor.execute("""
             INSERT INTO food_trade_products (name, slug, description, price_ghs, unit, image_url, min_order_qty, stock_qty, is_active, category_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (data.get("name"), data.get("slug"), data.get("description", ""), 
               data.get("price_ghs"), data.get("unit"), data.get("image_url"), data.get("min_order_qty"), 
               data.get("stock_qty"), data.get("is_active", True), data.get("category_id")))
@@ -218,12 +251,8 @@ def admin_add_product_images(product_id):
         conn.close()
         return jsonify(envelope(None, "Product not found", 404, False)), 404
 
-    primary_images = [image for image in normalized_images if image["is_primary"]]
-    if primary_images:
-        cursor.execute(
-            "UPDATE food_trade_product_images SET is_primary = 0 WHERE product_id = ?",
-            (product_id,),
-        )
+    # Replace existing product images with the new upload set
+    cursor.execute("DELETE FROM food_trade_product_images WHERE product_id = ?", (product_id,))
 
     inserted_images = []
     for image in normalized_images:
